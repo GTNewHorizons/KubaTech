@@ -23,6 +23,7 @@ import static kubaworks.api.utils.ModUtils.isDeobfuscatedEnvironment;
 import static kubaworks.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.EECRecipeMap;
 import static kubaworks.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.MobNameToRecipeMap;
 import static kubaworks.kubaworks.info;
+import static kubaworks.kubaworks.warn;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -85,9 +86,9 @@ public class MobRecipeLoader {
         public ItemStack stack;
         public DropType type;
         public int chance;
-        public boolean enchantable;
+        public Integer enchantable;
 
-        public MobDrop(ItemStack stack, DropType type, int chance, boolean enchantable) {
+        public MobDrop(ItemStack stack, DropType type, int chance, Integer enchantable) {
             this.stack = stack;
             this.type = type;
             this.chance = chance;
@@ -100,23 +101,18 @@ public class MobRecipeLoader {
         Mob_Handler.addRecipe(e, drop);
     }
 
-    private static class fakeRand extends Random {
+    public static class fakeRand extends Random {
         public boolean doescallnextbool = false;
         public boolean nextbool = false;
-        public boolean randomenchantmentdetected = false;
+        public ArrayList<ItemStack> randomenchantmentdetected = new ArrayList<>();
+        public ArrayList<Integer> enchantabilityLevel = new ArrayList<>();
         public int maxbound = 1;
         public int overridenext = 0;
 
         @Override
         public int nextInt(int bound) {
-
-            StackTraceElement[] s = new Throwable().getStackTrace();
-            if (Arrays.stream(s).anyMatch(se -> se.getMethodName().startsWith(addRandomEnchantmentName))) {
-                randomenchantmentdetected = true;
-                return super.nextInt(bound);
-            }
             if (maxbound < bound) maxbound = bound;
-            return overridenext >= bound ? bound - 1 : overridenext;
+            return overridenext % bound;
         }
 
         @Override
@@ -220,32 +216,36 @@ public class MobRecipeLoader {
 
             HashMap<GT_Utility.ItemId, ItemStack> drops = new HashMap<>();
             HashMap<GT_Utility.ItemId, Integer> dropcount = new HashMap<>();
-            HashSet<GT_Utility.ItemId> dropsrandomenchanted = new HashSet<>();
+            HashMap<GT_Utility.ItemId, Integer> dropsrandomenchanted = new HashMap<>();
             HashMap<GT_Utility.ItemId, ItemStack> raredrops = new HashMap<>();
             HashMap<GT_Utility.ItemId, Integer> raredropcount = new HashMap<>();
-            HashSet<GT_Utility.ItemId> raredropsrandomenchanted = new HashSet<>();
+            HashMap<GT_Utility.ItemId, Integer> raredropsrandomenchanted = new HashMap<>();
             Consumer<EntityItem> addDrop = (entityItem) -> {
-                ItemStack stack = entityItem.getEntityItem();
-                if (stack == null) return;
-                stack = stack.copy();
+                ItemStack ostack = entityItem.getEntityItem();
+                if (ostack == null) return;
+                ItemStack stack = ostack.copy();
                 GT_Utility.ItemId itemId = GT_Utility.ItemId.createNoCopy(stack);
                 drops.putIfAbsent(itemId, stack);
                 dropcount.merge(itemId, stack.stackSize, Integer::sum);
-                if (frand.randomenchantmentdetected) {
-                    frand.randomenchantmentdetected = false;
-                    dropsrandomenchanted.add(itemId);
+                int i;
+                if ((i = frand.randomenchantmentdetected.indexOf(ostack)) != -1) {
+                    frand.randomenchantmentdetected.remove(i);
+                    dropsrandomenchanted.put(itemId, frand.enchantabilityLevel.get(i));
+                    frand.enchantabilityLevel.remove(i);
                 }
             };
             Consumer<EntityItem> addDropRare = (entityItem) -> {
-                ItemStack stack = entityItem.getEntityItem();
-                if (stack == null) return;
-                stack = stack.copy();
+                ItemStack ostack = entityItem.getEntityItem();
+                if (ostack == null) return;
+                ItemStack stack = ostack.copy();
                 GT_Utility.ItemId itemId = GT_Utility.ItemId.createNoCopy(stack);
                 raredrops.putIfAbsent(itemId, stack);
                 raredropcount.merge(itemId, stack.stackSize, Integer::sum);
-                if (frand.randomenchantmentdetected) {
-                    frand.randomenchantmentdetected = false;
-                    raredropsrandomenchanted.add(itemId);
+                int i;
+                if ((i = frand.randomenchantmentdetected.indexOf(ostack)) != -1) {
+                    frand.randomenchantmentdetected.remove(i);
+                    raredropsrandomenchanted.put(itemId, frand.enchantabilityLevel.get(i));
+                    frand.enchantabilityLevel.remove(i);
                 }
             };
 
@@ -283,7 +283,7 @@ public class MobRecipeLoader {
                     }
             }
 
-            double maxnormalchance = frand.maxbound;
+            double maxnormalchance = frand.maxbound * (frand.doescallnextbool ? 2 : 1);
 
             info("[Mob Handler]Generating rare drops");
 
@@ -300,6 +300,11 @@ public class MobRecipeLoader {
             }
 
             e.capturedDrops.forEach(addDropRare);
+            if (!frand.randomenchantmentdetected.isEmpty()) {
+                warn("[Mob Handler]Random enchantment detected but not emptied !!!");
+                frand.randomenchantmentdetected.clear();
+                frand.enchantabilityLevel.clear();
+            }
             if (frand.maxbound > 1 || frand.doescallnextbool) {
                 e.capturedDrops.clear();
                 for (int nb = 0; nb < (frand.doescallnextbool ? 2 : 1); nb++)
@@ -319,7 +324,7 @@ public class MobRecipeLoader {
                     }
             }
 
-            double maxrarechance = frand.maxbound;
+            double maxrarechance = frand.maxbound * (frand.doescallnextbool ? 2 : 1);
 
             if (drops.isEmpty() && raredrops.isEmpty()) {
                 if (ModUtils.isClientSided) addNEIMobRecipe(e, new ArrayList<>());
@@ -343,7 +348,7 @@ public class MobRecipeLoader {
                 }
 
                 moboutputs.add(new MobDrop(
-                        outputs[i], MobDrop.DropType.Normal, outputchances[i], dropsrandomenchanted.contains(kk)));
+                        outputs[i], MobDrop.DropType.Normal, outputchances[i], dropsrandomenchanted.get(kk)));
                 i++;
             }
             for (Map.Entry<GT_Utility.ItemId, ItemStack> entry : raredrops.entrySet()) {
@@ -356,7 +361,7 @@ public class MobRecipeLoader {
                     outputchances[i] /= 2;
                 }
                 moboutputs.add(new MobDrop(
-                        outputs[i], MobDrop.DropType.Rare, outputchances[i], raredropsrandomenchanted.contains(kk)));
+                        outputs[i], MobDrop.DropType.Rare, outputchances[i], raredropsrandomenchanted.get(kk)));
                 i++;
             }
 

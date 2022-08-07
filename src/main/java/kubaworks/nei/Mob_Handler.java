@@ -38,6 +38,7 @@ import kubaworks.loaders.MobRecipeLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiInventory;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.init.Blocks;
@@ -56,6 +57,7 @@ import org.lwjgl.opengl.GL11;
 public class Mob_Handler extends TemplateRecipeHandler {
     private static final Mob_Handler instance = new Mob_Handler();
     private static final List<MobCachedRecipe> cachedRecipes = new ArrayList<>();
+    public static int cycleTicksStatic = Math.abs((int) System.currentTimeMillis());
 
     public static void addRecipe(EntityLiving e, List<MobRecipeLoader.MobDrop> drop) {
         List<MobPositionedStack> positionedStacks = new ArrayList<>();
@@ -249,24 +251,34 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 if (r.mInput.stream().anyMatch(ingredient::isItemEqual)) arecipes.add(r);
     }
 
+    @Override
+    public void onUpdate() {
+        cycleTicksStatic++;
+    }
+
     public static class MobPositionedStack extends PositionedStack {
 
         public final MobRecipeLoader.MobDrop.DropType type;
         public final int chance;
         public final boolean enchantable;
+        public final int enchantmentLevel;
+        private final Random rand;
 
         public MobPositionedStack(
-                Object object, int x, int y, MobRecipeLoader.MobDrop.DropType type, int chance, boolean enchantable) {
+                Object object, int x, int y, MobRecipeLoader.MobDrop.DropType type, int chance, Integer enchantable) {
             super(object, x, y, false);
+            rand = new Random();
             this.type = type;
             this.chance = chance;
-            this.enchantable = enchantable;
+            this.enchantable = enchantable != null;
+            if (this.enchantable) enchantmentLevel = enchantable;
+            else enchantmentLevel = 0;
             NBTTagList extratooltip = new NBTTagList();
 
             if (chance != 10000)
                 extratooltip.appendTag(new NBTTagString(
                         EnumChatFormatting.RESET + "Chance: " + (chance / 100) + "." + (chance % 100) + "%"));
-            if (enchantable)
+            if (this.enchantable)
                 extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + "Random enchantment is applied !"));
             extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + "" + EnumChatFormatting.GRAY + ""
                     + EnumChatFormatting.ITALIC + "Please remember that those numbers are an average drops"));
@@ -286,6 +298,15 @@ public class Mob_Handler extends TemplateRecipeHandler {
             itemtag.setTag("display", display);
             this.items[0].setTagCompound(itemtag);
             this.item.setTagCompound(itemtag);
+        }
+
+        @Override
+        public void setPermutationToRender(int index) {
+            if (this.item == null) this.item = this.items[0].copy();
+            if (enchantable) {
+                this.item.getTagCompound().removeTag("ench");
+                EnchantmentHelper.addRandomEnchantment(rand, this.item, enchantmentLevel);
+            }
         }
     }
 
@@ -323,7 +344,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
             if (!Loader.isModLoaded("InfernalMobs")) infernaltype = -1; // not supported
             else {
-                if (InfernalHelper.isClassAllowed(mob)) infernaltype = 0; // not allowed
+                if (!InfernalHelper.isClassAllowed(mob)) infernaltype = 0; // not allowed
                 else if (InfernalHelper.checkEntityClassForced(mob)) infernaltype = 2; // forced
                 else infernaltype = 1; // normal
             }
@@ -341,6 +362,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
         @Override
         public List<PositionedStack> getOtherStacks() {
+            if (cycleTicksStatic % 10 == 0) mOutputs.forEach(p -> p.setPermutationToRender(0));
             return mOutputs;
         }
     }
