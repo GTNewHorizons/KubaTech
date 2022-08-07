@@ -20,13 +20,14 @@
 package kubaworks;
 
 import cpw.mods.fml.common.event.*;
+import kubaworks.loaders.RecipeLoader;
 
 public class CommonProxy {
 
     public void preInit(FMLPreInitializationEvent event) {
         Config.syncronizeConfiguration(event.getSuggestedConfigurationFile());
 
-        MyMod.info("I am " + Tags.MODNAME + " at version " + Tags.VERSION);
+        kubaworks.info("I am " + Tags.MODNAME + " at version " + Tags.VERSION);
     }
 
     public void init(FMLInitializationEvent event) {}
@@ -35,7 +36,9 @@ public class CommonProxy {
 
     public void serverAboutToStart(FMLServerAboutToStartEvent event) {}
 
-    public void serverStarting(FMLServerStartingEvent event) {}
+    public void serverStarting(FMLServerStartingEvent event) {
+        RecipeLoader.addRecipesLate();
+    }
 
     public void serverStarted(FMLServerStartedEvent event) {}
 

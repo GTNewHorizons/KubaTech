@@ -22,20 +22,30 @@ package kubaworks;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.*;
+import kubaworks.loaders.RecipeLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-@Mod(modid = Tags.MODID, version = Tags.VERSION, name = Tags.MODNAME, acceptedMinecraftVersions = "[1.7.10]")
-public class MyMod {
+@Mod(
+        modid = Tags.MODID,
+        version = Tags.VERSION,
+        name = Tags.MODNAME,
+        acceptedMinecraftVersions = "[1.7.10]",
+        dependencies = "required-after:gregtech; " + "after:EnderIO; ")
+public class kubaworks {
 
-    private static Logger LOG = LogManager.getLogger(Tags.MODID);
+    public static kubaworks instance = null;
+
+    private static final Logger LOG = LogManager.getLogger(Tags.MODID);
 
     @SidedProxy(clientSide = Tags.MODID + ".ClientProxy", serverSide = Tags.MODID + ".CommonProxy")
     public static CommonProxy proxy;
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
+        instance = this;
         proxy.preInit(event);
+        RecipeLoader.addRecipes();
     }
 
     @Mod.EventHandler
