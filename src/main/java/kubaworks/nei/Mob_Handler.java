@@ -32,7 +32,6 @@ import java.awt.*;
 import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.List;
-
 import kubaworks.api.utils.FastRandom;
 import kubaworks.api.utils.InfernalHelper;
 import kubaworks.kubaworks;
@@ -78,7 +77,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 // yoffset = 62;
             }
             positionedStacks.add(
-                new MobPositionedStack(d.stack, xoffset, yoffset, d.type, d.chance, d.enchantable, d.damages));
+                    new MobPositionedStack(d.stack, xoffset, yoffset, d.type, d.chance, d.enchantable, d.damages));
             xoffset += 18;
             if (xoffset >= xorigin + (18 * 3)) {
                 xoffset = xorigin;
@@ -265,7 +264,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
         public final int chance;
         public final boolean enchantable;
         public final boolean randomdamage;
-        public final ArrayList<Integer> damages;
+        public final List<Integer> damages;
         public final int enchantmentLevel;
         private final Random rand;
 
@@ -276,7 +275,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 MobRecipeLoader.MobDrop.DropType type,
                 int chance,
                 Integer enchantable,
-                ArrayList<Integer> damages) {
+                List<Integer> damages) {
             super(object, x, y, false);
             rand = new FastRandom();
             this.type = type;

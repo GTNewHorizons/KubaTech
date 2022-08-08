@@ -26,12 +26,13 @@ import kubaworks.loaders.RecipeLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+@SuppressWarnings("unused")
 @Mod(
         modid = Tags.MODID,
         version = Tags.VERSION,
         name = Tags.MODNAME,
         acceptedMinecraftVersions = "[1.7.10]",
-        dependencies = "required-after:gregtech; " + "after:EnderIO; ")
+        dependencies = "required-after:gregtech; " + "required-after:spongemixins@[1.4.0,); " + "after:EnderIO; ")
 public class kubaworks {
 
     public static kubaworks instance = null;

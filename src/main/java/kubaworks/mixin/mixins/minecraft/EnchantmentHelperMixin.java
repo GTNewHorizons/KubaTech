@@ -1,9 +1,11 @@
 package kubaworks.mixin.mixins.minecraft;
 
 import java.util.Random;
+import kubaworks.api.utils.FastRandom;
 import kubaworks.loaders.MobRecipeLoader;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagInt;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = EnchantmentHelper.class)
 public class EnchantmentHelperMixin {
 
-    private static final Random rnd = new Random();
+    private static final Random rnd = new FastRandom();
 
     @Inject(method = "addRandomEnchantment", at = @At("HEAD"), require = 1)
     private static void addRandomEnchantmentDetector(
@@ -22,14 +24,14 @@ public class EnchantmentHelperMixin {
             ItemStack itemStack,
             int enchantabilityLevel,
             CallbackInfoReturnable<ItemStack> callbackInfoReturnable) {
-        if (random instanceof MobRecipeLoader.fakeRand) {
-            ((MobRecipeLoader.fakeRand) random).randomenchantmentdetected.add(itemStack);
-            ((MobRecipeLoader.fakeRand) random).enchantabilityLevel.add(enchantabilityLevel);
+        if (MobRecipeLoader.isInGenerationProcess && random instanceof MobRecipeLoader.fakeRand) {
+            itemStack.setTagInfo("RandomEnchantmentDetected", new NBTTagInt(enchantabilityLevel));
         }
     }
 
     @ModifyVariable(method = "addRandomEnchantment", at = @At("HEAD"), ordinal = 0, argsOnly = true, require = 1)
     private static Random addRandomEnchantmentModifier(Random random) {
+        if (!MobRecipeLoader.isInGenerationProcess) return random;
         if (random instanceof MobRecipeLoader.fakeRand) return rnd;
         return random;
     }

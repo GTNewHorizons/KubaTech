@@ -22,7 +22,6 @@ public class FastRandom extends Random {
 
     @Override
     protected int next(int bits) {
-        return (realRandom.nextInt() >>> (32-bits));
+        return (realRandom.nextInt() >>> (32 - bits));
     }
-
 }

@@ -25,6 +25,7 @@ import kubaworks.loaders.MobRecipeLoader;
 import kubaworks.nei.IMCForNEI;
 import net.minecraftforge.common.MinecraftForge;
 
+@SuppressWarnings("unused")
 public class ClientProxy extends CommonProxy {
 
     public void preInit(FMLPreInitializationEvent event) {
