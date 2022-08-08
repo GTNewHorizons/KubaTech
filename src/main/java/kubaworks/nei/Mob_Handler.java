@@ -32,6 +32,8 @@ import java.awt.*;
 import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.List;
+
+import kubaworks.api.utils.FastRandom;
 import kubaworks.api.utils.InfernalHelper;
 import kubaworks.kubaworks;
 import kubaworks.loaders.MobRecipeLoader;
@@ -63,13 +65,6 @@ public class Mob_Handler extends TemplateRecipeHandler {
         List<MobPositionedStack> positionedStacks = new ArrayList<>();
         int xoffset = 104, xorigin = 104, yoffset = 13, i = 0;
         for (MobRecipeLoader.MobDrop d : drop) {
-            positionedStacks.add(
-                    new MobPositionedStack(d.stack, xoffset, yoffset, d.type, d.chance, d.enchantable, d.damages));
-            xoffset += 18;
-            if (xoffset >= xorigin + (18 * 3)) {
-                xoffset = xorigin;
-                yoffset += 18;
-            }
             if (i == 0 && d.type == MobRecipeLoader.MobDrop.DropType.Rare) {
                 i = 1;
                 xoffset = xorigin;
@@ -81,6 +76,13 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 // xorigin = ;
                 // xoffset = xorigin;
                 // yoffset = 62;
+            }
+            positionedStacks.add(
+                new MobPositionedStack(d.stack, xoffset, yoffset, d.type, d.chance, d.enchantable, d.damages));
+            xoffset += 18;
+            if (xoffset >= xorigin + (18 * 3)) {
+                xoffset = xorigin;
+                yoffset += 18;
             }
         }
         instance.addRecipeInt(e, positionedStacks);
@@ -276,7 +278,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 Integer enchantable,
                 ArrayList<Integer> damages) {
             super(object, x, y, false);
-            rand = new Random();
+            rand = new FastRandom();
             this.type = type;
             this.chance = chance;
             this.enchantable = enchantable != null;

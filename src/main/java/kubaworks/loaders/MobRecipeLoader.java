@@ -404,6 +404,8 @@ public class MobRecipeLoader {
             }
             addDrop.accept(raredrops, e.capturedDrops);
 
+
+
             int maxrarechance = timesrolled;
 
             if (drops.isEmpty() && raredrops.isEmpty()) {
