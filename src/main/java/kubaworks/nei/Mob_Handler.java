@@ -63,7 +63,8 @@ public class Mob_Handler extends TemplateRecipeHandler {
         List<MobPositionedStack> positionedStacks = new ArrayList<>();
         int xoffset = 104, xorigin = 104, yoffset = 13, i = 0;
         for (MobRecipeLoader.MobDrop d : drop) {
-            positionedStacks.add(new MobPositionedStack(d.stack, xoffset, yoffset, d.type, d.chance, d.enchantable));
+            positionedStacks.add(
+                    new MobPositionedStack(d.stack, xoffset, yoffset, d.type, d.chance, d.enchantable, d.damages));
             xoffset += 18;
             if (xoffset >= xorigin + (18 * 3)) {
                 xoffset = xorigin;
@@ -261,11 +262,19 @@ public class Mob_Handler extends TemplateRecipeHandler {
         public final MobRecipeLoader.MobDrop.DropType type;
         public final int chance;
         public final boolean enchantable;
+        public final boolean randomdamage;
+        public final ArrayList<Integer> damages;
         public final int enchantmentLevel;
         private final Random rand;
 
         public MobPositionedStack(
-                Object object, int x, int y, MobRecipeLoader.MobDrop.DropType type, int chance, Integer enchantable) {
+                Object object,
+                int x,
+                int y,
+                MobRecipeLoader.MobDrop.DropType type,
+                int chance,
+                Integer enchantable,
+                ArrayList<Integer> damages) {
             super(object, x, y, false);
             rand = new Random();
             this.type = type;
@@ -273,13 +282,17 @@ public class Mob_Handler extends TemplateRecipeHandler {
             this.enchantable = enchantable != null;
             if (this.enchantable) enchantmentLevel = enchantable;
             else enchantmentLevel = 0;
+            this.randomdamage = damages != null;
+            if (this.randomdamage) this.damages = damages;
+            else this.damages = null;
             NBTTagList extratooltip = new NBTTagList();
 
             if (chance != 10000)
                 extratooltip.appendTag(new NBTTagString(
                         EnumChatFormatting.RESET + "Chance: " + (chance / 100) + "." + (chance % 100) + "%"));
-            if (this.enchantable)
-                extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + "Random enchantment is applied !"));
+            // if (this.enchantable)
+            //    extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + "Random enchantment is applied
+            // !"));
             extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + "" + EnumChatFormatting.GRAY + ""
                     + EnumChatFormatting.ITALIC + "Please remember that those numbers are an average drops"));
 
@@ -307,6 +320,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 this.item.getTagCompound().removeTag("ench");
                 EnchantmentHelper.addRandomEnchantment(rand, this.item, enchantmentLevel);
             }
+            if (randomdamage) this.item.setItemDamage(damages.get(rand.nextInt(damages.size())));
         }
     }
 
