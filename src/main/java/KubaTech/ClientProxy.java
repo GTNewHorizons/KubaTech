@@ -19,10 +19,10 @@
 
 package KubaTech;
 
+import KubaTech.api.utils.ModUtils;
+import KubaTech.loaders.MobRecipeLoader;
+import KubaTech.nei.IMCForNEI;
 import cpw.mods.fml.common.event.*;
-import kubaworks.api.utils.ModUtils;
-import kubaworks.loaders.MobRecipeLoader;
-import kubaworks.nei.IMCForNEI;
 import net.minecraftforge.common.MinecraftForge;
 
 @SuppressWarnings("unused")
