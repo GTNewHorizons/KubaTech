@@ -20,7 +20,6 @@
 package kubatech.loaders;
 
 import static kubatech.api.utils.ModUtils.isDeobfuscatedEnvironment;
-import static kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.EECRecipeMap;
 import static kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.MobNameToRecipeMap;
 
 import cpw.mods.fml.common.Loader;
@@ -39,6 +38,7 @@ import java.util.function.BiConsumer;
 import kubatech.Tags;
 import kubatech.api.utils.ModUtils;
 import kubatech.nei.Mob_Handler;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
@@ -52,7 +52,6 @@ import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fluids.FluidStack;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -79,6 +78,42 @@ public class MobRecipeLoader {
     private static boolean alreadyGenerated = false;
     public static boolean isInGenerationProcess = false;
 
+    public static class MobRecipe {
+        public final ArrayList<MobDrop> mOutputs;
+        public final int mEUt = 8000;
+        public final int mDuration = 100;
+        public final int mMaxDamageChance;
+
+        public MobRecipe(ArrayList<MobDrop> outputs) {
+            mOutputs = outputs;
+            int maxdamagechance = 0;
+            for (MobDrop o : mOutputs) if (o.damages != null) for (int v : o.damages.values()) maxdamagechance += v;
+            mMaxDamageChance = maxdamagechance;
+        }
+
+        public ItemStack[] generateOutputs(Random rnd) {
+            ArrayList<ItemStack> stacks = new ArrayList<>(mOutputs.size());
+            for (MobDrop o : mOutputs)
+                if (o.chance == 10000 || rnd.nextInt(10000) < o.chance) {
+                    ItemStack s = o.stack.copy();
+                    if (o.enchantable != null) EnchantmentHelper.addRandomEnchantment(rnd, s, o.enchantable);
+                    if (o.damages != null) {
+                        int rChance = rnd.nextInt(mMaxDamageChance);
+                        int cChance = 0;
+                        for (Map.Entry<Integer, Integer> damage : o.damages.entrySet()) {
+                            cChance += damage.getValue();
+                            if (rChance <= cChance) {
+                                s.setItemDamage(damage.getKey());
+                                break;
+                            }
+                        }
+                    }
+                    stacks.add(s);
+                }
+            return stacks.toArray(new ItemStack[0]);
+        }
+    }
+
     public static class MobDrop {
         public enum DropType {
             Normal,
@@ -90,9 +125,10 @@ public class MobRecipeLoader {
         public DropType type;
         public int chance;
         public Integer enchantable;
-        public List<Integer> damages;
+        public HashMap<Integer, Integer> damages;
 
-        public MobDrop(ItemStack stack, DropType type, int chance, Integer enchantable, List<Integer> damages) {
+        public MobDrop(
+                ItemStack stack, DropType type, int chance, Integer enchantable, HashMap<Integer, Integer> damages) {
             this.stack = stack;
             this.type = type;
             this.chance = chance;
@@ -460,7 +496,7 @@ public class MobRecipeLoader {
                 return;
             }
 
-            List<MobDrop> moboutputs = new ArrayList<>();
+            ArrayList<MobDrop> moboutputs = new ArrayList<>();
 
             ItemStack[] outputs = new ItemStack[drops.size() + raredrops.size()];
             int[] outputchances = new int[drops.size() + raredrops.size()];
@@ -477,7 +513,7 @@ public class MobRecipeLoader {
                         MobDrop.DropType.Normal,
                         outputchances[i],
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
-                        drop.isDamageRandomized ? new ArrayList<>(drop.damagesPossible.keySet()) : null));
+                        drop.isDamageRandomized ? drop.damagesPossible : null));
                 i++;
             }
             for (dropinstance drop : raredrops.drops) {
@@ -492,7 +528,7 @@ public class MobRecipeLoader {
                         MobDrop.DropType.Rare,
                         outputchances[i],
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
-                        drop.isDamageRandomized ? new ArrayList<>(drop.damagesPossible.keySet()) : null));
+                        drop.isDamageRandomized ? drop.damagesPossible : null));
                 i++;
             }
 
@@ -502,19 +538,7 @@ public class MobRecipeLoader {
                 NBTTagCompound nbt = new NBTTagCompound();
                 BlockPoweredSpawner.writeMobTypeToNBT(nbt, k);
                 sSpawner.setTagCompound(nbt);
-                MobNameToRecipeMap.put(
-                        k,
-                        EECRecipeMap.addFakeRecipe(
-                                true,
-                                new ItemStack[] {sSpawner},
-                                outputs,
-                                null,
-                                outputchances,
-                                new FluidStack[0],
-                                new FluidStack[0],
-                                (int) e.getMaxHealth() * 2,
-                                8000,
-                                0));
+                MobNameToRecipeMap.put(k, new MobRecipe(moboutputs));
             }
             LOG.info("Mapped " + k);
         });

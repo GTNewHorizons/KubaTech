@@ -30,11 +30,7 @@ public class IMCForNEI {
 
         sendHandler("kubatech.mobhandler", "minecraft:diamond_sword", 168, 151, 2, 6);
         sendCatalyst("kubatech.mobhandler", "minecraft:diamond_sword");
-
-        if (false && Loader.isModLoaded("EnderIO")) {
-            sendGTStyledHandler("kubatech.recipe.eec", "gregtech:gt.blockmachines:1006");
-            sendCatalyst("kubatech.recipe.eec", "gregtech:gt.blockmachines:1006");
-        }
+        if (Loader.isModLoaded("EnderIO")) sendCatalyst("kubatech.mobhandler", "gregtech:gt.blockmachines:14201");
     }
 
     private static void sendHandler(

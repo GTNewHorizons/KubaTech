@@ -20,10 +20,9 @@
 package kubatech.common.tileentity.gregtech.multiblock;
 
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.*;
-import static gregtech.api.enums.GT_Values.E;
-import static gregtech.api.enums.GT_Values.RES_PATH_GUI;
 import static gregtech.api.enums.Textures.BlockIcons.*;
 import static gregtech.api.util.GT_StructureUtility.ofHatchAdder;
+import static kubatech.api.Variables.Author;
 
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
@@ -37,33 +36,20 @@ import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_EnhancedMultiBlockBase;
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
-import gregtech.api.util.GT_Recipe;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Random;
+import kubatech.Tags;
+import kubatech.api.utils.FastRandom;
+import kubatech.loaders.MobRecipeLoader;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
 
 public class GT_MetaTileEntity_ExtremeExterminationChamber
         extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_ExtremeExterminationChamber> {
 
-    public static final GT_Recipe.GT_Recipe_Map EECRecipeMap = new GT_Recipe.GT_Recipe_Map(
-            new HashSet<>(4),
-            "kubatech.recipe.eec",
-            "Extreme Extermination Chamber",
-            null,
-            RES_PATH_GUI + "basicmachines/Default",
-            1,
-            6,
-            1,
-            0,
-            1,
-            E,
-            0,
-            E,
-            false,
-            false);
-    public static final HashMap<String, GT_Recipe> MobNameToRecipeMap = new HashMap<>();
+    public static final HashMap<String, MobRecipeLoader.MobRecipe> MobNameToRecipeMap = new HashMap<>();
+    public final Random rand = new FastRandom();
 
     public GT_MetaTileEntity_ExtremeExterminationChamber(int aID, String aName, String aNameRegional) {
         super(aID, aName, aNameRegional);
@@ -122,7 +108,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         tt.addMachineType("Powered Spawner")
                 .addInfo("Controller block for Extreme Extermination Chamber")
                 .addInfo("Spawns and Exterminates monsters for you")
-                .addInfo("Author: " + EnumChatFormatting.GOLD + "kuba6000")
+                .addInfo(Author)
                 .addSeparator()
                 .beginStructureBlock(5, 7, 5, true)
                 .addController("Front Bottom Center")
@@ -130,7 +116,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 .addOutputBus("Any casing", 1)
                 .addEnergyHatch("Any casing", 1)
                 .addMaintenanceHatch("Any casing", 1)
-                .toolTipFinisher("Gregtech");
+                .toolTipFinisher(Tags.MODNAME);
         return tt;
     }
 
@@ -202,16 +188,11 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         String mobType = aStack.getTagCompound().getString("mobType");
         if (mobType.isEmpty()) return false;
 
-        GT_Recipe recipe = MobNameToRecipeMap.get(mobType);
+        MobRecipeLoader.MobRecipe recipe = MobNameToRecipeMap.get(mobType);
 
         if (recipe == null) return false;
 
-        ArrayList<ItemStack> outputs = new ArrayList<>(recipe.mOutputs.length);
-        for (int i = 0; i < recipe.mOutputs.length; i++)
-            if (getBaseMetaTileEntity().getRandomNumber(10000) < recipe.getOutputChance(i))
-                outputs.add(recipe.getOutput(i));
-
-        this.mOutputItems = outputs.toArray(new ItemStack[0]);
+        this.mOutputItems = recipe.generateOutputs(rand);
         calculateOverclockedNessMulti(recipe.mEUt, recipe.mDuration, 2, getMaxInputVoltage());
         if (this.mEUt > 0) this.mEUt = -this.mEUt;
         this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);

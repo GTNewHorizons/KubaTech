@@ -24,7 +24,7 @@ import net.minecraftforge.common.config.Configuration;
 
 public class Config {
 
-    public static void syncronizeConfiguration(File configFile) {
+    public static void synchronizeConfiguration(File configFile) {
         Configuration configuration = new Configuration(configFile);
         configuration.load();
 

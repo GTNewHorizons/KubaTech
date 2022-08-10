@@ -25,7 +25,7 @@ import kubatech.loaders.RecipeLoader;
 public class CommonProxy {
 
     public void preInit(FMLPreInitializationEvent event) {
-        Config.syncronizeConfiguration(event.getSuggestedConfigurationFile());
+        Config.synchronizeConfiguration(event.getSuggestedConfigurationFile());
 
         kubatech.info("I am " + Tags.MODNAME + " at version " + Tags.VERSION);
     }

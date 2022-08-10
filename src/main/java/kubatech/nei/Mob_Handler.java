@@ -76,8 +76,14 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 // xoffset = xorigin;
                 // yoffset = 62;
             }
-            positionedStacks.add(
-                    new MobPositionedStack(d.stack, xoffset, yoffset, d.type, d.chance, d.enchantable, d.damages));
+            positionedStacks.add(new MobPositionedStack(
+                    d.stack,
+                    xoffset,
+                    yoffset,
+                    d.type,
+                    d.chance,
+                    d.enchantable,
+                    d.damages != null ? new ArrayList<>(d.damages.keySet()) : null));
             xoffset += 18;
             if (xoffset >= xorigin + (18 * 3)) {
                 xoffset = xorigin;
@@ -197,16 +203,6 @@ public class Mob_Handler extends TemplateRecipeHandler {
     }
 
     @Override
-    public List<String> handleItemTooltip(GuiRecipe gui, ItemStack stack, List<String> currenttip, int recipe) {
-        MobCachedRecipe currentrecipe = (MobCachedRecipe) arecipes.get(recipe);
-        for (PositionedStack mOutput : currentrecipe.mOutputs)
-            if (mOutput.items[0] == stack) {
-                break;
-            }
-        return currenttip;
-    }
-
-    @Override
     public String getRecipeName() {
         return "Mob drops";
     }
@@ -312,6 +308,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
             itemtag.setTag("display", display);
             this.items[0].setTagCompound(itemtag);
             this.item.setTagCompound(itemtag);
+            setPermutationToRender(0);
         }
 
         @Override
