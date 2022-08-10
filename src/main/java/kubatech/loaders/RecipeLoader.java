@@ -17,11 +17,11 @@
  *
  */
 
-package KubaTech.loaders;
+package kubatech.loaders;
 
-import KubaTech.api.enums.ItemList;
-import KubaTech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 import cpw.mods.fml.common.Loader;
+import kubatech.api.enums.ItemList;
+import kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 
 public class RecipeLoader {
 

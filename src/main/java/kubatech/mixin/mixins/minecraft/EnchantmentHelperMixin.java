@@ -1,8 +1,8 @@
-package KubaTech.mixin.mixins.minecraft;
+package kubatech.mixin.mixins.minecraft;
 
-import KubaTech.api.utils.FastRandom;
-import KubaTech.loaders.MobRecipeLoader;
 import java.util.Random;
+import kubatech.api.utils.FastRandom;
+import kubatech.loaders.MobRecipeLoader;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagInt;

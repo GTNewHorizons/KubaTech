@@ -17,9 +17,8 @@
  *
  */
 
-package KubaTech.nei;
+package kubatech.nei;
 
-import KubaTech.KubaTech;
 import codechicken.nei.guihook.GuiContainerManager;
 import codechicken.nei.recipe.GuiCraftingRecipe;
 import codechicken.nei.recipe.GuiUsageRecipe;
@@ -28,6 +27,7 @@ import cpw.mods.fml.common.event.FMLInterModComms;
 import gregtech.api.util.GT_Recipe;
 import gregtech.nei.GT_NEI_DefaultHandler;
 import java.nio.FloatBuffer;
+import kubatech.kubatech;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiInventory;
@@ -45,10 +45,10 @@ public class EEC_Handler extends GT_NEI_DefaultHandler {
         super(aRecipeMap);
         if (!NEI_Config.isAdded) {
             FMLInterModComms.sendRuntimeMessage(
-                    KubaTech.instance,
+                    kubatech.instance,
                     "NEIPlugins",
                     "register-crafting-handler",
-                    "KubaTech@" + getRecipeName() + "@" + getOverlayIdentifier());
+                    "kubatech@" + getRecipeName() + "@" + getOverlayIdentifier());
             GuiCraftingRecipe.craftinghandlers.add(this);
             GuiUsageRecipe.usagehandlers.add(this);
         }

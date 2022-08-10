@@ -17,11 +17,11 @@
  *
  */
 
-package KubaTech.nei;
+package kubatech.nei;
 
-import KubaTech.Tags;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.event.FMLInterModComms;
+import kubatech.Tags;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class IMCForNEI {

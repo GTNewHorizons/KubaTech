@@ -1,4 +1,4 @@
-package KubaTech.api.utils;
+package kubatech.api.utils;
 
 import java.util.Random;
 import java.util.SplittableRandom;

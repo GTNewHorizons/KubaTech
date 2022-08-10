@@ -19,8 +19,8 @@
 
 package kubatech;
 
-import KubaTech.loaders.RecipeLoader;
 import cpw.mods.fml.common.event.*;
+import kubatech.loaders.RecipeLoader;
 
 public class CommonProxy {
 

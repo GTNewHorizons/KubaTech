@@ -17,14 +17,10 @@
  *
  */
 
-package KubaTech.nei;
+package kubatech.nei;
 
 import static org.lwjgl.opengl.GL11.GL_MODELVIEW_STACK_DEPTH;
 
-import KubaTech.KubaTech;
-import KubaTech.api.utils.FastRandom;
-import KubaTech.api.utils.InfernalHelper;
-import KubaTech.loaders.MobRecipeLoader;
 import codechicken.lib.gui.GuiDraw;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.*;
@@ -36,6 +32,10 @@ import java.awt.*;
 import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.List;
+import kubatech.api.utils.FastRandom;
+import kubatech.api.utils.InfernalHelper;
+import kubatech.kubatech;
+import kubatech.loaders.MobRecipeLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiInventory;
@@ -95,7 +95,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
         this.transferRects.add(new RecipeTransferRect(new Rectangle(76, 18, 16, 16), getOverlayIdentifier()));
         if (!NEI_Config.isAdded) {
             FMLInterModComms.sendRuntimeMessage(
-                    KubaTech.instance,
+                    kubatech.instance,
                     "NEIPlugins",
                     "register-crafting-handler",
                     "kubatech@" + getRecipeName() + "@" + getOverlayIdentifier());

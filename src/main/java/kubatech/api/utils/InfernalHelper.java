@@ -17,7 +17,7 @@
  *
  */
 
-package KubaTech.api.utils;
+package kubatech.api.utils;
 
 import atomicstryker.infernalmobs.common.InfernalMobsCore;
 import java.lang.reflect.Field;

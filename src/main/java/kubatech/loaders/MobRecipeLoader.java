@@ -17,15 +17,12 @@
  *
  */
 
-package KubaTech.loaders;
+package kubatech.loaders;
 
-import static KubaTech.api.utils.ModUtils.isDeobfuscatedEnvironment;
-import static KubaTech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.EECRecipeMap;
-import static KubaTech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.MobNameToRecipeMap;
+import static kubatech.api.utils.ModUtils.isDeobfuscatedEnvironment;
+import static kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.EECRecipeMap;
+import static kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.MobNameToRecipeMap;
 
-import KubaTech.Tags;
-import KubaTech.api.utils.ModUtils;
-import KubaTech.nei.Mob_Handler;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
@@ -39,6 +36,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.BiConsumer;
+import kubatech.Tags;
+import kubatech.api.utils.ModUtils;
+import kubatech.nei.Mob_Handler;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;

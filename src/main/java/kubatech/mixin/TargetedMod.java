@@ -1,4 +1,4 @@
-package KubaTech.mixin;
+package kubatech.mixin;
 
 import com.google.common.io.Files;
 import java.nio.file.Path;

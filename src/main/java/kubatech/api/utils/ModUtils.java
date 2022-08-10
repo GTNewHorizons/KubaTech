@@ -17,7 +17,7 @@
  *
  */
 
-package KubaTech.api.utils;
+package kubatech.api.utils;
 
 import net.minecraft.launchwrapper.Launch;
 

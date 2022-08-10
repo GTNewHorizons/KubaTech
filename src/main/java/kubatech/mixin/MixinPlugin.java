@@ -1,9 +1,8 @@
-package KubaTech.mixin;
+package kubatech.mixin;
 
-import static KubaTech.mixin.TargetedMod.*;
 import static java.nio.file.Files.walk;
+import static kubatech.mixin.TargetedMod.*;
 
-import KubaTech.Tags;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import kubatech.Tags;
 import net.minecraft.launchwrapper.Launch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

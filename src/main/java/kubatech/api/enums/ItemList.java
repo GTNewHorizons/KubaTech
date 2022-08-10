@@ -1,4 +1,4 @@
-package KubaTech.api.enums;
+package kubatech.api.enums;
 
 import static gregtech.api.enums.GT_Values.NI;
 import static gregtech.api.enums.GT_Values.W;

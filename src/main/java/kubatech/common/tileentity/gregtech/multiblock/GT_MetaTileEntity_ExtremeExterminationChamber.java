@@ -17,7 +17,7 @@
  *
  */
 
-package KubaTech.common.tileentity.gregtech.multiblock;
+package kubatech.common.tileentity.gregtech.multiblock;
 
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.*;
 import static gregtech.api.enums.GT_Values.E;
@@ -49,7 +49,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
 
     public static final GT_Recipe.GT_Recipe_Map EECRecipeMap = new GT_Recipe.GT_Recipe_Map(
             new HashSet<>(4),
-            "KubaTech.recipe.eec",
+            "kubatech.recipe.eec",
             "Extreme Extermination Chamber",
             null,
             RES_PATH_GUI + "basicmachines/Default",
