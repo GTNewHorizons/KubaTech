@@ -17,12 +17,12 @@
  *
  */
 
-package KubaTech;
+package kubatech;
 
-import KubaTech.loaders.RecipeLoader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.*;
+import kubatech.loaders.RecipeLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,9 +33,9 @@ import org.apache.logging.log4j.Logger;
         name = Tags.MODNAME,
         acceptedMinecraftVersions = "[1.7.10]",
         dependencies = "required-after:gregtech; " + "required-after:spongemixins@[1.4.0,); " + "after:EnderIO; ")
-public class KubaTech {
+public class kubatech {
 
-    public static KubaTech instance = null;
+    public static kubatech instance = null;
 
     private static final Logger LOG = LogManager.getLogger(Tags.MODID);
 
