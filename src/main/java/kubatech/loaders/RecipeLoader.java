@@ -20,18 +20,27 @@
 package kubatech.loaders;
 
 import cpw.mods.fml.common.Loader;
+import kubatech.Tags;
 import kubatech.api.enums.ItemList;
 import kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RecipeLoader {
+
+    private static final Logger LOG = LogManager.getLogger(Tags.MODID + "[Recipe Loader]");
+
+    private static int MTEID = 14201;
+    private static final int MTEIDMax = 14300;
 
     public static void addRecipes() {
         if (Loader.isModLoaded("EnderIO")) {
             ItemList.ExtremeExterminationChamber.set(new GT_MetaTileEntity_ExtremeExterminationChamber(
-                            1006, "multimachine.exterminationchamber", "Extreme Extermination Chamber")
+                            MTEID++, "multimachine.exterminationchamber", "Extreme Extermination Chamber")
                     .getStackForm(1L));
             // TODO: RECIPE
         }
+        if (MTEID > MTEIDMax + 1) throw new RuntimeException("MTE ID's");
     }
 
     private static boolean lateRecipesInitialized = false;
