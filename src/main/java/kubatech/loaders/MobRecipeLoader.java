@@ -34,7 +34,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.function.BiConsumer;
 import kubatech.Tags;
 import kubatech.api.utils.ModUtils;
 import kubatech.nei.Mob_Handler;
@@ -176,14 +175,17 @@ public class MobRecipeLoader {
 
         private final ArrayList<nexter> nexts = new ArrayList<>();
         private int walkCounter = 0;
+        private double chance;
 
         @Override
         public int nextInt(int bound) {
             if (nexts.size() <= walkCounter) { // new call
                 nexts.add(new nexter(0, bound));
                 walkCounter++;
+                chance /= bound;
                 return 0;
             }
+            chance /= bound;
             return nexts.get(walkCounter++).getInt();
         }
 
@@ -192,18 +194,22 @@ public class MobRecipeLoader {
             if (nexts.size() <= walkCounter) { // new call
                 nexts.add(new nexter(1, 2));
                 walkCounter++;
+                chance /= 2;
                 return false;
             }
+            chance /= 2;
             return nexts.get(walkCounter++).getBoolean();
         }
 
         public void newRound() {
             walkCounter = 0;
             nexts.clear();
+            chance = 1d;
         }
 
         public boolean nextRound() {
             walkCounter = 0;
+            chance = 1d;
             while (nexts.size() > 0 && nexts.get(nexts.size() - 1).next()) nexts.remove(nexts.size() - 1);
             return nexts.size() > 0;
         }
@@ -216,6 +222,7 @@ public class MobRecipeLoader {
         public int enchantmentLevel = 0;
         public final ItemStack stack;
         public final GT_Utility.ItemId itemId;
+        private double dropchance = 0d;
         private int dropcount = 1;
         private final droplist owner;
 
@@ -225,9 +232,9 @@ public class MobRecipeLoader {
             itemId = GT_Utility.ItemId.createNoCopy(stack);
         }
 
-        public int getchance(int maxchance, int chancemodifier) {
-            maxchance -= owner.rollsskipped;
-            return (int) (((double) dropcount / (double) maxchance) * chancemodifier);
+        public int getchance(int chancemodifier) {
+            dropchance = (double) Math.round(dropchance * 100000) / 100000d;
+            return (int) (dropchance * chancemodifier);
         }
 
         @Override
@@ -239,22 +246,21 @@ public class MobRecipeLoader {
     public static class droplist {
         private final ArrayList<dropinstance> drops = new ArrayList<>();
         private final HashMap<GT_Utility.ItemId, Integer> dropschecker = new HashMap<>();
-        public int rollsskipped = 0;
 
-        public dropinstance add(dropinstance i) {
+        public dropinstance add(dropinstance i, double chance) {
             if (contains(i)) {
+                int ssize = i.stack.stackSize;
                 i = get(dropschecker.get(i.itemId));
-                i.dropcount++;
+                i.dropchance += chance * ssize;
+                i.dropcount += ssize;
                 return i;
             }
             drops.add(i);
+            i.dropchance += chance * i.stack.stackSize;
+            i.dropcount += i.stack.stackSize - 1;
+            i.stack.stackSize = 1;
             dropschecker.put(i.itemId, drops.size() - 1);
             return i;
-        }
-
-        public dropinstance addIfAbsent(dropinstance i) {
-            if (!contains(i)) return add(i);
-            return get(i);
         }
 
         public dropinstance get(int index) {
@@ -285,6 +291,62 @@ public class MobRecipeLoader {
         public int indexOf(dropinstance i) {
             if (!contains(i)) return -1;
             return dropschecker.get(i.itemId);
+        }
+    }
+
+    private static class dropCollector {
+        HashMap<GT_Utility.ItemId, Integer> damagableChecker = new HashMap<>();
+
+        public void addDrop(droplist fdrops, ArrayList<EntityItem> listToParse, double chance) {
+            for (EntityItem entityItem : listToParse) {
+                ItemStack ostack = entityItem.getEntityItem();
+                if (ostack == null) continue;
+                dropinstance drop;
+                boolean randomchomenchantdetected =
+                        ostack.hasTagCompound() && ostack.stackTagCompound.hasKey("RandomEnchantmentDetected");
+                int randomenchantmentlevel = 0;
+                if (randomchomenchantdetected) {
+                    randomenchantmentlevel = ostack.stackTagCompound.getInteger("RandomEnchantmentDetected");
+                    ostack.stackTagCompound.removeTag("ench");
+                    ostack.stackTagCompound.removeTag("RandomEnchantmentDetected");
+                }
+                boolean randomdamagedetected = false;
+                int newdamage = -1;
+                if (ostack.isItemStackDamageable()) {
+                    int odamage = ostack.getItemDamage();
+                    ostack.setItemDamage(1);
+                    GT_Utility.ItemId id = GT_Utility.ItemId.createNoCopy(ostack);
+                    damagableChecker.putIfAbsent(id, odamage);
+                    int check = damagableChecker.get(id);
+                    if (check != odamage) {
+                        randomdamagedetected = true;
+                        newdamage = odamage;
+                        ostack.setItemDamage(check);
+                    } else ostack.setItemDamage(odamage);
+                }
+                drop = fdrops.add(new dropinstance(ostack.copy(), fdrops), chance);
+                if (!drop.isEnchatmentRandomized && randomchomenchantdetected) {
+                    drop.isEnchatmentRandomized = true;
+                    drop.enchantmentLevel = randomenchantmentlevel;
+                }
+                if (drop.isDamageRandomized && !randomdamagedetected) {
+                    drop.damagesPossible.merge(drop.stack.getItemDamage(), 1, Integer::sum);
+                }
+                if (randomdamagedetected) {
+                    if (!drop.isDamageRandomized) {
+                        drop.isDamageRandomized = true;
+                        drop.damagesPossible.merge(drop.stack.getItemDamage(), drop.dropcount - 1, Integer::sum);
+                    }
+                    if (newdamage == -1) newdamage = drop.stack.getItemDamage();
+                    drop.damagesPossible.merge(newdamage, 1, Integer::sum);
+                }
+            }
+
+            listToParse.clear();
+        }
+
+        public void newRound() {
+            damagableChecker.clear();
         }
     }
 
@@ -387,78 +449,13 @@ public class MobRecipeLoader {
 
             droplist drops = new droplist();
             droplist raredrops = new droplist();
-
-            BiConsumer<droplist, List<EntityItem>> addDrop = (fdrops, listToParse) -> {
-                HashMap<GT_Utility.ItemId, Integer> damagableChecker = new HashMap<>();
-                boolean haveDetectedDamageRandomizationInAny = false;
-                for (EntityItem entityItem : listToParse) {
-                    ItemStack ostack = entityItem.getEntityItem();
-                    if (ostack == null) continue;
-                    dropinstance drop;
-                    boolean randomchomenchantdetected =
-                            ostack.hasTagCompound() && ostack.stackTagCompound.hasKey("RandomEnchantmentDetected");
-                    int randomenchantmentlevel = 0;
-                    if (randomchomenchantdetected) {
-                        randomenchantmentlevel = ostack.stackTagCompound.getInteger("RandomEnchantmentDetected");
-                        ostack.stackTagCompound.removeTag("ench");
-                    }
-                    boolean randomdamagedetected = false;
-                    int newdamage = -1;
-                    if (ostack.isItemStackDamageable()) {
-                        int odamage = ostack.getItemDamage();
-                        ostack.setItemDamage(1);
-                        GT_Utility.ItemId id = GT_Utility.ItemId.createNoCopy(ostack);
-                        damagableChecker.putIfAbsent(id, odamage);
-                        int check = damagableChecker.get(id);
-                        if (check != odamage) {
-                            randomdamagedetected = true;
-                            newdamage = odamage;
-                            ostack.setItemDamage(check);
-                            haveDetectedDamageRandomizationInAny = true;
-                        } else ostack.setItemDamage(odamage);
-                    }
-                    drop = fdrops.add(new dropinstance(ostack.copy(), fdrops));
-                    if (!drop.isEnchatmentRandomized && randomchomenchantdetected) {
-                        drop.isEnchatmentRandomized = true;
-                        drop.enchantmentLevel = randomenchantmentlevel;
-                    }
-                    if (drop.isDamageRandomized && !randomdamagedetected) {
-                        drop.damagesPossible.merge(drop.stack.getItemDamage(), 1, Integer::sum);
-                        drop.dropcount = 1;
-                        fdrops.rollsskipped++;
-                    }
-                    if (randomdamagedetected || (haveDetectedDamageRandomizationInAny && drop.dropcount == 100)) {
-                        if (!drop.isDamageRandomized) {
-                            drop.isDamageRandomized = true;
-                            drop.damagesPossible.merge(drop.stack.getItemDamage(), drop.dropcount - 1, Integer::sum);
-                            fdrops.rollsskipped += drop.dropcount - 2;
-                            for (int i = 0; i < fdrops.indexOf(drop); i++) {
-                                dropinstance idrop = fdrops.get(i);
-                                if (!idrop.isDamageRandomized
-                                        && idrop.dropcount > 100) // I have to assume that it is damagable too
-                                {
-                                    idrop.isDamageRandomized = true;
-                                    idrop.damagesPossible.merge(idrop.stack.getItemDamage(), 1, Integer::sum);
-                                    fdrops.rollsskipped += idrop.dropcount - 1;
-                                    idrop.dropcount = 1;
-                                }
-                            }
-                        }
-                        if (newdamage == -1) newdamage = drop.stack.getItemDamage();
-                        drop.damagesPossible.merge(newdamage, 1, Integer::sum);
-                        drop.dropcount = 1;
-                        fdrops.rollsskipped++;
-                    }
-                }
-
-                listToParse.clear();
-            };
+            dropCollector collector = new dropCollector();
 
             LOG.info("Generating normal drops");
 
             frand.newRound();
+            collector.newRound();
 
-            int timesrolled = 0;
             do {
                 try {
                     dropFewItems.invoke(e, true, 0);
@@ -466,18 +463,14 @@ public class MobRecipeLoader {
                     ex.printStackTrace();
                     return;
                 }
-                timesrolled++;
+                collector.addDrop(drops, e.capturedDrops, frand.chance);
+
             } while (frand.nextRound());
-
-            addDrop.accept(drops, e.capturedDrops);
-
-            int maxnormalchance = timesrolled;
 
             LOG.info("Generating rare drops");
 
             frand.newRound();
-
-            timesrolled = 0;
+            collector.newRound();
 
             do {
                 try {
@@ -486,11 +479,8 @@ public class MobRecipeLoader {
                     ex.printStackTrace();
                     return;
                 }
-                timesrolled++;
+                collector.addDrop(raredrops, e.capturedDrops, frand.chance);
             } while (frand.nextRound());
-            addDrop.accept(raredrops, e.capturedDrops);
-
-            int maxrarechance = timesrolled;
 
             if (drops.isEmpty() && raredrops.isEmpty()) {
                 if (ModUtils.isClientSided) addNEIMobRecipe(e, new ArrayList<>());
@@ -500,35 +490,33 @@ public class MobRecipeLoader {
 
             ArrayList<MobDrop> moboutputs = new ArrayList<>();
 
-            ItemStack[] outputs = new ItemStack[drops.size() + raredrops.size()];
-            int[] outputchances = new int[drops.size() + raredrops.size()];
             int i = 0;
             for (dropinstance drop : drops.drops) {
-                outputs[i] = drop.stack;
-                outputchances[i] = drop.getchance(maxnormalchance, 10000);
-                while (outputchances[i] > 10000) {
-                    outputs[i].stackSize *= 2;
-                    outputchances[i] /= 2;
+                ItemStack stack = drop.stack;
+                int chance = drop.getchance(10000);
+                while (chance > 10000) {
+                    stack.stackSize *= 2;
+                    chance /= 2;
                 }
                 moboutputs.add(new MobDrop(
-                        outputs[i],
+                        stack,
                         MobDrop.DropType.Normal,
-                        outputchances[i],
+                        chance,
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
                         drop.isDamageRandomized ? drop.damagesPossible : null));
                 i++;
             }
             for (dropinstance drop : raredrops.drops) {
-                outputs[i] = drop.stack;
-                outputchances[i] = drop.getchance(maxrarechance, 250);
-                while (outputchances[i] > 10000) {
-                    outputs[i].stackSize *= 2;
-                    outputchances[i] /= 2;
+                ItemStack stack = drop.stack;
+                int chance = drop.getchance(250);
+                while (chance > 10000) {
+                    stack.stackSize *= 2;
+                    chance /= 2;
                 }
                 moboutputs.add(new MobDrop(
-                        outputs[i],
+                        stack,
                         MobDrop.DropType.Rare,
-                        outputchances[i],
+                        chance,
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
                         drop.isDamageRandomized ? drop.damagesPossible : null));
                 i++;
