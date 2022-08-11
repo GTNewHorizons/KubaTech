@@ -34,6 +34,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import kubatech.Config;
 import kubatech.Tags;
 import kubatech.api.utils.ModUtils;
 import kubatech.nei.Mob_Handler;
@@ -60,8 +61,6 @@ public class MobRecipeLoader {
     private static final Logger LOG = LogManager.getLogger(Tags.MODID + "[Mob Handler]");
 
     public static final MobRecipeLoader instance = new MobRecipeLoader();
-
-    private static final HashSet<String> MobBlacklist = new HashSet<>(Arrays.asList(new String[] {"chisel.snowman"}));
 
     @SuppressWarnings("unused")
     @SubscribeEvent
@@ -375,6 +374,7 @@ public class MobRecipeLoader {
 
         if (alreadyGenerated) return;
         alreadyGenerated = true;
+        if (!Config.mobHandlerEnabled) return;
 
         World f = new GT_DummyWorld() {
             @Override
@@ -437,7 +437,7 @@ public class MobRecipeLoader {
                 return;
             }
 
-            if (MobBlacklist.contains(k)) {
+            if (Arrays.asList(Config.mobBlacklist).contains(k)) {
                 LOG.info("Entity " + k + " is blacklisted, skipping");
                 return;
             }
@@ -570,7 +570,7 @@ public class MobRecipeLoader {
             }
 
             if (drops.isEmpty() && raredrops.isEmpty() && additionaldrops.isEmpty()) {
-                if (ModUtils.isClientSided) addNEIMobRecipe(e, new ArrayList<>());
+                if (ModUtils.isClientSided && Config.includeEmptyMobs) addNEIMobRecipe(e, new ArrayList<>());
                 LOG.info("Entity " + k + " doesn't drop any items, skipping EEC Recipe map");
                 return;
             }

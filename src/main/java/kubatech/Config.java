@@ -24,9 +24,35 @@ import net.minecraftforge.common.config.Configuration;
 
 public class Config {
 
+    private static class Categories {
+        public static final String mobHandler = "MobHandler";
+    }
+
+    public static boolean mobHandlerEnabled = true;
+    public static boolean includeEmptyMobs = true;
+    public static String[] mobBlacklist;
+
     public static void synchronizeConfiguration(File configFile) {
         Configuration configuration = new Configuration(configFile);
         configuration.load();
+
+        mobHandlerEnabled = configuration
+                .get(
+                        Categories.mobHandler,
+                        "Enabled",
+                        true,
+                        "Enable \"Mob Drops\" NEI page and Extreme Extermination Chamber")
+                .getBoolean();
+        includeEmptyMobs = configuration
+                .get(Categories.mobHandler, "IncludeEmptyMobs", true, "Include mobs that have no drops in NEI")
+                .getBoolean();
+        mobBlacklist = configuration
+                .get(
+                        Categories.mobHandler,
+                        "MobBlacklist",
+                        new String[] {"EnderDragon", "chisel.snowman"},
+                        "These mobs will be skipped when generating recipe map")
+                .getStringList();
 
         if (configuration.hasChanged()) {
             configuration.save();
