@@ -19,6 +19,7 @@
 
 package kubatech.nei;
 
+import static kubatech.nei.Mob_Handler.Translations.*;
 import static org.lwjgl.opengl.GL11.GL_MODELVIEW_STACK_DEPTH;
 
 import codechicken.lib.gui.GuiDraw;
@@ -57,6 +58,39 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 public class Mob_Handler extends TemplateRecipeHandler {
+
+    static enum Translations {
+        NORMAL_DROPS,
+        RARE_DROPS,
+        ADDITIONAL_DROPS,
+        INFERNAL_CANNOT,
+        INFERNAL_CAN,
+        INFERNAL_ALWAYS,
+        CHANCE,
+        AVERAGE_REMINDER,
+        MOD,
+        MAX_HEALTH,
+        ;
+        final String key;
+
+        Translations() {
+            key = "mobhandler." + this.name().toLowerCase();
+        }
+
+        public String get() {
+            return StatCollector.translateToLocal(key);
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public String toString() {
+            return get();
+        }
+    }
+
     private static final Mob_Handler instance = new Mob_Handler();
     private static final List<MobCachedRecipe> cachedRecipes = new ArrayList<>();
     public static int cycleTicksStatic = Math.abs((int) System.currentTimeMillis());
@@ -212,40 +246,40 @@ public class Mob_Handler extends TemplateRecipeHandler {
         MobCachedRecipe currentrecipe = ((MobCachedRecipe) arecipes.get(recipe));
         int y = 7, yshift = 10, x = 57;
         GuiDraw.drawString(currentrecipe.localizedName, x, y, 0xFF555555, false);
-        GuiDraw.drawString("Mod: " + currentrecipe.mod, x, y += yshift, 0xFF555555, false);
-        GuiDraw.drawString("Max health: " + currentrecipe.maxHealth, x, y += yshift, 0xFF555555, false);
+        GuiDraw.drawString(MOD.get() + currentrecipe.mod, x, y += yshift, 0xFF555555, false);
+        GuiDraw.drawString(MAX_HEALTH.get() + currentrecipe.maxHealth, x, y += yshift, 0xFF555555, false);
         switch (currentrecipe.infernaltype) {
             case -1:
                 break;
             case 0:
-                GuiDraw.drawString("Cannot spawn infernal", x, y += yshift, 0xFF555555, false);
+                GuiDraw.drawString(INFERNAL_CANNOT.get(), x, y += yshift, 0xFF555555, false);
                 break;
             case 1:
-                GuiDraw.drawString("Can spawn infernal", x, y += yshift, 0xFFFF0000, false);
+                GuiDraw.drawString(INFERNAL_CAN.get(), x, y += yshift, 0xFFFF0000, false);
                 break;
             case 2:
-                GuiDraw.drawString("Always spawns infernal", x, y += yshift, 0xFFFF0000, false);
+                GuiDraw.drawString(INFERNAL_ALWAYS.get(), x, y += yshift, 0xFFFF0000, false);
                 break;
         }
         x = 6;
         y = 83;
         yshift = nextRowYShift;
         if (currentrecipe.normalOutputsCount > 0) {
-            GuiDraw.drawString("Normal Drops", x, y, 0xFF555555, false);
+            GuiDraw.drawString(NORMAL_DROPS.get(), x, y, 0xFF555555, false);
             y += yshift + ((currentrecipe.normalOutputsCount - 1) / itemsPerRow) * 18;
         }
         if (currentrecipe.rareOutputsCount > 0) {
-            GuiDraw.drawString("Rare Drops", x, y, 0xFF555555, false);
+            GuiDraw.drawString(RARE_DROPS.get(), x, y, 0xFF555555, false);
             y += yshift + ((currentrecipe.rareOutputsCount - 1) / itemsPerRow) * 18;
         }
         if (currentrecipe.additionalOutputsCount > 0) {
-            GuiDraw.drawString("Additional Drops", x, y, 0xFF555555, false);
+            GuiDraw.drawString(ADDITIONAL_DROPS.get(), x, y, 0xFF555555, false);
         }
     }
 
     @Override
     public String getRecipeName() {
-        return "Mob drops";
+        return "Mob Drops";
     }
 
     @Override
@@ -331,9 +365,8 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
             if (chance != 10000)
                 extratooltip.appendTag(new NBTTagString(
-                        EnumChatFormatting.RESET + "Chance: " + (chance / 100) + "." + (chance % 100) + "%"));
-            extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + "" + EnumChatFormatting.GRAY + ""
-                    + EnumChatFormatting.ITALIC + "Please remember that these are average drops."));
+                        EnumChatFormatting.RESET + CHANCE.get() + (chance / 100) + "." + (chance % 100) + "%"));
+            extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + AVERAGE_REMINDER.get()));
 
             NBTTagCompound itemtag = this.items[0].getTagCompound();
             if (itemtag == null) itemtag = new NBTTagCompound();
