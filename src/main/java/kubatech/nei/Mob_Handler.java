@@ -184,7 +184,6 @@ public class Mob_Handler extends TemplateRecipeHandler {
         int stackdepth = GL11.glGetInteger(GL_MODELVIEW_STACK_DEPTH);
 
         GL11.glPushMatrix();
-        GL11.glPushMatrix();
 
         ItemStack s = getIngredientStacks(recipe).get(0).item;
         try {

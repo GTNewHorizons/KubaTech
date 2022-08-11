@@ -1,5 +1,7 @@
 package kubatech.mixin.mixins.minecraft;
 
+import static kubatech.loaders.MobRecipeLoader.randomEnchantmentDetectedString;
+
 import java.util.Random;
 import kubatech.api.utils.FastRandom;
 import kubatech.loaders.MobRecipeLoader;
@@ -25,7 +27,7 @@ public class EnchantmentHelperMixin {
             int enchantabilityLevel,
             CallbackInfoReturnable<ItemStack> callbackInfoReturnable) {
         if (MobRecipeLoader.isInGenerationProcess && random instanceof MobRecipeLoader.fakeRand) {
-            itemStack.setTagInfo("RandomEnchantmentDetected", new NBTTagInt(enchantabilityLevel));
+            itemStack.setTagInfo(randomEnchantmentDetectedString, new NBTTagInt(enchantabilityLevel));
         }
     }
 
