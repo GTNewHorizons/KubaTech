@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.List;
 import kubatech.api.utils.FastRandom;
 import kubatech.api.utils.InfernalHelper;
+import kubatech.api.utils.ModUtils;
 import kubatech.kubatech;
 import kubatech.loaders.MobRecipeLoader;
 import net.minecraft.client.Minecraft;
@@ -59,46 +60,51 @@ public class Mob_Handler extends TemplateRecipeHandler {
     private static final Mob_Handler instance = new Mob_Handler();
     private static final List<MobCachedRecipe> cachedRecipes = new ArrayList<>();
     public static int cycleTicksStatic = Math.abs((int) System.currentTimeMillis());
+    private static final int itemsPerRow = 8, itemXShift = 18, itemYShift = 18, nextRowYShift = 35;
 
     public static void addRecipe(EntityLiving e, List<MobRecipeLoader.MobDrop> drop) {
         List<MobPositionedStack> positionedStacks = new ArrayList<>();
-        int xoffset = 104, xorigin = 104, yoffset = 13, i = 0;
+        int xorigin = 7, xoffset = xorigin, yoffset = 95, normaldrops = 0, raredrops = 0, additionaldrops = 0;
+        MobRecipeLoader.MobDrop.DropType i = null;
         for (MobRecipeLoader.MobDrop d : drop) {
-            if (i == 0 && d.type == MobRecipeLoader.MobDrop.DropType.Rare) {
-                i = 1;
+            if (i == d.type) {
+                xoffset += itemXShift;
+                if (xoffset >= xorigin + (itemXShift * itemsPerRow)) {
+                    xoffset = xorigin;
+                    yoffset += itemYShift;
+                }
+            }
+            if (i != null && i != d.type) {
                 xoffset = xorigin;
-                yoffset = 62;
+                yoffset += nextRowYShift;
             }
-            if (i == 1 && d.type == MobRecipeLoader.MobDrop.DropType.Additional) {
-                i = 2;
-                // TODO: Check
-                // xorigin = ;
-                // xoffset = xorigin;
-                // yoffset = 62;
-            }
+            i = d.type;
+            if (d.type == MobRecipeLoader.MobDrop.DropType.Normal) normaldrops++;
+            else if (d.type == MobRecipeLoader.MobDrop.DropType.Rare) raredrops++;
+            else if (d.type == MobRecipeLoader.MobDrop.DropType.Additional) additionaldrops++;
             positionedStacks.add(new MobPositionedStack(
-                    d.stack,
+                    d.stack.copy(),
                     xoffset,
                     yoffset,
                     d.type,
                     d.chance,
                     d.enchantable,
                     d.damages != null ? new ArrayList<>(d.damages.keySet()) : null));
-            xoffset += 18;
-            if (xoffset >= xorigin + (18 * 3)) {
-                xoffset = xorigin;
-                yoffset += 18;
-            }
         }
-        instance.addRecipeInt(e, positionedStacks);
+        instance.addRecipeInt(e, positionedStacks, normaldrops, raredrops, additionaldrops);
     }
 
-    private void addRecipeInt(EntityLiving e, List<Mob_Handler.MobPositionedStack> l) {
-        cachedRecipes.add(new MobCachedRecipe(e, l));
+    private void addRecipeInt(
+            EntityLiving e,
+            List<Mob_Handler.MobPositionedStack> l,
+            int normaldrops,
+            int raredrops,
+            int additionaldrops) {
+        cachedRecipes.add(new MobCachedRecipe(e, l, normaldrops, raredrops, additionaldrops));
     }
 
     public Mob_Handler() {
-        this.transferRects.add(new RecipeTransferRect(new Rectangle(76, 18, 16, 16), getOverlayIdentifier()));
+        this.transferRects.add(new RecipeTransferRect(new Rectangle(7, 62, 16, 16), getOverlayIdentifier()));
         if (!NEI_Config.isAdded) {
             FMLInterModComms.sendRuntimeMessage(
                     kubatech.instance,
@@ -129,9 +135,33 @@ public class Mob_Handler extends TemplateRecipeHandler {
     public void drawBackground(int recipe) {
         GL11.glColor4f(1f, 1f, 1f, 1f);
         GuiDraw.changeTexture(getGuiTexture());
-        GuiDraw.drawTexturedModalRect(0, 0, 0, 0, 168, 153);
+        GuiDraw.drawTexturedModalRect(0, 0, 0, 0, 168, 192);
 
         MobCachedRecipe currentrecipe = ((MobCachedRecipe) arecipes.get(recipe));
+
+        {
+            int x = 6, y = 94, yshift = nextRowYShift;
+            if (currentrecipe.normalOutputsCount > 0) {
+                for (int i = 0; i < ((currentrecipe.normalOutputsCount - 1) / itemsPerRow) + 1; i++) {
+                    GuiDraw.drawTexturedModalRect(x, y + (18 * i), 0, 192, 144, 18);
+                    if (i > 0) GuiDraw.drawTexturedModalRect(x, y + ((18 * i) - 1), 0, 193, 144, 2);
+                }
+                y += yshift + ((currentrecipe.normalOutputsCount - 1) / itemsPerRow) * 18;
+            }
+            if (currentrecipe.rareOutputsCount > 0) {
+                for (int i = 0; i < ((currentrecipe.rareOutputsCount - 1) / itemsPerRow) + 1; i++) {
+                    GuiDraw.drawTexturedModalRect(x, y + (18 * i), 0, 192, 144, 18);
+                    if (i > 0) GuiDraw.drawTexturedModalRect(x, y + ((18 * i) - 1), 0, 193, 144, 2);
+                }
+                y += yshift + ((currentrecipe.rareOutputsCount - 1) / itemsPerRow) * 18;
+            }
+            if (currentrecipe.additionalOutputsCount > 0) {
+                for (int i = 0; i < ((currentrecipe.additionalOutputsCount - 1) / itemsPerRow) + 1; i++) {
+                    GuiDraw.drawTexturedModalRect(x, y + (18 * i), 0, 192, 144, 18);
+                    if (i > 0) GuiDraw.drawTexturedModalRect(x, y + ((18 * i) - 1), 0, 193, 144, 2);
+                }
+            }
+        }
 
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glColor4f(1f, 1f, 1f, 1f);
@@ -139,7 +169,6 @@ public class Mob_Handler extends TemplateRecipeHandler {
         Minecraft mc = Minecraft.getMinecraft();
 
         ScaledResolution scale = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
-        int factor = scale.getScaleFactor();
 
         int width = scale.getScaledWidth();
         int height = scale.getScaledHeight();
@@ -164,7 +193,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
             int desiredhight = 27;
 
             int scaled = (int) (desiredhight / ehight);
-            int mobx = 37, moby = 55;
+            int mobx = 30, moby = 50;
             e.setPosition(mc.thePlayer.posX + 5, mc.thePlayer.posY, mc.thePlayer.posZ);
             // ARGS: x, y, scale, rot, rot, entity
             GuiInventory.func_147046_a(
@@ -181,24 +210,37 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
     @Override
     public void drawForeground(int recipe) {
-
         MobCachedRecipe currentrecipe = ((MobCachedRecipe) arecipes.get(recipe));
-        GuiDraw.drawString(currentrecipe.localizedName, 5, 0, 0xFF555555, false);
-        GuiDraw.drawString("Normal Drops", 100, 0, 0xFF555555, false);
-        GuiDraw.drawString("Rare Drops", 100, 50, 0xFF555555, false);
-        GuiDraw.drawString("Additional Drops", 7, 80, 0xFF555555, false);
+        int y = 7, yshift = 10, x = 57;
+        GuiDraw.drawString(currentrecipe.localizedName, x, y, 0xFF555555, false);
+        GuiDraw.drawString("Mod: " + currentrecipe.mod, x, y += yshift, 0xFF555555, false);
+        GuiDraw.drawString("Max health: " + currentrecipe.maxHealth, x, y += yshift, 0xFF555555, false);
         switch (currentrecipe.infernaltype) {
             case -1:
                 break;
             case 0:
-                GuiDraw.drawString("Cannot spawn infernal", 40, 120, 0xFF555555, false);
+                GuiDraw.drawString("Cannot spawn infernal", x, y += yshift, 0xFF555555, false);
                 break;
             case 1:
-                GuiDraw.drawString("Can spawn infernal", 40, 120, 0xFFFF0000, false);
+                GuiDraw.drawString("Can spawn infernal", x, y += yshift, 0xFFFF0000, false);
                 break;
             case 2:
-                GuiDraw.drawString("Always spawns infernal", 40, 120, 0xFFFF0000, false);
+                GuiDraw.drawString("Always spawns infernal", x, y += yshift, 0xFFFF0000, false);
                 break;
+        }
+        x = 6;
+        y = 83;
+        yshift = nextRowYShift;
+        if (currentrecipe.normalOutputsCount > 0) {
+            GuiDraw.drawString("Normal Drops", x, y, 0xFF555555, false);
+            y += yshift + ((currentrecipe.normalOutputsCount - 1) / itemsPerRow) * 18;
+        }
+        if (currentrecipe.rareOutputsCount > 0) {
+            GuiDraw.drawString("Rare Drops", x, y, 0xFF555555, false);
+            y += yshift + ((currentrecipe.rareOutputsCount - 1) / itemsPerRow) * 18;
+        }
+        if (currentrecipe.additionalOutputsCount > 0) {
+            GuiDraw.drawString("Additional Drops", x, y, 0xFF555555, false);
         }
     }
 
@@ -209,11 +251,12 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
     @Override
     public IUsageHandler getUsageAndCatalystHandler(String inputId, Object... ingredients) {
-        TemplateRecipeHandler handler = newInstance();
         if (inputId.equals("item")) {
+            TemplateRecipeHandler handler = newInstance();
             ItemStack candidate = (ItemStack) ingredients[0];
             if (RecipeCatalysts.containsCatalyst(handler, candidate)) {
                 handler.loadCraftingRecipes(getOverlayIdentifier(), (Object) null);
+                return handler;
             }
         }
         return this.getUsageHandler(inputId, ingredients);
@@ -221,7 +264,10 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
     @Override
     public void loadCraftingRecipes(String outputId, Object... results) {
-        if (outputId.equals(getOverlayIdentifier())) arecipes.addAll(cachedRecipes);
+        if (outputId.equals(getOverlayIdentifier())) {
+            arecipes.addAll(cachedRecipes);
+            return;
+        }
         super.loadCraftingRecipes(outputId, results);
     }
 
@@ -287,11 +333,8 @@ public class Mob_Handler extends TemplateRecipeHandler {
             if (chance != 10000)
                 extratooltip.appendTag(new NBTTagString(
                         EnumChatFormatting.RESET + "Chance: " + (chance / 100) + "." + (chance % 100) + "%"));
-            // if (this.enchantable)
-            //    extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + "Random enchantment is applied
-            // !"));
             extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + "" + EnumChatFormatting.GRAY + ""
-                    + EnumChatFormatting.ITALIC + "Please remember that those numbers are an average drops"));
+                    + EnumChatFormatting.ITALIC + "Please remember that these are average drops."));
 
             NBTTagCompound itemtag = this.items[0].getTagCompound();
             if (itemtag == null) itemtag = new NBTTagCompound();
@@ -331,12 +374,28 @@ public class Mob_Handler extends TemplateRecipeHandler {
         public final int infernaltype;
         public final PositionedStack ingredient;
         public final String localizedName;
+        public final String mod;
+        public final float maxHealth;
+        public final int normalOutputsCount;
+        public final int rareOutputsCount;
+        public final int additionalOutputsCount;
 
-        public MobCachedRecipe(EntityLiving mob, List<MobPositionedStack> mOutputs) {
+        public MobCachedRecipe(
+                EntityLiving mob,
+                List<MobPositionedStack> mOutputs,
+                int normalOutputsCount,
+                int rareOutputsCount,
+                int additionalOutputsCount) {
             super();
+            String classname = mob.getClass().getName();
+            this.mod = ModUtils.getModNameFromClassName(classname);
             this.mob = mob;
+            this.maxHealth = mob.getMaxHealth();
             this.mOutputs = new ArrayList<>(mOutputs.size());
             this.mOutputs.addAll(mOutputs);
+            this.normalOutputsCount = normalOutputsCount;
+            this.rareOutputsCount = rareOutputsCount;
+            this.additionalOutputsCount = additionalOutputsCount;
             this.mInput = new ArrayList<>();
             int id = EntityList.getEntityID(mob);
             mobname = EntityList.getEntityString(mob);
@@ -352,7 +411,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 s.setTagCompound(nbt);
                 this.mInput.add(0, s);
             } else if (id == 0) this.mInput.add(new ItemStack(Items.spawn_egg, 1, 0)); // ???
-            ingredient = new PositionedStack(this.mInput.get(0), 50, 49, false);
+            ingredient = new PositionedStack(this.mInput.get(0), 38, 44, false);
 
             if (!Loader.isModLoaded("InfernalMobs")) infernaltype = -1; // not supported
             else {

@@ -81,14 +81,16 @@ public class MobRecipeLoader {
     public static class MobRecipe {
         public final ArrayList<MobDrop> mOutputs;
         public final int mEUt = 8000;
-        public final int mDuration = 100;
+        public final int mDuration;
         public final int mMaxDamageChance;
 
-        public MobRecipe(ArrayList<MobDrop> outputs) {
+        public MobRecipe(EntityLiving e, ArrayList<MobDrop> outputs) {
             mOutputs = outputs;
             int maxdamagechance = 0;
             for (MobDrop o : mOutputs) if (o.damages != null) for (int v : o.damages.values()) maxdamagechance += v;
             mMaxDamageChance = maxdamagechance;
+            // Powered spawner with octadic capacitor spawns ~22/min ~= 0.366/sec ~= 2.72s/spawn ~= 54.54t/spawn
+            mDuration = 55 + 10 + (((int) e.getMaxHealth() / 5) * 10);
         }
 
         public ItemStack[] generateOutputs(Random rnd) {
@@ -538,7 +540,7 @@ public class MobRecipeLoader {
                 NBTTagCompound nbt = new NBTTagCompound();
                 BlockPoweredSpawner.writeMobTypeToNBT(nbt, k);
                 sSpawner.setTagCompound(nbt);
-                MobNameToRecipeMap.put(k, new MobRecipe(moboutputs));
+                MobNameToRecipeMap.put(k, new MobRecipe(e, moboutputs));
             }
             LOG.info("Mapped " + k);
         });

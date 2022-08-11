@@ -28,7 +28,7 @@ public class IMCForNEI {
 
     public static void IMCSender() {
 
-        sendHandler("kubatech.mobhandler", "minecraft:diamond_sword", 168, 151, 2, 6);
+        sendHandler("kubatech.mobhandler", "minecraft:diamond_sword", 168, 192, 1, 6);
         sendCatalyst("kubatech.mobhandler", "minecraft:diamond_sword");
         if (Loader.isModLoaded("EnderIO")) sendCatalyst("kubatech.mobhandler", "gregtech:gt.blockmachines:14201");
     }

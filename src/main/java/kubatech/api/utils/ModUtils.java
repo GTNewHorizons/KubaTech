@@ -19,10 +19,32 @@
 
 package kubatech.api.utils;
 
+import cpw.mods.fml.common.Loader;
+import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.launchwrapper.Launch;
 
 public class ModUtils {
     public static final boolean isDeobfuscatedEnvironment =
             (boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment");
     public static boolean isClientSided = false;
+    private static final HashMap<String, String> classNamesToModIDs = new HashMap<>();
+    private static final Map.Entry<String, String> emptyEntry = new AbstractMap.SimpleEntry<>("", "");
+
+    public static String getModNameFromClassName(String classname) {
+        if (classNamesToModIDs.size() == 0) {
+            classNamesToModIDs.put("net.minecraft", "Minecraft");
+            Loader.instance().getActiveModList().forEach(m -> {
+                Object Mod = m.getMod();
+                if (Mod != null)
+                    classNamesToModIDs.put(Mod.getClass().getPackage().getName(), m.getName());
+            });
+        }
+        return classNamesToModIDs.entrySet().stream()
+                .filter(e -> classname.startsWith(e.getKey()))
+                .findAny()
+                .orElse(emptyEntry)
+                .getValue();
+    }
 }
