@@ -43,6 +43,7 @@ import kubatech.api.utils.InfernalHelper;
 import kubatech.api.utils.ModUtils;
 import kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 import kubatech.nei.Mob_Handler;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
@@ -50,6 +51,7 @@ import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.monster.EntitySlime;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
@@ -280,10 +282,16 @@ public class MobRecipeLoader {
         private final ArrayList<nexter> nexts = new ArrayList<>();
         private int walkCounter = 0;
         private double chance;
+        private boolean exceptionOnEnchantTry = false;
+        private int maxWalkCount = -1;
 
         @Override
         public int nextInt(int bound) {
+            if (exceptionOnEnchantTry && bound == Enchantment.enchantmentsBookList.length) return -1;
             if (nexts.size() <= walkCounter) { // new call
+                if (maxWalkCount == walkCounter) {
+                    return 0;
+                }
                 nexts.add(new nexter(0, bound));
                 walkCounter++;
                 chance /= bound;
@@ -296,6 +304,9 @@ public class MobRecipeLoader {
         @Override
         public float nextFloat() {
             if (nexts.size() <= walkCounter) { // new call
+                if (maxWalkCount == walkCounter) {
+                    return 0f;
+                }
                 nexts.add(new nexter(2, 10));
                 walkCounter++;
                 chance /= 10;
@@ -308,6 +319,9 @@ public class MobRecipeLoader {
         @Override
         public boolean nextBoolean() {
             if (nexts.size() <= walkCounter) { // new call
+                if (maxWalkCount == walkCounter) {
+                    return false;
+                }
                 nexts.add(new nexter(1, 2));
                 walkCounter++;
                 chance /= 2;
@@ -321,6 +335,8 @@ public class MobRecipeLoader {
             walkCounter = 0;
             nexts.clear();
             chance = 1d;
+            maxWalkCount = -1;
+            exceptionOnEnchantTry = false;
         }
 
         public boolean nextRound() {
@@ -412,6 +428,7 @@ public class MobRecipeLoader {
 
     private static class dropCollector {
         HashMap<GT_Utility.ItemId, Integer> damagableChecker = new HashMap<>();
+        private boolean booksAlwaysRandomlyEnchanted = false;
 
         public void addDrop(droplist fdrops, ArrayList<EntityItem> listToParse, double chance) {
             for (EntityItem entityItem : listToParse) {
@@ -425,6 +442,15 @@ public class MobRecipeLoader {
                     randomenchantmentlevel = ostack.stackTagCompound.getInteger(randomEnchantmentDetectedString);
                     ostack.stackTagCompound.removeTag("ench");
                     ostack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
+                }
+                if ((booksAlwaysRandomlyEnchanted || randomchomenchantdetected)
+                        && Items.enchanted_book == ostack.getItem()) {
+                    NBTTagCompound tagCompound = (NBTTagCompound) ostack.stackTagCompound.copy();
+                    tagCompound.removeTag("StoredEnchantments");
+                    ostack = new ItemStack(Items.book, ostack.stackSize, 0);
+                    if (!tagCompound.hasNoTags()) ostack.stackTagCompound = tagCompound;
+                    if (randomenchantmentlevel == 0) randomenchantmentlevel = 1;
+                    randomchomenchantdetected = true;
                 }
                 boolean randomdamagedetected = false;
                 int newdamage = -1;
@@ -463,6 +489,7 @@ public class MobRecipeLoader {
 
         public void newRound() {
             damagableChecker.clear();
+            booksAlwaysRandomlyEnchanted = false;
         }
     }
 
@@ -587,6 +614,30 @@ public class MobRecipeLoader {
 
             frand.newRound();
             collector.newRound();
+
+            if (v.getName().startsWith("com.emoniph.witchery")) {
+                try {
+                    dropFewItems.invoke(e, true, 0);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return;
+                }
+                frand.newRound();
+                frand.exceptionOnEnchantTry = true;
+                boolean enchantmentDetected = false;
+                try {
+                    dropFewItems.invoke(e, true, 0);
+                } catch (Exception ex) {
+                    enchantmentDetected = true;
+                }
+                int w = frand.walkCounter;
+                frand.newRound();
+                if (enchantmentDetected) {
+                    frand.maxWalkCount = w;
+                    collector.booksAlwaysRandomlyEnchanted = true;
+                }
+                e.capturedDrops.clear();
+            }
 
             do {
                 try {

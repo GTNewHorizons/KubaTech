@@ -472,7 +472,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
             } else display.setTag("Lore", extratooltip);
             itemtag.setTag("display", display);
             this.items[0].setTagCompound(itemtag);
-            this.item.setTagCompound(itemtag);
+            this.item.setTagCompound((NBTTagCompound) itemtag.copy());
             setPermutationToRender(0);
         }
 
@@ -480,6 +480,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
         public void setPermutationToRender(int index) {
             if (this.item == null) this.item = this.items[0].copy();
             if (enchantable) {
+                if (this.item.getItem() == Items.enchanted_book) this.item = this.items[0].copy();
                 this.item.getTagCompound().removeTag("ench");
                 EnchantmentHelper.addRandomEnchantment(rand, this.item, enchantmentLevel);
             }
