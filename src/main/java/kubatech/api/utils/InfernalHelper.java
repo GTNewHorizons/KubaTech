@@ -20,10 +20,12 @@
 package kubatech.api.utils;
 
 import atomicstryker.infernalmobs.common.InfernalMobsCore;
+import atomicstryker.infernalmobs.common.mods.api.ModifierLoader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.item.ItemStack;
 
 public class InfernalHelper {
     private static Method isClassAllowed = null;
@@ -55,6 +57,21 @@ public class InfernalHelper {
             exception.printStackTrace();
         }
         return false;
+    }
+
+    private static Field modifierLoaders = null;
+
+    public static ArrayList<ModifierLoader<?>> getModifierLoaders() {
+        try {
+            if (modifierLoaders == null) {
+                modifierLoaders = InfernalMobsCore.class.getDeclaredField("modifierLoaders");
+                modifierLoaders.setAccessible(true);
+            }
+            return (ArrayList<ModifierLoader<?>>) modifierLoaders.get(InfernalMobsCore.instance());
+        } catch (Throwable exception) {
+            exception.printStackTrace();
+        }
+        return new ArrayList<>();
     }
 
     private static Field eliteRarity;
@@ -102,6 +119,51 @@ public class InfernalHelper {
         return 15;
     }
 
+    private static Field minEliteModifiers;
+
+    public static int getMinEliteModifiers() {
+        try {
+            if (minEliteModifiers == null) {
+                minEliteModifiers = InfernalMobsCore.class.getDeclaredField("minEliteModifiers");
+                minEliteModifiers.setAccessible(true);
+            }
+            return minEliteModifiers.getInt(InfernalMobsCore.instance());
+        } catch (Throwable exception) {
+            exception.printStackTrace();
+        }
+        return 15;
+    }
+
+    private static Field minUltraModifiers;
+
+    public static int getMinUltraModifiers() {
+        try {
+            if (minUltraModifiers == null) {
+                minUltraModifiers = InfernalMobsCore.class.getDeclaredField("minUltraModifiers");
+                minUltraModifiers.setAccessible(true);
+            }
+            return minUltraModifiers.getInt(InfernalMobsCore.instance());
+        } catch (Throwable exception) {
+            exception.printStackTrace();
+        }
+        return 15;
+    }
+
+    private static Field minInfernoModifiers;
+
+    public static int getMinInfernoModifiers() {
+        try {
+            if (minInfernoModifiers == null) {
+                minInfernoModifiers = InfernalMobsCore.class.getDeclaredField("minInfernoModifiers");
+                minInfernoModifiers.setAccessible(true);
+            }
+            return minInfernoModifiers.getInt(InfernalMobsCore.instance());
+        } catch (Throwable exception) {
+            exception.printStackTrace();
+        }
+        return 15;
+    }
+
     private static Field dimensionBlackList;
 
     public static ArrayList<Integer> getDimensionBlackList() {
@@ -111,6 +173,51 @@ public class InfernalHelper {
                 dimensionBlackList.setAccessible(true);
             }
             return (ArrayList<Integer>) dimensionBlackList.get(InfernalMobsCore.instance());
+        } catch (Throwable exception) {
+            exception.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
+
+    private static Field dropIdListElite;
+
+    public static ArrayList<ItemStack> getDropIdListElite() {
+        try {
+            if (dropIdListElite == null) {
+                dropIdListElite = InfernalMobsCore.class.getDeclaredField("dropIdListElite");
+                dropIdListElite.setAccessible(true);
+            }
+            return (ArrayList<ItemStack>) dropIdListElite.get(InfernalMobsCore.instance());
+        } catch (Throwable exception) {
+            exception.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
+
+    private static Field dropIdListUltra;
+
+    public static ArrayList<ItemStack> getDropIdListUltra() {
+        try {
+            if (dropIdListUltra == null) {
+                dropIdListUltra = InfernalMobsCore.class.getDeclaredField("dropIdListUltra");
+                dropIdListUltra.setAccessible(true);
+            }
+            return (ArrayList<ItemStack>) dropIdListUltra.get(InfernalMobsCore.instance());
+        } catch (Throwable exception) {
+            exception.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
+
+    private static Field dropIdListInfernal;
+
+    public static ArrayList<ItemStack> getDropIdListInfernal() {
+        try {
+            if (dropIdListInfernal == null) {
+                dropIdListInfernal = InfernalMobsCore.class.getDeclaredField("dropIdListInfernal");
+                dropIdListInfernal.setAccessible(true);
+            }
+            return (ArrayList<ItemStack>) dropIdListInfernal.get(InfernalMobsCore.instance());
         } catch (Throwable exception) {
             exception.printStackTrace();
         }

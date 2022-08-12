@@ -22,6 +22,9 @@ package kubatech.loaders;
 import static kubatech.api.utils.ModUtils.isDeobfuscatedEnvironment;
 import static kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.MobNameToRecipeMap;
 
+import atomicstryker.infernalmobs.common.InfernalMobsCore;
+import atomicstryker.infernalmobs.common.MobModifier;
+import atomicstryker.infernalmobs.common.mods.api.ModifierLoader;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
@@ -36,7 +39,9 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import kubatech.Config;
 import kubatech.Tags;
+import kubatech.api.utils.InfernalHelper;
 import kubatech.api.utils.ModUtils;
+import kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 import kubatech.nei.Mob_Handler;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
@@ -82,22 +87,74 @@ public class MobRecipeLoader {
 
     public static class MobRecipe {
         public final ArrayList<MobDrop> mOutputs;
-        public final int mEUt = 8000;
+        public final int mEUt = 2000;
         public final int mDuration;
         public final int mMaxDamageChance;
+        public final boolean infernalityAllowed;
+        public final boolean alwaysinfernal;
+        public static droplist infernaldrops;
 
         public MobRecipe(EntityLiving e, ArrayList<MobDrop> outputs) {
+            if (infernaldrops == null && Loader.isModLoaded("InfernalMobs")) {
+                infernaldrops = new droplist();
+                LOG.info("Generating Infernal drops");
+                ArrayList<ModifierLoader<?>> modifierLoaders = (ArrayList<ModifierLoader<?>>)
+                        InfernalHelper.getModifierLoaders().clone();
+                int i = 0;
+                for (ModifierLoader<?> modifierLoader : modifierLoaders) {
+                    MobModifier nextMod = modifierLoader.make(null);
+                    if (nextMod.getBlackListMobClasses() != null)
+                        for (Class<?> cl : nextMod.getBlackListMobClasses())
+                            if (e.getClass().isAssignableFrom(cl)) break;
+                    i++;
+                }
+                if (i > 0) {
+                    double chance =
+                            InfernalHelper.checkEntityClassForced(e) ? 1d : (1d / InfernalHelper.getEliteRarity());
+                    ArrayList<ItemStack> elitelist = InfernalHelper.getDropIdListElite();
+                    for (ItemStack stack : elitelist) {
+                        dropinstance instance = infernaldrops.add(
+                                new dropinstance(stack.copy(), infernaldrops), chance / elitelist.size());
+                        instance.isEnchatmentRandomized = true;
+                        instance.enchantmentLevel = stack.getItem().getItemEnchantability();
+                    }
+                    ArrayList<ItemStack> ultralist = InfernalHelper.getDropIdListUltra();
+                    chance *= 1d / InfernalHelper.getUltraRarity();
+                    for (ItemStack stack : ultralist) {
+                        dropinstance instance = infernaldrops.add(
+                                new dropinstance(stack.copy(), infernaldrops), chance / ultralist.size());
+                        instance.isEnchatmentRandomized = true;
+                        instance.enchantmentLevel = stack.getItem().getItemEnchantability();
+                    }
+                    ArrayList<ItemStack> infernallist = InfernalHelper.getDropIdListInfernal();
+                    chance *= 1d / InfernalHelper.getInfernoRarity();
+                    for (ItemStack stack : infernallist) {
+                        dropinstance instance = infernaldrops.add(
+                                new dropinstance(stack.copy(), infernaldrops), chance / infernallist.size());
+                        instance.isEnchatmentRandomized = true;
+                        instance.enchantmentLevel = stack.getItem().getItemEnchantability();
+                    }
+                }
+            } else if (infernaldrops == null) infernaldrops = new droplist();
+
+            infernalityAllowed = InfernalHelper.isClassAllowed(e);
+            alwaysinfernal = InfernalHelper.checkEntityClassForced(e);
+
             mOutputs = outputs;
             int maxdamagechance = 0;
-            for (MobDrop o : mOutputs) if (o.damages != null) for (int v : o.damages.values()) maxdamagechance += v;
+            for (MobDrop o : mOutputs) {
+                if (o.damages != null) for (int v : o.damages.values()) maxdamagechance += v;
+            }
             mMaxDamageChance = maxdamagechance;
             // Powered spawner with octadic capacitor spawns ~22/min ~= 0.366/sec ~= 2.72s/spawn ~= 54.54t/spawn
             mDuration = 55 + 10 + (((int) e.getMaxHealth() / 5) * 10);
         }
 
-        public ItemStack[] generateOutputs(Random rnd) {
+        public ItemStack[] generateOutputs(Random rnd, GT_MetaTileEntity_ExtremeExterminationChamber MTE) {
+            MTE.mEUt = mEUt;
+            MTE.mMaxProgresstime = mDuration;
             ArrayList<ItemStack> stacks = new ArrayList<>(mOutputs.size());
-            for (MobDrop o : mOutputs)
+            for (MobDrop o : mOutputs) {
                 if (o.chance == 10000 || rnd.nextInt(10000) < o.chance) {
                     ItemStack s = o.stack.copy();
                     if (o.enchantable != null) EnchantmentHelper.addRandomEnchantment(rnd, s, o.enchantable);
@@ -114,6 +171,45 @@ public class MobRecipeLoader {
                     }
                     stacks.add(s);
                 }
+            }
+
+            if (infernalityAllowed
+                    && mEUt * 8 < MTE.getMaxInputVoltage()
+                    && !InfernalHelper.getDimensionBlackList()
+                            .contains(MTE.getBaseMetaTileEntity().getWorld().provider.dimensionId)) {
+                int p = 0;
+                int mods = 0;
+                if (alwaysinfernal || rnd.nextInt(InfernalHelper.getEliteRarity()) == 0) {
+                    p = 1;
+                    if (rnd.nextInt(InfernalHelper.getUltraRarity()) == 0) {
+                        p = 2;
+                        if (rnd.nextInt(InfernalHelper.getInfernoRarity()) == 0) p = 3;
+                    }
+                }
+                ArrayList<ItemStack> infernalstacks = null;
+                if (p > 0)
+                    if (p == 1) {
+                        infernalstacks = InfernalHelper.getDropIdListElite();
+                        mods = InfernalHelper.getMinEliteModifiers();
+                    } else if (p == 2) {
+                        infernalstacks = InfernalHelper.getDropIdListUltra();
+                        mods = InfernalHelper.getMinUltraModifiers();
+                    } else if (p == 3) {
+                        infernalstacks = InfernalHelper.getDropIdListInfernal();
+                        mods = InfernalHelper.getMinInfernoModifiers();
+                    }
+                if (infernalstacks != null) {
+                    ItemStack infernalstack = infernalstacks
+                            .get(rnd.nextInt(infernalstacks.size()))
+                            .copy();
+                    EnchantmentHelper.addRandomEnchantment(
+                            rnd, infernalstack, infernalstack.getItem().getItemEnchantability());
+                    stacks.add(infernalstack);
+                    MTE.mEUt *= 8;
+                    MTE.mMaxProgresstime *= mods * InfernalMobsCore.instance().getMobModHealthFactor();
+                }
+            }
+
             return stacks.toArray(new ItemStack[0]);
         }
     }
@@ -122,7 +218,8 @@ public class MobRecipeLoader {
         public enum DropType {
             Normal,
             Rare,
-            Additional
+            Additional,
+            Infernal
         }
 
         public ItemStack stack;
@@ -568,6 +665,9 @@ public class MobRecipeLoader {
                 } while (frand.nextRound());
             } catch (Exception ignored) {
             }
+
+            frand.newRound();
+            collector.newRound();
 
             if (drops.isEmpty() && raredrops.isEmpty() && additionaldrops.isEmpty()) {
                 if (ModUtils.isClientSided && Config.includeEmptyMobs) addNEIMobRecipe(e, new ArrayList<>());

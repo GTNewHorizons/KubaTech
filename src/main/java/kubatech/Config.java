@@ -50,7 +50,7 @@ public class Config {
                 .get(
                         Categories.mobHandler,
                         "MobBlacklist",
-                        new String[] {"EnderDragon", "chisel.snowman"},
+                        new String[] {"chisel.snowman"},
                         "These mobs will be skipped when generating recipe map")
                 .getStringList();
 

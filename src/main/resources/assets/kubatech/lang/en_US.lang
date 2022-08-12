@@ -4,6 +4,7 @@
 mobhandler.normal_drops=Normal drops
 mobhandler.rare_drops=Rare drops
 mobhandler.additional_drops=Additional drops
+mobhandler.infernal_drops=Infernal drops
 mobhandler.infernal_cannot=Cannot spawn infernal
 mobhandler.infernal_can=Can spawn infernal
 mobhandler.infernal_always=Always spawns infernal

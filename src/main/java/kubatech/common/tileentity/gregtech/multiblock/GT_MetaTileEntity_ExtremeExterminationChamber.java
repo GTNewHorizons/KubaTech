@@ -44,6 +44,7 @@ import kubatech.loaders.MobRecipeLoader;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.world.EnumDifficulty;
 
 public class GT_MetaTileEntity_ExtremeExterminationChamber
         extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_ExtremeExterminationChamber> {
@@ -108,6 +109,10 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         tt.addMachineType("Powered Spawner")
                 .addInfo("Controller block for Extreme Extermination Chamber")
                 .addInfo("Spawns and Exterminates monsters for you")
+                .addInfo("Base energy usage: 2,000 EU/t")
+                .addInfo("Recipe time is based on mob health")
+                .addInfo("If the mob spawns infernal")
+                .addInfo("it will drain 8 times more power")
                 .addInfo(Author)
                 .addSeparator()
                 .beginStructureBlock(5, 7, 5, true)
@@ -180,6 +185,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
 
     @Override
     public boolean checkRecipe(ItemStack aStack) {
+        if (this.getBaseMetaTileEntity().getWorld().difficultySetting == EnumDifficulty.PEACEFUL) return false;
+
         if (aStack == null) return false;
 
         if (aStack.getItem() != poweredSpawnerItem) return false;
@@ -192,8 +199,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
 
         if (recipe == null) return false;
 
-        this.mOutputItems = recipe.generateOutputs(rand);
-        calculateOverclockedNessMulti(recipe.mEUt, recipe.mDuration, 2, getMaxInputVoltage());
+        this.mOutputItems = recipe.generateOutputs(rand, this);
+        calculateOverclockedNessMulti(this.mEUt, this.mMaxProgresstime, 2, getMaxInputVoltage());
         if (this.mEUt > 0) this.mEUt = -this.mEUt;
         this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
         this.mEfficiencyIncrease = 10000;
