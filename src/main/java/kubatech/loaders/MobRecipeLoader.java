@@ -842,7 +842,9 @@ public class MobRecipeLoader {
 
         isInGenerationProcess = false;
 
-        LOG.info("Sorting NEI map");
-        Mob_Handler.sortCachedRecipes();
+        if (ModUtils.isClientSided) {
+            LOG.info("Sorting NEI map");
+            Mob_Handler.sortCachedRecipes();
+        }
     }
 }
