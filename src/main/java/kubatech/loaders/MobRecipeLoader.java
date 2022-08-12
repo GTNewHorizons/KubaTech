@@ -718,8 +718,9 @@ public class MobRecipeLoader {
                     for (int j = 0, lastActiveItemsLength = lastActiveItems.length; j < lastActiveItemsLength; j++) {
                         ItemStack stack = lastActiveItems[j];
                         if (stack != null) {
-                            if (stack.getItem() instanceof ItemWandCasting)
-                                continue; // crashes the game when rendering in GUI
+                            if (Loader.isModLoaded("Thaumcraft"))
+                                if (stack.getItem() instanceof ItemWandCasting)
+                                    continue; // crashes the game when rendering in GUI
 
                             int randomenchant = -1;
                             if (stack.hasTagCompound()
