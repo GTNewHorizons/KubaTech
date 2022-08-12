@@ -7,6 +7,7 @@ dependencies {
     compile("com.github.GTNewHorizons:EnderIO:2.3.1.29:dev")
     compile("com.github.GTNewHorizons:Infernal-Mobs:1.7.5-GTNH:dev")
     compile("com.github.GTNewHorizons:SpecialMobs:3.3.12:dev")
+    compile("com.github.GTNewHorizons:twilightforest:2.3.8.15:dev")
     compile("thaumcraft:Thaumcraft:1.7.10-4.2.3.5:dev")
     compile("curse.maven:witchery-69673:2234410")
     runtime("curse.maven:cofh-core-69162:2388751")

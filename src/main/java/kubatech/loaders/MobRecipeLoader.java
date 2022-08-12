@@ -284,6 +284,7 @@ public class MobRecipeLoader {
         private double chance;
         private boolean exceptionOnEnchantTry = false;
         private int maxWalkCount = -1;
+        private float forceFloatValue = -1.f;
 
         @Override
         public int nextInt(int bound) {
@@ -303,6 +304,7 @@ public class MobRecipeLoader {
 
         @Override
         public float nextFloat() {
+            if (forceFloatValue != -1f) return forceFloatValue;
             if (nexts.size() <= walkCounter) { // new call
                 if (maxWalkCount == walkCounter) {
                     return 0f;
@@ -337,6 +339,7 @@ public class MobRecipeLoader {
             chance = 1d;
             maxWalkCount = -1;
             exceptionOnEnchantTry = false;
+            forceFloatValue = -1f;
         }
 
         public boolean nextRound() {
@@ -648,6 +651,11 @@ public class MobRecipeLoader {
                 }
                 collector.addDrop(drops, e.capturedDrops, frand.chance);
 
+                if (frand.chance < 0.000001d) {
+                    LOG.info("Skipping " + k + " because it's too randomized");
+                    return;
+                }
+
             } while (frand.nextRound());
 
             LOG.info("Generating rare drops");
@@ -683,6 +691,11 @@ public class MobRecipeLoader {
                     }
                 } while (detectedException && !cl.equals(Entity.class));
                 if (cl.equals(EntityLiving.class) || cl.equals(Entity.class)) throw new Exception();
+                double chanceModifierLocal = 1f;
+                if (v.getName().startsWith("twilightforest.entity")) {
+                    frand.forceFloatValue = 0f;
+                    chanceModifierLocal = 0.25f;
+                }
                 do {
                     addRandomArmor.invoke(e);
                     enchantEquipment.invoke(e);
@@ -698,8 +711,8 @@ public class MobRecipeLoader {
                                 stack.stackTagCompound.removeTag("ench");
                                 stack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
                             }
-                            dropinstance i =
-                                    additionaldrops.add(new dropinstance(stack, additionaldrops), frand.chance);
+                            dropinstance i = additionaldrops.add(
+                                    new dropinstance(stack, additionaldrops), frand.chance * chanceModifierLocal);
                             if (!i.isDamageRandomized && i.stack.isItemStackDamageable()) {
                                 i.isDamageRandomized = true;
                                 int maxdamage = i.stack.getMaxDamage();

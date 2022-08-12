@@ -23,6 +23,7 @@ import static kubatech.nei.Mob_Handler.Translations.*;
 import static org.lwjgl.opengl.GL11.GL_MODELVIEW_STACK_DEPTH;
 
 import codechicken.lib.gui.GuiDraw;
+import codechicken.nei.NEIClientUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.*;
 import cpw.mods.fml.common.Loader;
@@ -47,6 +48,7 @@ import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelBox;
 import net.minecraft.client.model.ModelRenderer;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.RendererLivingEntity;
@@ -298,8 +300,12 @@ public class Mob_Handler extends TemplateRecipeHandler {
             // ARGS: x, y, scale, rot, rot, entity
             GuiInventory.func_147046_a(
                     mobx, moby, scaled, (float) (x + mobx) - mouseX, (float) (y + moby - eheight * scaled) - mouseZ, e);
-        } catch (Throwable ignored) {
-
+        } catch (Throwable ex) {
+            Tessellator tes = Tessellator.instance;
+            try {
+                tes.draw();
+            } catch (Exception ignored) {
+            }
         }
 
         stackdepth -= GL11.glGetInteger(GL_MODELVIEW_STACK_DEPTH);
@@ -313,6 +319,8 @@ public class Mob_Handler extends TemplateRecipeHandler {
         MobCachedRecipe currentrecipe = ((MobCachedRecipe) arecipes.get(recipe));
         int y = 7, yshift = 10, x = 57;
         GuiDraw.drawString(currentrecipe.localizedName, x, y, 0xFF555555, false);
+        if (Minecraft.getMinecraft().gameSettings.advancedItemTooltips && NEIClientUtils.shiftKey())
+            GuiDraw.drawString(currentrecipe.mobname, x, y += yshift, 0xFF555555, false);
         GuiDraw.drawString(MOD.get() + currentrecipe.mod, x, y += yshift, 0xFF555555, false);
         GuiDraw.drawString(MAX_HEALTH.get() + currentrecipe.maxHealth, x, y += yshift, 0xFF555555, false);
         switch (currentrecipe.infernaltype) {
