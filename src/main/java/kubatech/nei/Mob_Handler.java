@@ -157,6 +157,17 @@ public class Mob_Handler extends TemplateRecipeHandler {
         cachedRecipes.add(new MobCachedRecipe(e, l, normaldrops, raredrops, additionaldrops, infernalDrops));
     }
 
+    public static void sortCachedRecipes() {
+        cachedRecipes.sort((o1, o2) -> {
+            boolean m1 = o1.mod.equals("Minecraft");
+            boolean m2 = o2.mod.equals("Minecraft");
+            if (m1 && !m2) return -1;
+            else if (!m1 && m2) return 1;
+            if (!o1.mod.equals(o2.mod)) return o1.mod.compareTo(o2.mod);
+            else return o1.localizedName.compareTo(o2.localizedName);
+        });
+    }
+
     public Mob_Handler() {
         this.transferRects.add(new RecipeTransferRect(new Rectangle(7, 62, 16, 16), getOverlayIdentifier()));
         if (!NEI_Config.isAdded) {

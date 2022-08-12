@@ -836,8 +836,12 @@ public class MobRecipeLoader {
 
         time -= System.currentTimeMillis();
         time = -time;
+
         LOG.info("Recipe map generated ! It took " + time + "ms");
 
         isInGenerationProcess = false;
+
+        LOG.info("Sorting NEI map");
+        Mob_Handler.sortCachedRecipes();
     }
 }
