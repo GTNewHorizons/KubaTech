@@ -444,7 +444,6 @@ public class MobRecipeLoader {
                 if (randomchomenchantdetected) {
                     randomenchantmentlevel = ostack.stackTagCompound.getInteger(randomEnchantmentDetectedString);
                     ostack.stackTagCompound.removeTag("ench");
-                    ostack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
                 }
                 if ((booksAlwaysRandomlyEnchanted || randomchomenchantdetected)
                         && Items.enchanted_book == ostack.getItem()) {
@@ -651,9 +650,9 @@ public class MobRecipeLoader {
                 }
                 collector.addDrop(drops, e.capturedDrops, frand.chance);
 
-                if (frand.chance < 0.000001d) {
-                    LOG.info("Skipping " + k + " because it's too randomized");
-                    return;
+                if (frand.chance < 0.0000001d) {
+                    LOG.info("Skipping " + k + " normal dropmap because it's too randomized");
+                    break;
                 }
 
             } while (frand.nextRound());
@@ -671,6 +670,11 @@ public class MobRecipeLoader {
                     return;
                 }
                 collector.addDrop(raredrops, e.capturedDrops, frand.chance);
+
+                if (frand.chance < 0.0000001d) {
+                    LOG.info("Skipping " + k + " rare dropmap because it's too randomized");
+                    break;
+                }
             } while (frand.nextRound());
 
             LOG.info("Generating additional drops");
@@ -691,6 +695,17 @@ public class MobRecipeLoader {
                     }
                 } while (detectedException && !cl.equals(Entity.class));
                 if (cl.equals(EntityLiving.class) || cl.equals(Entity.class)) throw new Exception();
+                cl = e.getClass();
+                do {
+                    detectedException = false;
+                    try {
+                        cl.getDeclaredMethod(enchantEquipmentName);
+                    } catch (Exception ex) {
+                        detectedException = true;
+                        cl = cl.getSuperclass();
+                    }
+                } while (detectedException && !cl.equals(EntityLiving.class));
+                boolean usingVanillaEnchantingMethod = cl.equals(EntityLiving.class);
                 double chanceModifierLocal = 1f;
                 if (v.getName().startsWith("twilightforest.entity")) {
                     frand.forceFloatValue = 0f;
@@ -698,8 +713,10 @@ public class MobRecipeLoader {
                 }
                 do {
                     addRandomArmor.invoke(e);
-                    enchantEquipment.invoke(e);
-                    for (ItemStack stack : e.getLastActiveItems()) {
+                    if (!usingVanillaEnchantingMethod) enchantEquipment.invoke(e);
+                    ItemStack[] lastActiveItems = e.getLastActiveItems();
+                    for (int j = 0, lastActiveItemsLength = lastActiveItems.length; j < lastActiveItemsLength; j++) {
+                        ItemStack stack = lastActiveItems[j];
                         if (stack != null) {
                             if (stack.getItem() instanceof ItemWandCasting)
                                 continue; // crashes the game when rendering in GUI
@@ -709,10 +726,12 @@ public class MobRecipeLoader {
                                     && stack.stackTagCompound.hasKey(randomEnchantmentDetectedString)) {
                                 randomenchant = stack.stackTagCompound.getInteger(randomEnchantmentDetectedString);
                                 stack.stackTagCompound.removeTag("ench");
-                                stack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
                             }
                             dropinstance i = additionaldrops.add(
-                                    new dropinstance(stack, additionaldrops), frand.chance * chanceModifierLocal);
+                                    new dropinstance(stack.copy(), additionaldrops),
+                                    frand.chance
+                                            * chanceModifierLocal
+                                            * (usingVanillaEnchantingMethod ? (j == 0 ? 0.75d : 0.5d) : 1d));
                             if (!i.isDamageRandomized && i.stack.isItemStackDamageable()) {
                                 i.isDamageRandomized = true;
                                 int maxdamage = i.stack.getMaxDamage();
@@ -723,9 +742,26 @@ public class MobRecipeLoader {
                                 i.isEnchatmentRandomized = true;
                                 i.enchantmentLevel = randomenchant;
                             }
+                            if (usingVanillaEnchantingMethod) {
+                                if (!stack.hasTagCompound()) stack.stackTagCompound = new NBTTagCompound();
+                                stack.stackTagCompound.setInteger(randomEnchantmentDetectedString, 14);
+                                dropinstance newdrop = additionaldrops.add(
+                                        new dropinstance(stack.copy(), additionaldrops),
+                                        frand.chance * chanceModifierLocal * (j == 0 ? 0.25d : 0.5d));
+                                newdrop.isEnchatmentRandomized = true;
+                                newdrop.enchantmentLevel = 14;
+                                newdrop.isDamageRandomized = i.isDamageRandomized;
+                                newdrop.damagesPossible = (HashMap<Integer, Integer>) i.damagesPossible.clone();
+                            }
                         }
                     }
                     Arrays.fill(e.getLastActiveItems(), null);
+
+                    if (frand.chance < 0.0000001d) {
+                        LOG.info("Skipping " + k + " additional dropmap because it's too randomized");
+                        break;
+                    }
+
                 } while (frand.nextRound());
             } catch (Exception ignored) {
             }
@@ -743,6 +779,7 @@ public class MobRecipeLoader {
 
             for (dropinstance drop : drops.drops) {
                 ItemStack stack = drop.stack;
+                if (stack.hasTagCompound()) stack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
                 int chance = drop.getchance(10000);
                 while (chance > 10000) {
                     stack.stackSize *= 2;
@@ -757,6 +794,7 @@ public class MobRecipeLoader {
             }
             for (dropinstance drop : raredrops.drops) {
                 ItemStack stack = drop.stack;
+                if (stack.hasTagCompound()) stack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
                 int chance = drop.getchance(250);
                 while (chance > 10000) {
                     stack.stackSize *= 2;
@@ -771,6 +809,7 @@ public class MobRecipeLoader {
             }
             for (dropinstance drop : additionaldrops.drops) {
                 ItemStack stack = drop.stack;
+                if (stack.hasTagCompound()) stack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
                 int chance = drop.getchance(850);
                 while (chance > 10000) {
                     stack.stackSize *= 2;
