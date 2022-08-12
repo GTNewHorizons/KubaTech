@@ -50,7 +50,28 @@ public class Config {
                 .get(
                         Categories.mobHandler,
                         "MobBlacklist",
-                        new String[] {"chisel.snowman"},
+                        new String[] {
+                            "Giant",
+                            "Thaumcraft.TravelingTrunk",
+                            "chisel.snowman",
+                            "OpenBlocks.Luggage",
+                            "OpenBlocks.MiniMe",
+                            "SpecialMobs.SpecialCreeper",
+                            "SpecialMobs.SpecialZombie",
+                            "SpecialMobs.SpecialPigZombie",
+                            "SpecialMobs.SpecialSlime",
+                            "SpecialMobs.SpecialSkeleton",
+                            "SpecialMobs.SpecialEnderman",
+                            "SpecialMobs.SpecialCaveSpider",
+                            "SpecialMobs.SpecialGhast",
+                            "SpecialMobs.SpecialWitch",
+                            "SpecialMobs.SpecialSpider",
+                            "TwilightForest.HydraHead",
+                            "TwilightForest.RovingCube",
+                            "TwilightForest.Harbinger Cube",
+                            "TwilightForest.Adherent",
+                            "SpecialMobs.SpecialSilverfish",
+                        },
                         "These mobs will be skipped when generating recipe map")
                 .getStringList();
 
