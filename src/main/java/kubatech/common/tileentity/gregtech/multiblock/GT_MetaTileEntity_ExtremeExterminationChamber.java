@@ -62,6 +62,8 @@ import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraftforge.fluids.FluidStack;
 
 public class GT_MetaTileEntity_ExtremeExterminationChamber
         extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_ExtremeExterminationChamber> {
@@ -99,11 +101,11 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                         {"ccccc", "csssc", "csssc", "csssc", "ccccc"},
                         {"CC~CC", "CCCCC", "CCCCC", "CCCCC", "CCCCC"},
                     }))
-                    .addElement('c', ofBlock(GregTech_API.sBlockCasings2, 0))
+                    .addElement('c', onElementPass(t -> t.mCasing++, ofBlock(GregTech_API.sBlockCasings2, 0)))
                     .addElement(
                             'C',
                             ofChain(
-                                    ofBlock(GregTech_API.sBlockCasings2, 0),
+                                    onElementPass(t -> t.mCasing++, ofBlock(GregTech_API.sBlockCasings2, 0)),
                                     ofHatchAdder(
                                             GT_MetaTileEntity_ExtremeExterminationChamber::addOutputToMachineList,
                                             CASING_INDEX,
@@ -126,6 +128,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     private TileEntity masterStoneRitual = null;
     private TileEntity tileAltar = null;
     private boolean isInRitualMode = false;
+    private int mCasing = 0;
 
     @Override
     public void saveNBTData(NBTTagCompound aNBT) {
@@ -163,6 +166,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 .addController("Front Bottom Center")
                 .addCasingInfo("Solid Steel Machine Casing", 10)
                 .addOutputBus("Any casing", 1)
+                .addOutputHatch("Any casing", 1)
                 .addEnergyHatch("Any casing", 1)
                 .addMaintenanceHatch("Any casing", 1)
                 .toolTipFinisher(Tags.MODNAME);
@@ -319,12 +323,14 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
 
         this.mOutputItems = recipe.generateOutputs(rand, this);
 
-        if (isInRitualMode) {
-            if (isRitualValid()) {
-                this.mMaxProgresstime = 400;
-                this.mEUt /= 4;
-            }
-        } else calculateOverclockedNessMulti(this.mEUt, this.mMaxProgresstime, 2, getMaxInputVoltage());
+        if (isInRitualMode && isRitualValid()) {
+            this.mMaxProgresstime = 400;
+            this.mEUt /= 4;
+            this.mOutputFluids = new FluidStack[] {FluidRegistry.getFluidStack("xpjuice", 5000)};
+        } else {
+            calculateOverclockedNessMulti(this.mEUt, this.mMaxProgresstime, 2, getMaxInputVoltage());
+            this.mOutputFluids = new FluidStack[] {FluidRegistry.getFluidStack("xpjuice", 120)};
+        }
         if (this.mEUt > 0) this.mEUt = -this.mEUt;
         this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
         this.mEfficiencyIncrease = 10000;
@@ -365,7 +371,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     @Override
     public boolean checkMachine(IGregTechTileEntity aBaseMetaTileEntity, ItemStack aStack) {
         if (!checkPiece(STRUCTURE_PIECE_MAIN, 2, 6, 0)) return false;
-        if (mMaintenanceHatches.size() != 1 || mEnergyHatches.size() == 0) return false;
+        if (mCasing < 10 || mMaintenanceHatches.size() != 1 || mEnergyHatches.size() == 0) return false;
         if (isInRitualMode) connectToRitual();
         return true;
     }
