@@ -51,6 +51,7 @@ import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.monster.EntitySlime;
+import net.minecraft.entity.monster.IMob;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -95,6 +96,7 @@ public class MobRecipeLoader {
         public final boolean infernalityAllowed;
         public final boolean alwaysinfernal;
         public static droplist infernaldrops;
+        public boolean isPeacefulAllowed;
 
         public MobRecipe(EntityLiving e, ArrayList<MobDrop> outputs) {
             if (infernaldrops == null && LoaderReference.InfernalMobs) {
@@ -141,6 +143,7 @@ public class MobRecipeLoader {
 
             infernalityAllowed = InfernalHelper.isClassAllowed(e);
             alwaysinfernal = InfernalHelper.checkEntityClassForced(e);
+            isPeacefulAllowed = !(e instanceof IMob);
 
             mOutputs = outputs;
             int maxdamagechance = 0;

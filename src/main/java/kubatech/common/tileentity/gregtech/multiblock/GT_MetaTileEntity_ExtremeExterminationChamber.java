@@ -303,8 +303,6 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
 
     @Override
     public boolean checkRecipe(ItemStack aStack) {
-        if (this.getBaseMetaTileEntity().getWorld().difficultySetting == EnumDifficulty.PEACEFUL) return false;
-
         if (aStack == null) return false;
 
         if (aStack.getItem() != poweredSpawnerItem) return false;
@@ -316,6 +314,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         MobRecipeLoader.MobRecipe recipe = MobNameToRecipeMap.get(mobType);
 
         if (recipe == null) return false;
+        if (!recipe.isPeacefulAllowed
+                && this.getBaseMetaTileEntity().getWorld().difficultySetting == EnumDifficulty.PEACEFUL) return false;
 
         this.mOutputItems = recipe.generateOutputs(rand, this);
 
