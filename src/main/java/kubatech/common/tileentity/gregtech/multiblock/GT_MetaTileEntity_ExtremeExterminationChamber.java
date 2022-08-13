@@ -155,6 +155,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 .addInfo("Spawns and Exterminates monsters for you")
                 .addInfo("Base energy usage: 2,000 EU/t")
                 .addInfo("Recipe time is based on mob health")
+                .addInfo("Also produces 120 Liquid XP per operation")
                 .addInfo("If the mob spawns infernal")
                 .addInfo("it will drain 8 times more power")
                 .addInfo("You can enable ritual mode with a screwdriver")
