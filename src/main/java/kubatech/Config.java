@@ -31,8 +31,13 @@ public class Config {
     public static boolean mobHandlerEnabled = true;
     public static boolean includeEmptyMobs = true;
     public static String[] mobBlacklist;
+    public static File configFile;
 
-    public static void synchronizeConfiguration(File configFile) {
+    public static void init(File configFile) {
+        Config.configFile = configFile;
+    }
+
+    public static void synchronizeConfiguration() {
         Configuration configuration = new Configuration(configFile);
         configuration.load();
 
