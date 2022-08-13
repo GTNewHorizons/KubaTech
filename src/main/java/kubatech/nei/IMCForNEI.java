@@ -19,9 +19,9 @@
 
 package kubatech.nei;
 
-import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.event.FMLInterModComms;
 import kubatech.Tags;
+import kubatech.api.LoaderReference;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class IMCForNEI {
@@ -30,7 +30,7 @@ public class IMCForNEI {
 
         sendHandler("kubatech.mobhandler", "minecraft:diamond_sword", 168, 192, 1, 6);
         sendCatalyst("kubatech.mobhandler", "minecraft:diamond_sword");
-        if (Loader.isModLoaded("EnderIO")) sendCatalyst("kubatech.mobhandler", "gregtech:gt.blockmachines:14201");
+        if (LoaderReference.EnderIO) sendCatalyst("kubatech.mobhandler", "gregtech:gt.blockmachines:14201");
     }
 
     private static void sendHandler(

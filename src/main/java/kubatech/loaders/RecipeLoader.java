@@ -19,8 +19,8 @@
 
 package kubatech.loaders;
 
-import cpw.mods.fml.common.Loader;
 import kubatech.Tags;
+import kubatech.api.LoaderReference;
 import kubatech.api.enums.ItemList;
 import kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 import org.apache.logging.log4j.LogManager;
@@ -34,7 +34,7 @@ public class RecipeLoader {
     private static final int MTEIDMax = 14300;
 
     public static void addRecipes() {
-        if (Loader.isModLoaded("EnderIO")) {
+        if (LoaderReference.EnderIO) {
             ItemList.ExtremeExterminationChamber.set(new GT_MetaTileEntity_ExtremeExterminationChamber(
                             MTEID++, "multimachine.exterminationchamber", "Extreme Extermination Chamber")
                     .getStackForm(1L));
