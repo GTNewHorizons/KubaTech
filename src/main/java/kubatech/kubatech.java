@@ -19,10 +19,15 @@
 
 package kubatech;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.*;
+import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
+import cpw.mods.fml.relauncher.Side;
 import kubatech.loaders.RecipeLoader;
+import kubatech.network.LoadConfigHandler;
+import kubatech.network.LoadConfigPacket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,6 +42,11 @@ import org.apache.logging.log4j.Logger;
 public class kubatech {
 
     public static kubatech instance = null;
+    public static final SimpleNetworkWrapper NETWORK = new SimpleNetworkWrapper(Tags.MODID);
+
+    static {
+        NETWORK.registerMessage(new LoadConfigHandler(), LoadConfigPacket.class, 0, Side.CLIENT);
+    }
 
     private static final Logger LOG = LogManager.getLogger(Tags.MODID);
 
@@ -48,6 +58,7 @@ public class kubatech {
         instance = this;
         proxy.preInit(event);
         RecipeLoader.addRecipes();
+        FMLCommonHandler.instance().bus().register(new FMLEventHandler());
     }
 
     @Mod.EventHandler

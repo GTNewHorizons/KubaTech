@@ -19,6 +19,7 @@
 
 package kubatech.loaders;
 
+import static kubatech.api.utils.ModUtils.isClientSided;
 import static kubatech.api.utils.ModUtils.isDeobfuscatedEnvironment;
 import static kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.MobNameToRecipeMap;
 
@@ -28,8 +29,6 @@ import atomicstryker.infernalmobs.common.mods.api.ModifierLoader;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import crazypants.enderio.EnderIO;
-import crazypants.enderio.machine.spawner.BlockPoweredSpawner;
 import gregtech.api.util.GT_Utility;
 import gregtech.common.GT_DummyWorld;
 import java.lang.reflect.Field;
@@ -40,9 +39,9 @@ import kubatech.Config;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.utils.InfernalHelper;
-import kubatech.api.utils.ModUtils;
 import kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 import kubatech.nei.Mob_Handler;
+import kubatech.network.LoadConfigPacket;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
@@ -241,11 +240,6 @@ public class MobRecipeLoader {
             this.enchantable = enchantable;
             this.damages = damages;
         }
-    }
-
-    @SideOnly(Side.CLIENT)
-    public static void addNEIMobRecipe(EntityLiving e, List<MobDrop> drop) {
-        Mob_Handler.addRecipe(e, drop);
     }
 
     public static class fakeRand extends Random {
@@ -498,6 +492,20 @@ public class MobRecipeLoader {
         }
     }
 
+    public static class GeneralMappedMob {
+        public final EntityLiving mob;
+        public final MobRecipe recipe;
+        public final ArrayList<MobDrop> drops;
+
+        public GeneralMappedMob(EntityLiving mob, MobRecipe recipe, ArrayList<MobDrop> drops) {
+            this.mob = mob;
+            this.recipe = recipe;
+            this.drops = drops;
+        }
+    }
+
+    public static final HashMap<String, GeneralMappedMob> GeneralMobList = new HashMap<>();
+
     @SuppressWarnings("unchecked")
     public static void generateMobRecipeMap() {
 
@@ -563,11 +571,6 @@ public class MobRecipeLoader {
 
             if (Modifier.isAbstract(v.getModifiers())) {
                 LOG.info("Entity " + k + " is abstract, skipping");
-                return;
-            }
-
-            if (Arrays.asList(Config.mobBlacklist).contains(k)) {
-                LOG.info("Entity " + k + " is blacklisted, skipping");
                 return;
             }
 
@@ -774,7 +777,7 @@ public class MobRecipeLoader {
             collector.newRound();
 
             if (drops.isEmpty() && raredrops.isEmpty() && additionaldrops.isEmpty()) {
-                if (ModUtils.isClientSided && Config.includeEmptyMobs) addNEIMobRecipe(e, new ArrayList<>());
+                GeneralMobList.put(k, new GeneralMappedMob(e, null, new ArrayList<>()));
                 LOG.info("Entity " + k + " doesn't drop any items, skipping EEC Recipe map");
                 return;
             }
@@ -827,14 +830,8 @@ public class MobRecipeLoader {
                         drop.isDamageRandomized ? drop.damagesPossible : null));
             }
 
-            if (ModUtils.isClientSided) addNEIMobRecipe(e, moboutputs);
-            if (LoaderReference.EnderIO) {
-                ItemStack sSpawner = new ItemStack(EnderIO.blockPoweredSpawner, 0);
-                NBTTagCompound nbt = new NBTTagCompound();
-                BlockPoweredSpawner.writeMobTypeToNBT(nbt, k);
-                sSpawner.setTagCompound(nbt);
-                MobNameToRecipeMap.put(k, new MobRecipe(e, moboutputs));
-            }
+            GeneralMobList.put(k, new GeneralMappedMob(e, new MobRecipe(e, moboutputs), moboutputs));
+
             LOG.info("Mapped " + k);
         });
 
@@ -844,10 +841,42 @@ public class MobRecipeLoader {
         LOG.info("Recipe map generated ! It took " + time + "ms");
 
         isInGenerationProcess = false;
+    }
 
-        if (ModUtils.isClientSided) {
-            LOG.info("Sorting NEI map");
-            Mob_Handler.sortCachedRecipes();
-        }
+    public static void processMobRecipeMap() {
+        LOG.info("Loading config");
+        if (isClientSided) Mob_Handler.clearRecipes();
+        MobNameToRecipeMap.clear();
+        LoadConfigPacket.instance.mobsToLoad.clear();
+        GeneralMobList.forEach((k, v) -> {
+            if (Arrays.asList(Config.mobBlacklist).contains(k)) {
+                LOG.info("Entity " + k + " is blacklisted, skipping");
+                return;
+            }
+            if (v.drops.isEmpty()) {
+                LOG.info("Entity " + k + " doesn't drop any items, skipping EEC map");
+                if (!Config.includeEmptyMobs) return;
+                LoadConfigPacket.instance.mobsToLoad.add(k);
+                LOG.info("Registered " + k);
+                return;
+            }
+            if (v.recipe != null) MobNameToRecipeMap.put(k, v.recipe);
+            LoadConfigPacket.instance.mobsToLoad.add(k);
+            LOG.info("Registered " + k);
+        });
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static void processMobRecipeMap(HashSet<String> mobs) {
+        if (isClientSided) Mob_Handler.clearRecipes();
+        MobNameToRecipeMap.clear();
+        mobs.forEach(k -> {
+            GeneralMappedMob v = GeneralMobList.get(k);
+            Mob_Handler.addRecipe(v.mob, v.drops);
+            if (v.recipe != null) MobNameToRecipeMap.put(k, v.recipe);
+            LOG.info("Registered " + k);
+        });
+        LOG.info("Sorting NEI map");
+        Mob_Handler.sortCachedRecipes();
     }
 }

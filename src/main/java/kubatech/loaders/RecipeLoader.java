@@ -71,7 +71,7 @@ public class RecipeLoader {
         if (lateRecipesInitialized) return;
         lateRecipesInitialized = true;
 
-        // GT_MetaTileEntity_ExtremeExterminationChamber.initializeRecipeMap();
         MobRecipeLoader.generateMobRecipeMap();
+        MobRecipeLoader.processMobRecipeMap();
     }
 }

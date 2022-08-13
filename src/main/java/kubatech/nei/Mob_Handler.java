@@ -157,6 +157,10 @@ public class Mob_Handler extends TemplateRecipeHandler {
         cachedRecipes.add(new MobCachedRecipe(e, l, normaldrops, raredrops, additionaldrops, infernalDrops));
     }
 
+    public static void clearRecipes() {
+        cachedRecipes.clear();
+    }
+
     public static void sortCachedRecipes() {
         cachedRecipes.sort((o1, o2) -> {
             boolean m1 = o1.mod.equals("Minecraft");
