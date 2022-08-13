@@ -26,7 +26,6 @@ import codechicken.lib.gui.GuiDraw;
 import codechicken.nei.NEIClientUtils;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.*;
-import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.event.FMLInterModComms;
 import crazypants.enderio.EnderIO;
 import crazypants.enderio.machine.spawner.BlockPoweredSpawner;
@@ -36,6 +35,7 @@ import java.lang.reflect.Field;
 import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.List;
+import kubatech.api.LoaderReference;
 import kubatech.api.utils.FastRandom;
 import kubatech.api.utils.InfernalHelper;
 import kubatech.api.utils.ModUtils;
@@ -420,8 +420,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
     @Override
     public void loadUsageRecipes(ItemStack ingredient) {
-        if (Loader.isModLoaded("EnderIO")
-                && ingredient.getItem() == Item.getItemFromBlock(EnderIO.blockPoweredSpawner)) {
+        if (LoaderReference.EnderIO && ingredient.getItem() == Item.getItemFromBlock(EnderIO.blockPoweredSpawner)) {
             if (!ingredient.hasTagCompound() || !ingredient.getTagCompound().hasKey("mobType")) {
                 loadCraftingRecipes(getOverlayIdentifier(), (Object) null);
                 return;
@@ -549,7 +548,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 this.mInput.add(new ItemStack(Items.spawn_egg, 1, id));
                 this.mInput.add(new ItemStack(Blocks.mob_spawner, 1, id));
             }
-            if (Loader.isModLoaded("EnderIO")) {
+            if (LoaderReference.EnderIO) {
                 ItemStack s = new ItemStack(EnderIO.blockPoweredSpawner, 1);
                 NBTTagCompound nbt = new NBTTagCompound();
                 BlockPoweredSpawner.writeMobTypeToNBT(nbt, mobname);
@@ -558,7 +557,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
             } else if (id == 0) this.mInput.add(new ItemStack(Items.spawn_egg, 1, 0)); // ???
             ingredient = new PositionedStack(this.mInput.get(0), 38, 44, false);
 
-            if (!Loader.isModLoaded("InfernalMobs")) infernaltype = -1; // not supported
+            if (!LoaderReference.InfernalMobs) infernaltype = -1; // not supported
             else {
                 if (!InfernalHelper.isClassAllowed(mob)) infernaltype = 0; // not allowed
                 else if (InfernalHelper.checkEntityClassForced(mob)) infernaltype = 2; // forced

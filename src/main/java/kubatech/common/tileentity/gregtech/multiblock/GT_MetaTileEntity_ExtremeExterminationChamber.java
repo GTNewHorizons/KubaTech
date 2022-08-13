@@ -33,7 +33,6 @@ import WayofTime.alchemicalWizardry.common.rituals.RitualEffectWellOfSuffering;
 import WayofTime.alchemicalWizardry.common.tileEntity.TEMasterStone;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
-import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import crazypants.enderio.EnderIO;
@@ -119,7 +118,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                                             1)))
                     .addElement(
                             's',
-                            Loader.isModLoaded("ExtraUtilities")
+                            LoaderReference.ExtraUtilities
                                     ? ofBlock(Block.getBlockFromName("ExtraUtilities:spike_base_diamond"), 0)
                                     : isAir())
                     .build();
@@ -265,7 +264,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
 
                 if (world.getWorldTime() % RitualEffectWellOfSuffering.timeDelay != 0) return;
 
-                if (tileAltar == null || ((TileEntity) tileAltar).isInvalid()) {
+                if (tileAltar == null || tileAltar.isInvalid()) {
                     tileAltar = null;
                     for (int i = -5; i <= 5; i++)
                         for (int j = -5; j <= 5; j++)
@@ -345,7 +344,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     }
 
     private boolean connectToRitual() {
-        if (!Loader.isModLoaded("AWWayofTime")) return false;
+        if (!LoaderReference.BloodMagic) return false;
         ChunkCoordinates coords = this.getBaseMetaTileEntity().getCoords();
         int[] abc = new int[] {0, -8, 2};
         int[] xyz = new int[] {0, 0, 0};

@@ -25,7 +25,6 @@ import static kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_E
 import atomicstryker.infernalmobs.common.InfernalMobsCore;
 import atomicstryker.infernalmobs.common.MobModifier;
 import atomicstryker.infernalmobs.common.mods.api.ModifierLoader;
-import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -39,6 +38,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import kubatech.Config;
 import kubatech.Tags;
+import kubatech.api.LoaderReference;
 import kubatech.api.utils.InfernalHelper;
 import kubatech.api.utils.ModUtils;
 import kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
@@ -97,7 +97,7 @@ public class MobRecipeLoader {
         public static droplist infernaldrops;
 
         public MobRecipe(EntityLiving e, ArrayList<MobDrop> outputs) {
-            if (infernaldrops == null && Loader.isModLoaded("InfernalMobs")) {
+            if (infernaldrops == null && LoaderReference.InfernalMobs) {
                 infernaldrops = new droplist();
                 LOG.info("Generating Infernal drops");
                 ArrayList<ModifierLoader<?>> modifierLoaders = (ArrayList<ModifierLoader<?>>)
@@ -718,7 +718,7 @@ public class MobRecipeLoader {
                     for (int j = 0, lastActiveItemsLength = lastActiveItems.length; j < lastActiveItemsLength; j++) {
                         ItemStack stack = lastActiveItems[j];
                         if (stack != null) {
-                            if (Loader.isModLoaded("Thaumcraft"))
+                            if (LoaderReference.Thaumcraft)
                                 if (stack.getItem() instanceof ItemWandCasting)
                                     continue; // crashes the game when rendering in GUI
 
@@ -825,7 +825,7 @@ public class MobRecipeLoader {
             }
 
             if (ModUtils.isClientSided) addNEIMobRecipe(e, moboutputs);
-            if (Loader.isModLoaded("EnderIO")) {
+            if (LoaderReference.EnderIO) {
                 ItemStack sSpawner = new ItemStack(EnderIO.blockPoweredSpawner, 0);
                 NBTTagCompound nbt = new NBTTagCompound();
                 BlockPoweredSpawner.writeMobTypeToNBT(nbt, k);
