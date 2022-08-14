@@ -70,7 +70,7 @@ import org.lwjgl.opengl.GL11;
 
 public class Mob_Handler extends TemplateRecipeHandler {
 
-    static enum Translations {
+    enum Translations {
         NORMAL_DROPS,
         RARE_DROPS,
         ADDITIONAL_DROPS,
@@ -91,6 +91,10 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
         public String get() {
             return StatCollector.translateToLocal(key);
+        }
+
+        public String get(Object... args) {
+            return StatCollector.translateToLocalFormatted(key, args);
         }
 
         public String getKey() {

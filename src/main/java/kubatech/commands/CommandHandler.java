@@ -19,6 +19,8 @@
 
 package kubatech.commands;
 
+import static kubatech.commands.CommandHandler.Translations.*;
+
 import java.util.*;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommand;
@@ -26,8 +28,39 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
 
 public class CommandHandler extends CommandBase {
+    enum Translations {
+        INVALID,
+        CANT_FIND,
+        GENERIC_HELP,
+        USAGE,
+        ;
+        final String key;
+
+        Translations() {
+            key = "commandhandler." + this.name().toLowerCase();
+        }
+
+        public String get() {
+            return StatCollector.translateToLocal(key);
+        }
+
+        public String get(Object... args) {
+            return StatCollector.translateToLocalFormatted(key, args);
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public String toString() {
+            return get();
+        }
+    }
+
     private static final ArrayList<String> aliases = new ArrayList<>(Collections.singleton("kt"));
     public static final HashMap<String, ICommand> commands = new HashMap<>();
 
@@ -38,7 +71,7 @@ public class CommandHandler extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender p_71518_1_) {
-        return "kubatech <option>";
+        return "kubatech " + USAGE.get();
     }
 
     @Override
@@ -50,17 +83,13 @@ public class CommandHandler extends CommandBase {
     public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_) {
         if (p_71515_1_.getEntityWorld().isRemote) return;
         if (p_71515_2_.length == 0) {
-            p_71515_1_.addChatMessage(new ChatComponentText(EnumChatFormatting.RED
-                    + "Invalid use ! The proper use of this command is: /" + getCommandUsage(p_71515_1_)));
-            p_71515_1_.addChatMessage(new ChatComponentText(
-                    EnumChatFormatting.RED + "You can also use \"/kubatech help\" to get possible commands"));
+            p_71515_1_.addChatMessage(new ChatComponentText(INVALID.get(getCommandUsage(p_71515_1_))));
+            p_71515_1_.addChatMessage(new ChatComponentText(GENERIC_HELP.get()));
             return;
         }
         if (!commands.containsKey(p_71515_2_[0])) {
-            p_71515_1_.addChatMessage(
-                    new ChatComponentText(EnumChatFormatting.RED + "Can't find command option " + p_71515_2_[0]));
-            p_71515_1_.addChatMessage(new ChatComponentText(
-                    EnumChatFormatting.RED + "You can also use \"/kubatech help\" to get possible commands"));
+            p_71515_1_.addChatMessage(new ChatComponentText(CANT_FIND.get(p_71515_2_[0])));
+            p_71515_1_.addChatMessage(new ChatComponentText(GENERIC_HELP.get()));
             return;
         }
         ICommand cmd = commands.get(p_71515_2_[0]);

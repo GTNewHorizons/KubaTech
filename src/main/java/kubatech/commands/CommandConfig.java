@@ -19,6 +19,8 @@
 
 package kubatech.commands;
 
+import static kubatech.commands.CommandConfig.Translations.*;
+
 import kubatech.Config;
 import kubatech.kubatech;
 import kubatech.loaders.MobRecipeLoader;
@@ -28,9 +30,37 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
 
 public class CommandConfig extends CommandBase {
+    enum Translations {
+        INVALID_OPTION,
+        SUCCESS,
+        USAGE,
+        ;
+        final String key;
+
+        Translations() {
+            key = "command.config." + this.name().toLowerCase();
+        }
+
+        public String get() {
+            return StatCollector.translateToLocal(key);
+        }
+
+        public String get(Object... args) {
+            return StatCollector.translateToLocalFormatted(key, args);
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public String toString() {
+            return get();
+        }
+    }
 
     @Override
     public String getCommandName() {
@@ -39,7 +69,7 @@ public class CommandConfig extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender p_71518_1_) {
-        return "config <option>";
+        return "config " + USAGE.get();
     }
 
     @Override
@@ -51,8 +81,7 @@ public class CommandConfig extends CommandBase {
     @Override
     public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_) {
         if (p_71515_2_.length == 0 || !p_71515_2_[0].equals("reload")) {
-            p_71515_1_.addChatMessage(
-                    new ChatComponentText(EnumChatFormatting.RED + "Invalid option ! Possible options: reload"));
+            p_71515_1_.addChatMessage(new ChatComponentText(INVALID_OPTION.get()));
             return;
         }
         Config.synchronizeConfiguration();
@@ -62,6 +91,6 @@ public class CommandConfig extends CommandBase {
             kubatech.info("Sending config to " + ((EntityPlayerMP) p).getDisplayName());
             kubatech.NETWORK.sendTo(LoadConfigPacket.instance, (EntityPlayerMP) p);
         });
-        p_71515_1_.addChatMessage(new ChatComponentText(EnumChatFormatting.GREEN + "Config reloaded successfully !"));
+        p_71515_1_.addChatMessage(new ChatComponentText(SUCCESS.get()));
     }
 }
