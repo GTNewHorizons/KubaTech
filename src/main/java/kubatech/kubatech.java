@@ -36,7 +36,8 @@ import org.apache.logging.log4j.Logger;
         name = Tags.MODNAME,
         acceptedMinecraftVersions = "[1.7.10]",
         dependencies = "required-after:gregtech; " + "required-after:spongemixins@[1.4.0,); " + "after:EnderIO; "
-                + "after:AWWayofTime; " + "after:ExtraUtilities; " + "after: InfernalMobs; " + "after: Thaumcraft; ")
+                + "after:AWWayofTime; " + "after:ExtraUtilities; " + "after: InfernalMobs; " + "after: Thaumcraft; "
+                + "after: MineTweaker3; ")
 public class kubatech {
 
     public static kubatech instance = null;

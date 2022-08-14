@@ -35,6 +35,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.stream.Collectors;
 import kubatech.Config;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
@@ -42,6 +43,10 @@ import kubatech.api.utils.InfernalHelper;
 import kubatech.common.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 import kubatech.nei.Mob_Handler;
 import kubatech.network.LoadConfigPacket;
+import minetweaker.MineTweakerAPI;
+import minetweaker.api.entity.IEntityDefinition;
+import minetweaker.api.item.IItemStack;
+import minetweaker.mc1710.item.MCItemStack;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
@@ -61,6 +66,7 @@ import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import stanhebben.zenscript.value.IntRange;
 import thaumcraft.common.items.wands.ItemWandCasting;
 
 public class MobRecipeLoader {
@@ -95,8 +101,35 @@ public class MobRecipeLoader {
         public final boolean infernalityAllowed;
         public final boolean alwaysinfernal;
         public static droplist infernaldrops;
-        public boolean isPeacefulAllowed;
+        public final boolean isPeacefulAllowed;
 
+        @SuppressWarnings("unchecked")
+        public MobRecipe copy() {
+            return new MobRecipe(
+                    (ArrayList<MobDrop>) mOutputs.clone(),
+                    mDuration,
+                    mMaxDamageChance,
+                    infernalityAllowed,
+                    alwaysinfernal,
+                    isPeacefulAllowed);
+        }
+
+        private MobRecipe(
+                ArrayList<MobDrop> mOutputs,
+                int mDuration,
+                int mMaxDamageChance,
+                boolean infernalityAllowed,
+                boolean alwaysinfernal,
+                boolean isPeacefulAllowed) {
+            this.mOutputs = mOutputs;
+            this.mDuration = mDuration;
+            this.mMaxDamageChance = mMaxDamageChance;
+            this.infernalityAllowed = infernalityAllowed;
+            this.alwaysinfernal = alwaysinfernal;
+            this.isPeacefulAllowed = isPeacefulAllowed;
+        }
+
+        @SuppressWarnings("unchecked")
         public MobRecipe(EntityLiving e, ArrayList<MobDrop> outputs) {
             if (infernaldrops == null && LoaderReference.InfernalMobs) {
                 infernaldrops = new droplist();
@@ -845,6 +878,7 @@ public class MobRecipeLoader {
 
     public static void processMobRecipeMap() {
         LOG.info("Loading config");
+
         if (isClientSided) Mob_Handler.clearRecipes();
         MobNameToRecipeMap.clear();
         LoadConfigPacket.instance.mobsToLoad.clear();
@@ -853,14 +887,24 @@ public class MobRecipeLoader {
                 LOG.info("Entity " + k + " is blacklisted, skipping");
                 return;
             }
-            if (v.drops.isEmpty()) {
+
+            MobRecipe recipe = v.recipe;
+            if (recipe != null) recipe = recipe.copy();
+            ArrayList<MobDrop> drops = (ArrayList<MobDrop>) v.drops.clone();
+
+            // MT Scripts should already be loaded here
+            if (LoaderReference.MineTweaker) {
+                Optionals.parseMTAdditions(k, drops, recipe);
+            }
+
+            if (drops.isEmpty()) {
                 LOG.info("Entity " + k + " doesn't drop any items, skipping EEC map");
                 if (!Config.includeEmptyMobs) return;
                 LoadConfigPacket.instance.mobsToLoad.add(k);
                 LOG.info("Registered " + k);
                 return;
             }
-            if (v.recipe != null) MobNameToRecipeMap.put(k, v.recipe);
+            if (v.recipe != null) MobNameToRecipeMap.put(k, recipe);
             LoadConfigPacket.instance.mobsToLoad.add(k);
             LOG.info("Registered " + k);
         });
@@ -872,11 +916,58 @@ public class MobRecipeLoader {
         MobNameToRecipeMap.clear();
         mobs.forEach(k -> {
             GeneralMappedMob v = GeneralMobList.get(k);
-            Mob_Handler.addRecipe(v.mob, v.drops);
-            if (v.recipe != null) MobNameToRecipeMap.put(k, v.recipe);
+            MobRecipe recipe = v.recipe;
+            if (recipe != null) recipe = recipe.copy();
+            ArrayList<MobDrop> drops = (ArrayList<MobDrop>) v.drops.clone();
+
+            // MT Scripts should already be loaded here
+            if (LoaderReference.MineTweaker) {
+                Optionals.parseMTAdditions(k, drops, recipe);
+            }
+
+            Mob_Handler.addRecipe(v.mob, drops);
+            if (recipe != null) MobNameToRecipeMap.put(k, recipe);
             LOG.info("Registered " + k);
         });
         LOG.info("Sorting NEI map");
         Mob_Handler.sortCachedRecipes();
+    }
+
+    private static class Optionals {
+        private static void parseMTAdditions(String k, ArrayList<MobDrop> drops, MobRecipe recipe) {
+            IEntityDefinition ie = MineTweakerAPI.game.getEntity(k);
+            if (ie != null) {
+                for (Map.Entry<IItemStack, IntRange> entry : ie.getDropsToAdd().entrySet()) {
+                    IntRange r = entry.getValue();
+                    // Get average chance
+                    double chance;
+                    if (r.getFrom() == 0 && r.getTo() == 0) chance = 1d;
+                    else chance = (((double) r.getTo() - (double) r.getFrom()) / 2d) + (double) r.getFrom();
+                    ItemStack stack = ((ItemStack) entry.getKey().getInternal()).copy();
+                    MobDrop drop = new MobDrop(stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null);
+                    drops.add(drop);
+                    if (recipe != null) recipe.mOutputs.add(drop);
+                }
+                for (Map.Entry<IItemStack, IntRange> entry :
+                        ie.getDropsToAddPlayerOnly().entrySet()) {
+                    IntRange r = entry.getValue();
+                    // Get average chance
+                    double chance;
+                    if (r.getFrom() == 0 && r.getTo() == 0) chance = 1d;
+                    else chance = (((double) r.getTo() - (double) r.getFrom()) / 2d) + (double) r.getFrom();
+                    ItemStack stack = ((ItemStack) entry.getKey().getInternal()).copy();
+                    MobDrop drop = new MobDrop(stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null);
+                    drops.add(drop);
+                    if (recipe != null) recipe.mOutputs.add(drop);
+                }
+                for (IItemStack istack : ie.getDropsToRemove()) {
+                    List<MobDrop> toRemove = drops.stream()
+                            .filter(d -> istack.matches(new MCItemStack(d.stack)))
+                            .collect(Collectors.toList());
+                    drops.removeAll(toRemove);
+                    if (recipe != null) recipe.mOutputs.removeAll(toRemove);
+                }
+            }
+        }
     }
 }
