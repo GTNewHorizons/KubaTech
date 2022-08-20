@@ -36,6 +36,7 @@ import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.List;
 import kubatech.api.LoaderReference;
+import kubatech.api.mobhandler.MobDrop;
 import kubatech.api.utils.FastRandom;
 import kubatech.api.utils.InfernalHelper;
 import kubatech.api.utils.MobUtils;
@@ -108,7 +109,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
     public static int cycleTicksStatic = Math.abs((int) System.currentTimeMillis());
     private static final int itemsPerRow = 8, itemXShift = 18, itemYShift = 18, nextRowYShift = 35;
 
-    public static void addRecipe(EntityLiving e, List<MobRecipeLoader.MobDrop> drop) {
+    public static void addRecipe(EntityLiving e, List<MobDrop> drop) {
         List<MobPositionedStack> positionedStacks = new ArrayList<>();
         int xorigin = 7,
                 xoffset = xorigin,
@@ -117,8 +118,8 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 raredrops = 0,
                 additionaldrops = 0,
                 infernaldrops = 0;
-        MobRecipeLoader.MobDrop.DropType i = null;
-        for (MobRecipeLoader.MobDrop d : drop) {
+        MobDrop.DropType i = null;
+        for (MobDrop d : drop) {
             if (i == d.type) {
                 xoffset += itemXShift;
                 if (xoffset >= xorigin + (itemXShift * itemsPerRow)) {
@@ -131,10 +132,10 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 yoffset += nextRowYShift;
             }
             i = d.type;
-            if (d.type == MobRecipeLoader.MobDrop.DropType.Normal) normaldrops++;
-            else if (d.type == MobRecipeLoader.MobDrop.DropType.Rare) raredrops++;
-            else if (d.type == MobRecipeLoader.MobDrop.DropType.Additional) additionaldrops++;
-            else if (d.type == MobRecipeLoader.MobDrop.DropType.Infernal) break; // dont render infernal drops
+            if (d.type == MobDrop.DropType.Normal) normaldrops++;
+            else if (d.type == MobDrop.DropType.Rare) raredrops++;
+            else if (d.type == MobDrop.DropType.Additional) additionaldrops++;
+            else if (d.type == MobDrop.DropType.Infernal) break; // dont render infernal drops
             positionedStacks.add(new MobPositionedStack(
                     d.stack.copy(),
                     xoffset,
@@ -424,7 +425,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
     public static class MobPositionedStack extends PositionedStack {
 
-        public final MobRecipeLoader.MobDrop.DropType type;
+        public final MobDrop.DropType type;
         public final int chance;
         public final boolean enchantable;
         public final boolean randomdamage;
@@ -436,7 +437,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 Object object,
                 int x,
                 int y,
-                MobRecipeLoader.MobDrop.DropType type,
+                MobDrop.DropType type,
                 int chance,
                 Integer enchantable,
                 List<Integer> damages) {

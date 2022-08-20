@@ -42,13 +42,15 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
-import kubatech.Config;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
+import kubatech.api.mobhandler.MobDrop;
 import kubatech.api.network.LoadConfigPacket;
 import kubatech.api.utils.GSONUtils;
 import kubatech.api.utils.InfernalHelper;
 import kubatech.api.utils.ModUtils;
+import kubatech.config.Config;
+import kubatech.config.OverridesConfig;
 import kubatech.nei.Mob_Handler;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 import minetweaker.MineTweakerAPI;
@@ -261,38 +263,6 @@ public class MobRecipeLoader {
             }
 
             return stacks.toArray(new ItemStack[0]);
-        }
-    }
-
-    public static class MobDrop {
-        public enum DropType {
-            Normal,
-            Rare,
-            Additional,
-            Infernal
-        }
-
-        @GSONUtils.SkipGSON
-        public ItemStack stack;
-
-        public NBTTagCompound reconstructableStack;
-        public DropType type;
-        public int chance;
-        public Integer enchantable;
-        public HashMap<Integer, Integer> damages;
-
-        public MobDrop(
-                ItemStack stack, DropType type, int chance, Integer enchantable, HashMap<Integer, Integer> damages) {
-            this.stack = stack;
-            this.reconstructableStack = stack.writeToNBT(new NBTTagCompound());
-            this.type = type;
-            this.chance = chance;
-            this.enchantable = enchantable;
-            this.damages = damages;
-        }
-
-        public void reconstructStack() {
-            this.stack = ItemStack.loadItemStackFromNBT(this.reconstructableStack);
         }
     }
 
@@ -973,13 +943,18 @@ public class MobRecipeLoader {
     public static void processMobRecipeMap() {
         LOG.info("Loading config");
 
+        OverridesConfig.LoadConfig();
+
         if (isClientSided) Mob_Handler.clearRecipes();
         MobNameToRecipeMap.clear();
         LoadConfigPacket.instance.mobsToLoad.clear();
-        GeneralMobList.forEach((k, v) -> {
+        LoadConfigPacket.instance.mobsOverrides.clear();
+        for (Map.Entry<String, GeneralMappedMob> entry : GeneralMobList.entrySet()) {
+            String k = entry.getKey();
+            GeneralMappedMob v = entry.getValue();
             if (Arrays.asList(Config.mobBlacklist).contains(k)) {
                 LOG.info("Entity " + k + " is blacklisted, skipping");
-                return;
+                continue;
             }
 
             MobRecipe recipe = v.recipe;
@@ -992,21 +967,35 @@ public class MobRecipeLoader {
                 Optionals.parseMTAdditions(k, drops, recipe);
             }
 
+            OverridesConfig.MobOverride override = null;
+            if ((override = OverridesConfig.overrides.get(k)) != null) {
+                if (override.removeAll) drops.clear();
+                else
+                    for (OverridesConfig.MobDropSimplified removal : override.removals) {
+                        drops.removeIf(removal::isMatching);
+                        if (recipe != null) recipe.mOutputs.removeIf(removal::isMatching);
+                    }
+                drops.addAll(override.additions);
+                if (recipe != null) recipe.mOutputs.addAll(override.additions);
+                LoadConfigPacket.instance.mobsOverrides.put(k, override);
+            }
+
             if (drops.isEmpty()) {
                 LOG.info("Entity " + k + " doesn't drop any items, skipping EEC map");
-                if (!Config.includeEmptyMobs) return;
+                if (!Config.includeEmptyMobs) continue;
                 LoadConfigPacket.instance.mobsToLoad.add(k);
                 LOG.info("Registered " + k);
-                return;
+                continue;
             }
             if (v.recipe != null) MobNameToRecipeMap.put(k, recipe);
             LoadConfigPacket.instance.mobsToLoad.add(k);
             LOG.info("Registered " + k);
-        });
+        }
     }
 
     @SideOnly(Side.CLIENT)
-    public static void processMobRecipeMap(HashSet<String> mobs) {
+    public static void processMobRecipeMap(
+            HashSet<String> mobs, HashMap<String, OverridesConfig.MobOverride> overrides) {
         if (isClientSided) Mob_Handler.clearRecipes();
         MobNameToRecipeMap.clear();
         mobs.forEach(k -> {
@@ -1019,6 +1008,19 @@ public class MobRecipeLoader {
             // MT Scripts should already be loaded here
             if (LoaderReference.MineTweaker) {
                 Optionals.parseMTAdditions(k, drops, recipe);
+            }
+
+            OverridesConfig.MobOverride override = null;
+            if ((override = overrides.get(k)) != null) {
+                if (override.removeAll) drops.clear();
+                else
+                    for (OverridesConfig.MobDropSimplified removal : override.removals) {
+                        drops.removeIf(removal::isMatching);
+                        if (recipe != null) recipe.mOutputs.removeIf(removal::isMatching);
+                    }
+                drops.addAll(override.additions);
+                if (recipe != null) recipe.mOutputs.addAll(override.additions);
+                drops.sort(Comparator.comparing(d -> d.type)); // Fix gui
             }
 
             Mob_Handler.addRecipe(v.mob, drops);
