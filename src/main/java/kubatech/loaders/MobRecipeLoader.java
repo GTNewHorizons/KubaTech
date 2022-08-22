@@ -811,26 +811,6 @@ public class MobRecipeLoader {
                 }
             } while (frand.nextRound());
 
-            LOG.info("Generating rare drops with looting");
-
-            frand.newRound();
-            collector.newRound();
-
-            do {
-                try {
-                    dropRareDrop.invoke(e, 1);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    return;
-                }
-                collector.addDrop(raredropslooting, e.capturedDrops, frand.chance);
-
-                if (frand.chance < 0.0000001d) {
-                    LOG.info("Skipping " + k + " rare dropmap because it's too randomized");
-                    break;
-                }
-            } while (frand.nextRound());
-
             LOG.info("Generating additional drops");
 
             frand.newRound();
