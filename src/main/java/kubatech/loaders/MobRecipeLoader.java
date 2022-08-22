@@ -1106,7 +1106,10 @@ public class MobRecipeLoader {
                         if (recipe != null) recipe.mOutputs.removeIf(removal::isMatching);
                     }
                 drops.addAll(override.additions);
-                if (recipe != null) recipe.mOutputs.addAll(override.additions);
+                if (recipe != null)
+                    recipe.mOutputs.addAll(override.additions.stream()
+                            .filter(d -> !d.playerOnly)
+                            .collect(Collectors.toList()));
                 LoadConfigPacket.instance.mobsOverrides.put(k, override);
             }
 
@@ -1149,7 +1152,10 @@ public class MobRecipeLoader {
                         if (recipe != null) recipe.mOutputs.removeIf(removal::isMatching);
                     }
                 drops.addAll(override.additions);
-                if (recipe != null) recipe.mOutputs.addAll(override.additions);
+                if (recipe != null)
+                    recipe.mOutputs.addAll(override.additions.stream()
+                            .filter(d -> !d.playerOnly)
+                            .collect(Collectors.toList()));
                 drops.sort(Comparator.comparing(d -> d.type)); // Fix gui
             }
 
@@ -1175,7 +1181,6 @@ public class MobRecipeLoader {
                     MobDrop drop = new MobDrop(
                             stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, false, true);
                     drops.add(drop);
-                    if (recipe != null) recipe.mOutputs.add(drop);
                 }
                 for (Map.Entry<IItemStack, IntRange> entry :
                         ie.getDropsToAddPlayerOnly().entrySet()) {
@@ -1188,7 +1193,6 @@ public class MobRecipeLoader {
                     MobDrop drop = new MobDrop(
                             stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, false, true);
                     drops.add(drop);
-                    if (recipe != null) recipe.mOutputs.add(drop);
                 }
                 for (IItemStack istack : ie.getDropsToRemove()) {
                     List<MobDrop> toRemove = drops.stream()
