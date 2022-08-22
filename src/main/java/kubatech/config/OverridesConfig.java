@@ -133,10 +133,10 @@ public class OverridesConfig {
                             if (ename == null) continue;
                             MobOverride override = overrides.computeIfAbsent(ename, k -> new MobOverride());
                             for (CustomDrops.CustomDrop.Drop drop : customdrop.getDrops()) {
-                                GameRegistry.UniqueIdentifier UI =
-                                        new GameRegistry.UniqueIdentifier(drop.getItemName());
-                                ItemStack stack = GameRegistry.findItemStack(UI.modId, UI.name, 1);
+                                String[] parts = drop.getItemName().split(":");
+                                ItemStack stack = GameRegistry.findItemStack(parts[0], parts[1], 1);
                                 if (stack == null) continue;
+                                if (parts.length > 2) stack.setItemDamage(Integer.parseInt(parts[2]));
                                 String pNBT = ReflectionHelper.getField(drop, "mTag", null);
                                 if (pNBT != null && !pNBT.isEmpty()) {
                                     try {
