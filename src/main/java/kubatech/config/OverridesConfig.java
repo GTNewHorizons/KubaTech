@@ -111,6 +111,7 @@ public class OverridesConfig {
 
     @SuppressWarnings("UnstableApiUsage")
     public static void LoadConfig() {
+        LOG.info("Loading Config");
         if (overrideFile == null) overrideFile = Config.getConfigFile("MobOverrides.cfg");
         if (!overrideFile.exists()) writeExampleFile();
         Reader reader = null;
@@ -119,6 +120,7 @@ public class OverridesConfig {
             overrides = gson.fromJson(reader, new TypeToken<Map<String, MobOverride>>() {}.getType());
             overrides.remove("ExampleMob");
             if (LoaderReference.GTNHCoreMod) {
+                LOG.info("Detected GTNH Core Mod, parsing custom drops from there.");
                 CustomDrops coredrops =
                         ReflectionHelper.getField(MainRegistry.Module_CustomDrops, "_mCustomDrops", null);
                 if (coredrops != null) {
@@ -181,6 +183,7 @@ public class OverridesConfig {
 
     @SuppressWarnings("UnstableApiUsage")
     private static void writeExampleFile() {
+        LOG.info("No config has been detected, writing an example one");
         Writer writer = null;
         try {
             writer = Files.newWriter(overrideFile, StandardCharsets.UTF_8);
