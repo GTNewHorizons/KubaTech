@@ -945,14 +945,14 @@ public class MobRecipeLoader {
                     LOG.warn("Detected 0% loot, setting to 0.01%");
                     chance = 1;
                 }
-
+                dropinstance dlooting = dropslooting.get(drop);
                 moboutputs.add(new MobDrop(
                         stack,
                         MobDrop.DropType.Normal,
                         chance,
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
                         drop.isDamageRandomized ? drop.damagesPossible : null,
-                        dropslooting.get(drop).dropcount > drop.dropcount,
+                        dlooting != null && dlooting.dropcount > drop.dropcount,
                         false));
             }
             for (dropinstance drop : raredrops.drops) {
