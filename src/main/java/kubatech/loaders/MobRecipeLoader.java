@@ -874,6 +874,10 @@ public class MobRecipeLoader {
                     stack.stackSize *= div;
                     chance /= div;
                 }
+                if (chance == 0) {
+                    LOG.warn("Detected 0% loot, setting to 0.01%");
+                    chance = 1;
+                }
                 moboutputs.add(new MobDrop(
                         stack,
                         MobDrop.DropType.Normal,
@@ -891,6 +895,10 @@ public class MobRecipeLoader {
                     stack.stackSize *= div;
                     chance /= div;
                 }
+                if (chance == 0) {
+                    LOG.warn("Detected 0% loot, setting to 0.01%");
+                    chance = 1;
+                }
                 moboutputs.add(new MobDrop(
                         stack,
                         MobDrop.DropType.Rare,
@@ -907,6 +915,10 @@ public class MobRecipeLoader {
                     int div = (int) Math.ceil(chance / 10000d);
                     stack.stackSize *= div;
                     chance /= div;
+                }
+                if (chance == 0) {
+                    LOG.warn("Detected 0% loot, setting to 0.01%");
+                    chance = 1;
                 }
                 moboutputs.add(new MobDrop(
                         stack,
