@@ -697,9 +697,9 @@ public class MobRecipeLoader {
 
             droplist drops = new droplist();
             droplist raredrops = new droplist();
+            droplist superraredrops = new droplist();
             droplist additionaldrops = new droplist();
             droplist dropslooting = new droplist();
-            droplist raredropslooting = new droplist();
 
             LOG.info("Generating normal drops");
 
@@ -804,6 +804,26 @@ public class MobRecipeLoader {
                     return;
                 }
                 collector.addDrop(raredrops, e.capturedDrops, frand.chance);
+
+                if (frand.chance < 0.0000001d) {
+                    LOG.info("Skipping " + k + " rare dropmap because it's too randomized");
+                    break;
+                }
+            } while (frand.nextRound());
+
+            LOG.info("Generating super rare drops");
+
+            frand.newRound();
+            collector.newRound();
+
+            do {
+                try {
+                    dropRareDrop.invoke(e, 1);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return;
+                }
+                collector.addDrop(superraredrops, e.capturedDrops, frand.chance);
 
                 if (frand.chance < 0.0000001d) {
                     LOG.info("Skipping " + k + " rare dropmap because it's too randomized");
@@ -954,8 +974,31 @@ public class MobRecipeLoader {
                         chance,
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
                         drop.isDamageRandomized ? drop.damagesPossible : null,
-                        raredropslooting.get(drop).dropcount > drop.dropcount,
+                        false,
                         false));
+            }
+            for (dropinstance drop : superraredrops.drops) {
+                if (raredrops.contains(drop)) continue;
+                ItemStack stack = drop.stack;
+                if (stack.hasTagCompound()) stack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
+                int chance = drop.getchance(50);
+                if (chance > 10000) {
+                    int div = (int) Math.ceil(chance / 10000d);
+                    stack.stackSize *= div;
+                    chance /= div;
+                }
+                if (chance == 0) {
+                    LOG.warn("Detected 0% loot, setting to 0.01%");
+                    chance = 1;
+                }
+                moboutputs.add(new MobDrop(
+                        stack,
+                        MobDrop.DropType.Rare,
+                        chance,
+                        drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
+                        drop.isDamageRandomized ? drop.damagesPossible : null,
+                        false,
+                        true));
             }
             for (dropinstance drop : additionaldrops.drops) {
                 ItemStack stack = drop.stack;
