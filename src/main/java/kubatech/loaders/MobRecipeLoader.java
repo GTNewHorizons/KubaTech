@@ -730,6 +730,7 @@ public class MobRecipeLoader {
                 e.capturedDrops.clear();
             }
 
+            boolean second = false;
             do {
                 try {
                     dropFewItems.invoke(e, true, 0);
@@ -739,12 +740,15 @@ public class MobRecipeLoader {
                 }
                 collector.addDrop(drops, e.capturedDrops, frand.chance);
 
-                if (frand.chance < 0.0000001d) {
+                if (second && frand.chance < 0.0000001d) {
                     LOG.info("Skipping " + k + " normal dropmap because it's too randomized");
                     break;
                 }
+                second = true;
 
             } while (frand.nextRound());
+
+            LOG.info("Generating normal drops with looting");
 
             frand.newRound();
             collector.newRound();
@@ -773,8 +777,7 @@ public class MobRecipeLoader {
                 e.capturedDrops.clear();
             }
 
-            LOG.info("Generating normal drops with looting");
-
+            second = false;
             do {
                 try {
                     dropFewItems.invoke(e, true, 1);
@@ -784,10 +787,11 @@ public class MobRecipeLoader {
                 }
                 collector.addDrop(dropslooting, e.capturedDrops, frand.chance);
 
-                if (frand.chance < 0.0000001d) {
+                if (second && frand.chance < 0.0000001d) {
                     LOG.info("Skipping " + k + " normal dropmap because it's too randomized");
                     break;
                 }
+                second = true;
 
             } while (frand.nextRound());
 
@@ -796,6 +800,7 @@ public class MobRecipeLoader {
             frand.newRound();
             collector.newRound();
 
+            second = false;
             do {
                 try {
                     dropRareDrop.invoke(e, 0);
@@ -805,10 +810,12 @@ public class MobRecipeLoader {
                 }
                 collector.addDrop(raredrops, e.capturedDrops, frand.chance);
 
-                if (frand.chance < 0.0000001d) {
+                if (second && frand.chance < 0.0000001d) {
                     LOG.info("Skipping " + k + " rare dropmap because it's too randomized");
                     break;
                 }
+                second = true;
+
             } while (frand.nextRound());
 
             LOG.info("Generating super rare drops");
@@ -816,6 +823,7 @@ public class MobRecipeLoader {
             frand.newRound();
             collector.newRound();
 
+            second = false;
             do {
                 try {
                     dropRareDrop.invoke(e, 1);
@@ -825,10 +833,12 @@ public class MobRecipeLoader {
                 }
                 collector.addDrop(superraredrops, e.capturedDrops, frand.chance);
 
-                if (frand.chance < 0.0000001d) {
+                if (second && frand.chance < 0.0000001d) {
                     LOG.info("Skipping " + k + " rare dropmap because it's too randomized");
                     break;
                 }
+                second = true;
+
             } while (frand.nextRound());
 
             LOG.info("Generating additional drops");
@@ -865,6 +875,7 @@ public class MobRecipeLoader {
                     frand.forceFloatValue = 0f;
                     chanceModifierLocal = 0.25f;
                 }
+                second = false;
                 do {
                     addRandomArmor.invoke(e);
                     if (!usingVanillaEnchantingMethod) enchantEquipment.invoke(e);
@@ -912,10 +923,11 @@ public class MobRecipeLoader {
                     }
                     Arrays.fill(e.getLastActiveItems(), null);
 
-                    if (frand.chance < 0.0000001d) {
+                    if (second && frand.chance < 0.0000001d) {
                         LOG.info("Skipping " + k + " additional dropmap because it's too randomized");
                         break;
                     }
+                    second = true;
 
                 } while (frand.nextRound());
             } catch (Exception ignored) {
