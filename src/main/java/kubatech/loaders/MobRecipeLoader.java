@@ -191,9 +191,14 @@ public class MobRecipeLoader {
             alwaysinfernal = InfernalHelper.checkEntityClassForced(e);
             isPeacefulAllowed = !(e instanceof IMob);
 
-            mOutputs = outputs;
+            mOutputs = (ArrayList<MobDrop>) outputs.clone();
             int maxdamagechance = 0;
-            for (MobDrop o : mOutputs) {
+            for (Iterator<MobDrop> iterator = mOutputs.iterator(); iterator.hasNext(); ) {
+                MobDrop o = iterator.next();
+                if (o.playerOnly) {
+                    iterator.remove();
+                    continue;
+                }
                 if (o.damages != null) for (int v : o.damages.values()) maxdamagechance += v;
             }
             mMaxDamageChance = maxdamagechance;
@@ -873,7 +878,8 @@ public class MobRecipeLoader {
                         MobDrop.DropType.Normal,
                         chance,
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
-                        drop.isDamageRandomized ? drop.damagesPossible : null));
+                        drop.isDamageRandomized ? drop.damagesPossible : null,
+                        false));
             }
             for (dropinstance drop : raredrops.drops) {
                 ItemStack stack = drop.stack;
@@ -888,7 +894,8 @@ public class MobRecipeLoader {
                         MobDrop.DropType.Rare,
                         chance,
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
-                        drop.isDamageRandomized ? drop.damagesPossible : null));
+                        drop.isDamageRandomized ? drop.damagesPossible : null,
+                        false));
             }
             for (dropinstance drop : additionaldrops.drops) {
                 ItemStack stack = drop.stack;
@@ -903,7 +910,8 @@ public class MobRecipeLoader {
                         MobDrop.DropType.Additional,
                         chance,
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
-                        drop.isDamageRandomized ? drop.damagesPossible : null));
+                        drop.isDamageRandomized ? drop.damagesPossible : null,
+                        false));
             }
 
             GeneralMobList.put(k, new GeneralMappedMob(e, new MobRecipe(e, moboutputs), moboutputs));
@@ -1042,7 +1050,8 @@ public class MobRecipeLoader {
                     if (r.getFrom() == 0 && r.getTo() == 0) chance = 1d;
                     else chance = (((double) r.getTo() - (double) r.getFrom()) / 2d) + (double) r.getFrom();
                     ItemStack stack = ((ItemStack) entry.getKey().getInternal()).copy();
-                    MobDrop drop = new MobDrop(stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null);
+                    MobDrop drop =
+                            new MobDrop(stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, true);
                     drops.add(drop);
                     if (recipe != null) recipe.mOutputs.add(drop);
                 }
@@ -1054,7 +1063,8 @@ public class MobRecipeLoader {
                     if (r.getFrom() == 0 && r.getTo() == 0) chance = 1d;
                     else chance = (((double) r.getTo() - (double) r.getFrom()) / 2d) + (double) r.getFrom();
                     ItemStack stack = ((ItemStack) entry.getKey().getInternal()).copy();
-                    MobDrop drop = new MobDrop(stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null);
+                    MobDrop drop =
+                            new MobDrop(stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, true);
                     drops.add(drop);
                     if (recipe != null) recipe.mOutputs.add(drop);
                 }

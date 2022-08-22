@@ -28,16 +28,24 @@ public class MobDrop {
     public int chance;
     public Integer enchantable;
     public HashMap<Integer, Integer> damages;
+    public boolean playerOnly = false;
 
     private MobDrop() {}
 
-    public MobDrop(ItemStack stack, DropType type, int chance, Integer enchantable, HashMap<Integer, Integer> damages) {
+    public MobDrop(
+            ItemStack stack,
+            DropType type,
+            int chance,
+            Integer enchantable,
+            HashMap<Integer, Integer> damages,
+            boolean playerOnly) {
         this.stack = stack;
         this.reconstructableStack = new ConstructableItemStack(stack);
         this.type = type;
         this.chance = chance;
         this.enchantable = enchantable;
         this.damages = damages;
+        this.playerOnly = playerOnly;
     }
 
     public void reconstructStack() {
@@ -61,6 +69,7 @@ public class MobDrop {
                 BufHelper.writeInt(v);
             });
         }
+        BufHelper.writeBoolean(playerOnly);
         byteBuf.writeInt(BufHelper.readableBytes());
         byteBuf.writeBytes(BufHelper);
     }
@@ -78,6 +87,7 @@ public class MobDrop {
             int damagessize = byteBuf.readInt();
             for (int i = 0; i < damagessize; i++) mobDrop.damages.put(byteBuf.readInt(), byteBuf.readInt());
         } else mobDrop.damages = null;
+        mobDrop.playerOnly = byteBuf.readBoolean();
         mobDrop.reconstructStack();
         return mobDrop;
     }
