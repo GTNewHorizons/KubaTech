@@ -470,6 +470,7 @@ public class MobRecipeLoader {
                 if (randomchomenchantdetected) {
                     randomenchantmentlevel = ostack.stackTagCompound.getInteger(randomEnchantmentDetectedString);
                     ostack.stackTagCompound.removeTag("ench");
+                    ostack.stackTagCompound.setInteger(randomEnchantmentDetectedString, 0);
                 }
                 if ((booksAlwaysRandomlyEnchanted || randomchomenchantdetected)
                         && Items.enchanted_book == ostack.getItem()) {
