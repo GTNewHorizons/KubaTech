@@ -869,9 +869,10 @@ public class MobRecipeLoader {
                 ItemStack stack = drop.stack;
                 if (stack.hasTagCompound()) stack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
                 int chance = drop.getchance(10000);
-                while (chance > 10000) {
-                    stack.stackSize *= 2;
-                    chance /= 2;
+                if (chance > 10000) {
+                    int div = (int) Math.ceil(chance / 10000d);
+                    stack.stackSize *= div;
+                    chance /= div;
                 }
                 moboutputs.add(new MobDrop(
                         stack,
@@ -885,9 +886,10 @@ public class MobRecipeLoader {
                 ItemStack stack = drop.stack;
                 if (stack.hasTagCompound()) stack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
                 int chance = drop.getchance(250);
-                while (chance > 10000) {
-                    stack.stackSize *= 2;
-                    chance /= 2;
+                if (chance > 10000) {
+                    int div = (int) Math.ceil(chance / 10000d);
+                    stack.stackSize *= div;
+                    chance /= div;
                 }
                 moboutputs.add(new MobDrop(
                         stack,
@@ -901,9 +903,10 @@ public class MobRecipeLoader {
                 ItemStack stack = drop.stack;
                 if (stack.hasTagCompound()) stack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
                 int chance = drop.getchance(850);
-                while (chance > 10000) {
-                    stack.stackSize *= 2;
-                    chance /= 2;
+                if (chance > 10000) {
+                    int div = (int) Math.ceil(chance / 10000d);
+                    stack.stackSize *= div;
+                    chance /= div;
                 }
                 moboutputs.add(new MobDrop(
                         stack,
