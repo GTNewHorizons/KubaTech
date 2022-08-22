@@ -36,29 +36,29 @@ public class OverridesConfig {
         @GSONUtils.SkipGSON
         ItemStack stack;
 
-        ConstructableItemStack stackConstructable;
+        ConstructableItemStack reconstructableStack;
         MobDrop.DropType type;
 
         private MobDropSimplified() {}
 
         public MobDropSimplified(ItemStack stack, MobDrop.DropType type) {
-            stackConstructable = new ConstructableItemStack(stack);
+            reconstructableStack = new ConstructableItemStack(stack);
             this.type = type;
         }
 
         public void reconstructStack() {
-            stack = stackConstructable.construct();
+            stack = reconstructableStack.construct();
         }
 
         public boolean isMatching(MobDrop drop) {
-            return stackConstructable.isSame(drop.reconstructableStack, true);
+            return reconstructableStack.isSame(drop.reconstructableStack, true);
         }
 
         private static final ByteBuf BufHelper = Unpooled.buffer();
 
         public void writeToByteBuf(ByteBuf byteBuf) {
             BufHelper.clear();
-            stackConstructable.writeToByteBuf(BufHelper);
+            reconstructableStack.writeToByteBuf(BufHelper);
             BufHelper.writeInt(type.ordinal());
             byteBuf.writeInt(BufHelper.readableBytes());
             byteBuf.writeBytes(BufHelper);
@@ -67,7 +67,7 @@ public class OverridesConfig {
         public static MobDropSimplified readFromByteBuf(ByteBuf byteBuf) {
             MobDropSimplified mobDropSimplified = new MobDropSimplified();
             int size = byteBuf.readInt();
-            mobDropSimplified.stackConstructable = ConstructableItemStack.readFromByteBuf(byteBuf);
+            mobDropSimplified.reconstructableStack = ConstructableItemStack.readFromByteBuf(byteBuf);
             mobDropSimplified.type = MobDrop.DropType.get(byteBuf.readInt());
             mobDropSimplified.reconstructStack();
             return mobDropSimplified;
