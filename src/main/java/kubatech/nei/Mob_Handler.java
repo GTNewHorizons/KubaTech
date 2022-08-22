@@ -79,6 +79,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
         AVERAGE_REMINDER,
         MOD,
         MAX_HEALTH,
+        LOOTABLE,
         PLAYER_ONLY,
         ;
         final String key;
@@ -145,6 +146,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
                     d.chance,
                     d.enchantable,
                     d.damages != null ? new ArrayList<>(d.damages.keySet()) : null,
+                    d.lootable,
                     d.playerOnly));
         }
         instance.addRecipeInt(e, positionedStacks, normaldrops, raredrops, additionaldrops, infernaldrops);
@@ -443,6 +445,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
                 int chance,
                 Integer enchantable,
                 List<Integer> damages,
+                boolean lootable,
                 boolean isPlayerOnly) {
             super(object, x, y, false);
             rand = new FastRandom();
@@ -459,6 +462,7 @@ public class Mob_Handler extends TemplateRecipeHandler {
             if (chance != 10000)
                 extratooltip.appendTag(new NBTTagString(
                         EnumChatFormatting.RESET + CHANCE.get() + (chance / 100) + "." + (chance % 100) + "%"));
+            if (lootable) extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + LOOTABLE.get()));
             if (isPlayerOnly) extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + PLAYER_ONLY.get()));
             extratooltip.appendTag(new NBTTagString(EnumChatFormatting.RESET + AVERAGE_REMINDER.get()));
 

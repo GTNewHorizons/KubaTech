@@ -698,6 +698,8 @@ public class MobRecipeLoader {
             droplist drops = new droplist();
             droplist raredrops = new droplist();
             droplist additionaldrops = new droplist();
+            droplist dropslooting = new droplist();
+            droplist raredropslooting = new droplist();
 
             LOG.info("Generating normal drops");
 
@@ -744,6 +746,51 @@ public class MobRecipeLoader {
 
             } while (frand.nextRound());
 
+            frand.newRound();
+            collector.newRound();
+
+            if (v.getName().startsWith("com.emoniph.witchery")) {
+                try {
+                    dropFewItems.invoke(e, true, 0);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return;
+                }
+                frand.newRound();
+                frand.exceptionOnEnchantTry = true;
+                boolean enchantmentDetected = false;
+                try {
+                    dropFewItems.invoke(e, true, 0);
+                } catch (Exception ex) {
+                    enchantmentDetected = true;
+                }
+                int w = frand.walkCounter;
+                frand.newRound();
+                if (enchantmentDetected) {
+                    frand.maxWalkCount = w;
+                    collector.booksAlwaysRandomlyEnchanted = true;
+                }
+                e.capturedDrops.clear();
+            }
+
+            LOG.info("Generating normal drops with looting");
+
+            do {
+                try {
+                    dropFewItems.invoke(e, true, 1);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return;
+                }
+                collector.addDrop(dropslooting, e.capturedDrops, frand.chance);
+
+                if (frand.chance < 0.0000001d) {
+                    LOG.info("Skipping " + k + " normal dropmap because it's too randomized");
+                    break;
+                }
+
+            } while (frand.nextRound());
+
             LOG.info("Generating rare drops");
 
             frand.newRound();
@@ -757,6 +804,26 @@ public class MobRecipeLoader {
                     return;
                 }
                 collector.addDrop(raredrops, e.capturedDrops, frand.chance);
+
+                if (frand.chance < 0.0000001d) {
+                    LOG.info("Skipping " + k + " rare dropmap because it's too randomized");
+                    break;
+                }
+            } while (frand.nextRound());
+
+            LOG.info("Generating rare drops with looting");
+
+            frand.newRound();
+            collector.newRound();
+
+            do {
+                try {
+                    dropRareDrop.invoke(e, 1);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return;
+                }
+                collector.addDrop(raredropslooting, e.capturedDrops, frand.chance);
 
                 if (frand.chance < 0.0000001d) {
                     LOG.info("Skipping " + k + " rare dropmap because it's too randomized");
@@ -878,12 +945,14 @@ public class MobRecipeLoader {
                     LOG.warn("Detected 0% loot, setting to 0.01%");
                     chance = 1;
                 }
+
                 moboutputs.add(new MobDrop(
                         stack,
                         MobDrop.DropType.Normal,
                         chance,
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
                         drop.isDamageRandomized ? drop.damagesPossible : null,
+                        dropslooting.get(drop).dropcount > drop.dropcount,
                         false));
             }
             for (dropinstance drop : raredrops.drops) {
@@ -905,6 +974,7 @@ public class MobRecipeLoader {
                         chance,
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
                         drop.isDamageRandomized ? drop.damagesPossible : null,
+                        raredropslooting.get(drop).dropcount > drop.dropcount,
                         false));
             }
             for (dropinstance drop : additionaldrops.drops) {
@@ -926,6 +996,7 @@ public class MobRecipeLoader {
                         chance,
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
                         drop.isDamageRandomized ? drop.damagesPossible : null,
+                        false,
                         false));
             }
 
@@ -1065,8 +1136,8 @@ public class MobRecipeLoader {
                     if (r.getFrom() == 0 && r.getTo() == 0) chance = 1d;
                     else chance = (((double) r.getTo() - (double) r.getFrom()) / 2d) + (double) r.getFrom();
                     ItemStack stack = ((ItemStack) entry.getKey().getInternal()).copy();
-                    MobDrop drop =
-                            new MobDrop(stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, true);
+                    MobDrop drop = new MobDrop(
+                            stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, false, true);
                     drops.add(drop);
                     if (recipe != null) recipe.mOutputs.add(drop);
                 }
@@ -1078,8 +1149,8 @@ public class MobRecipeLoader {
                     if (r.getFrom() == 0 && r.getTo() == 0) chance = 1d;
                     else chance = (((double) r.getTo() - (double) r.getFrom()) / 2d) + (double) r.getFrom();
                     ItemStack stack = ((ItemStack) entry.getKey().getInternal()).copy();
-                    MobDrop drop =
-                            new MobDrop(stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, true);
+                    MobDrop drop = new MobDrop(
+                            stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, false, true);
                     drops.add(drop);
                     if (recipe != null) recipe.mOutputs.add(drop);
                 }

@@ -160,7 +160,7 @@ public class OverridesConfig {
                                 stack.stackSize = amount;
                                 // Drops from coremod are player only
                                 override.additions.add(
-                                        new MobDrop(stack, MobDrop.DropType.Normal, chance, null, null, true));
+                                        new MobDrop(stack, MobDrop.DropType.Normal, chance, null, null, false, true));
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -191,8 +191,8 @@ public class OverridesConfig {
             exdamages.put(1, 1);
             exdamages.put(2, 5);
             exdamages.put(3, 10);
-            ex1.additions.add(
-                    new MobDrop(new ItemStack(Items.diamond_sword), MobDrop.DropType.Rare, 500, 20, exdamages, false));
+            ex1.additions.add(new MobDrop(
+                    new ItemStack(Items.diamond_sword), MobDrop.DropType.Rare, 500, 20, exdamages, true, false));
             example.put("ExampleMob", ex1);
             gson.toJson(example, writer);
             writer.flush();
