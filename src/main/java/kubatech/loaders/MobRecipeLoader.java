@@ -998,7 +998,7 @@ public class MobRecipeLoader {
                         drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
                         drop.isDamageRandomized ? drop.damagesPossible : null,
                         false,
-                        true));
+                        false));
             }
             for (dropinstance drop : additionaldrops.drops) {
                 ItemStack stack = drop.stack;
