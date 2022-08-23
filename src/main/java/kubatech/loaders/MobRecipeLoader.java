@@ -1186,8 +1186,7 @@ public class MobRecipeLoader {
                 drops.addAll(override.additions);
                 recipe.mOutputs.addAll(
                         override.additions.stream().filter(d -> !d.playerOnly).collect(Collectors.toList()));
-                drops.sort(Comparator.comparing(d -> d.type));
-                LoadConfigPacket.instance.mobsOverrides.put(k, override);
+                drops.sort(Comparator.comparing(d -> d.type)); // Fix GUI
             }
             recipe.refresh();
 
