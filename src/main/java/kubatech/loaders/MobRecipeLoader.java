@@ -1210,8 +1210,9 @@ public class MobRecipeLoader {
                     else chance = (((double) r.getTo() - (double) r.getFrom()) / 2d) + (double) r.getFrom();
                     ItemStack stack = ((ItemStack) entry.getKey().getInternal()).copy();
                     MobDrop drop = new MobDrop(
-                            stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, false, true);
+                            stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, false, false);
                     drops.add(drop);
+                    recipe.mOutputs.add(drop);
                 }
                 for (Map.Entry<IItemStack, IntRange> entry :
                         ie.getDropsToAddPlayerOnly().entrySet()) {
@@ -1230,7 +1231,7 @@ public class MobRecipeLoader {
                             .filter(d -> istack.matches(new MCItemStack(d.stack)))
                             .collect(Collectors.toList());
                     drops.removeAll(toRemove);
-                    if (recipe != null) recipe.mOutputs.removeAll(toRemove);
+                    recipe.mOutputs.removeAll(toRemove);
                 }
             }
         }
