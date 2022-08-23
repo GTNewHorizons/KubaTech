@@ -1207,7 +1207,11 @@ public class MobRecipeLoader {
                     // Get average chance
                     double chance;
                     if (r.getFrom() == 0 && r.getTo() == 0) chance = 1d;
-                    else chance = (((double) r.getTo() - (double) r.getFrom()) / 2d) + (double) r.getFrom();
+                    else {
+                        double a = r.getFrom();
+                        double b = r.getTo();
+                        chance = ((b * b) + b - (a * a) + a) / (2 * (b - a + 1));
+                    }
                     ItemStack stack = ((ItemStack) entry.getKey().getInternal()).copy();
                     MobDrop drop = new MobDrop(
                             stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, false, false);
@@ -1220,7 +1224,11 @@ public class MobRecipeLoader {
                     // Get average chance
                     double chance;
                     if (r.getFrom() == 0 && r.getTo() == 0) chance = 1d;
-                    else chance = (((double) r.getTo() - (double) r.getFrom()) / 2d) + (double) r.getFrom();
+                    else {
+                        double a = r.getFrom();
+                        double b = r.getTo();
+                        chance = ((b * b) + b - (a * a) + a) / (2 * (b - a + 1));
+                    }
                     ItemStack stack = ((ItemStack) entry.getKey().getInternal()).copy();
                     MobDrop drop = new MobDrop(
                             stack, MobDrop.DropType.Normal, (int) (chance * 10000), null, null, false, true);
