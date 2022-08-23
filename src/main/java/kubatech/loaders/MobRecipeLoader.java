@@ -1174,7 +1174,7 @@ public class MobRecipeLoader {
             }
 
             OverridesConfig.MobOverride override = null;
-            if ((override = OverridesConfig.overrides.get(k)) != null) {
+            if ((override = overrides.get(k)) != null) {
                 if (override.removeAll) {
                     drops.clear();
                     recipe.mOutputs.clear();
