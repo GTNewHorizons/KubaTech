@@ -25,3 +25,22 @@ command.help.usage=- Shows all possible commands
 command.config.invalid_option=§cInvalid option ! Possible options: reload
 command.config.success=§aConfig reloaded successfully !
 command.config.usage=<option>
+
+#Items
+item.fromcollection=This item is from
+#Tea collection
+item.teacollection=Turbo Legendary Secret Tea Collection
+item.teacollection.mmm=Mmmm Tea
+item.kubaitem.teacollection.black_tea.name=§6§lKuba's Black Tea
+item.kubaitem.teacollection.butterfly_tea.name=§1§lKuba's Butterfly Pea Tea
+item.kubaitem.teacollection.earl_gray_tea.name=§6§lKuba's Earl Gray Tea
+item.kubaitem.teacollection.green_tea.name=§2§lKuba's Green Tea
+item.kubaitem.teacollection.lemon_tea.name=§e§lKuba's Lemon Tea
+item.kubaitem.teacollection.milk_tea.name=§f§lKuba's Milk Tea
+item.kubaitem.teacollection.oolong_tea.name=§e§lKuba's Oolong Tea
+item.kubaitem.teacollection.peppermint_tea.name=§a§lKuba's Peppermint Tea
+item.kubaitem.teacollection.pu-erh_tea.name=§4§lKuba's Pu-erh Tea
+item.kubaitem.teacollection.red_tea.name=§c§lKuba's Hibiscus Tea
+item.kubaitem.teacollection.white_tea.name=§e§lKuba's White Tea
+item.kubaitem.teacollection.yellow_tea.name=§6§lKuba's Yellow Tea
+item.kubaitem.teacollection.ultimate_tea.name=§6§lKuba's %s §6§lTea
