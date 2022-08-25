@@ -21,6 +21,9 @@ package kubatech.loaders.item.items;
 
 import java.util.Random;
 import kubatech.api.utils.FastRandom;
+import kubatech.api.utils.ModUtils;
+import net.minecraft.client.Minecraft;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 
 public class TeaUltimate extends Tea {
@@ -41,13 +44,24 @@ public class TeaUltimate extends Tea {
     }
 
     @Override
-    public String getDisplayName() {
-        long current = System.currentTimeMillis();
-        if (current - timeCounter > 200) {
-            timeCounter = current;
-            name = rndColor() + "U" + rndColor() + "L" + rndColor() + "T" + rndColor() + "I" + rndColor() + "M"
-                    + rndColor() + "A" + rndColor() + "T" + rndColor() + "E";
+    public String getDisplayName(ItemStack stack) {
+        if (!ModUtils.isClientSided) return super.getDisplayName(stack);
+        if (stack.stackTagCompound == null
+                || (!stack.stackTagCompound.hasKey("TeaOwner")
+                        || stack.stackTagCompound
+                                .getString("TeaOwner")
+                                .equals(Minecraft.getMinecraft()
+                                        .thePlayer
+                                        .getUniqueID()
+                                        .toString()))) {
+            long current = System.currentTimeMillis();
+            if (current - timeCounter > 200) {
+                timeCounter = current;
+                name = rndColor() + "U" + rndColor() + "L" + rndColor() + "T" + rndColor() + "I" + rndColor() + "M"
+                        + rndColor() + "A" + rndColor() + "T" + rndColor() + "E";
+            }
+            return String.format(super.getDisplayName(stack), name + EnumChatFormatting.RESET);
         }
-        return String.format(super.getDisplayName(), name + EnumChatFormatting.RESET);
+        return EnumChatFormatting.GOLD + "" + EnumChatFormatting.BOLD + "" + EnumChatFormatting.ITALIC + "???????";
     }
 }

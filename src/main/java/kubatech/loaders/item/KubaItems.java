@@ -43,10 +43,12 @@ public class KubaItems extends Item {
         this.setMaxDamage(0);
         this.setHasSubtypes(true);
         this.setCreativeTab(KT);
+        this.setUnlocalizedName("kubaitems");
     }
 
     public ItemStack registerProxyItem(ItemProxy item) {
         items.put(idCounter, item);
+        item.ItemInit(idCounter);
         return new ItemStack(this, 1, idCounter++);
     }
 
@@ -75,7 +77,7 @@ public class KubaItems extends Item {
 
     @Override
     public EnumAction getItemUseAction(ItemStack p_77661_1_) {
-        return getItem(p_77661_1_).getItemUseAction();
+        return getItem(p_77661_1_).getItemUseAction(p_77661_1_);
     }
 
     @Override
@@ -105,7 +107,7 @@ public class KubaItems extends Item {
 
     @Override
     public void addInformation(ItemStack p_77624_1_, EntityPlayer p_77624_2_, List p_77624_3_, boolean p_77624_4_) {
-        getItem(p_77624_1_).addInformation(p_77624_2_, p_77624_3_, p_77624_4_);
+        getItem(p_77624_1_).addInformation(p_77624_1_, p_77624_2_, p_77624_3_, p_77624_4_);
     }
 
     @Override
@@ -115,7 +117,7 @@ public class KubaItems extends Item {
 
     @Override
     public String getItemStackDisplayName(ItemStack p_77653_1_) {
-        return getItem(p_77653_1_).getDisplayName();
+        return getItem(p_77653_1_).getDisplayName(p_77653_1_);
     }
 
     @SideOnly(Side.CLIENT)

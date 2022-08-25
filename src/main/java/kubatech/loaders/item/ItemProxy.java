@@ -34,17 +34,22 @@ public class ItemProxy {
     private final String unlocalizedName;
     private final String texturepath;
     private IIcon icon;
+    private int itemID;
 
     public ItemProxy(String unlocalizedName, String texture) {
         this.unlocalizedName = "item.kubaitem." + unlocalizedName;
         texturepath = Tags.MODID + ":" + texture;
     }
 
+    public void ItemInit(int index) {
+        itemID = index;
+    }
+
     public String getUnlocalizedName() {
         return unlocalizedName;
     }
 
-    public String getDisplayName() {
+    public String getDisplayName(ItemStack stack) {
         return StatCollector.translateToLocal(this.unlocalizedName + ".name").trim();
     }
 
@@ -56,12 +61,12 @@ public class ItemProxy {
         return icon;
     }
 
-    public void addInformation(EntityPlayer p_77624_2_, List p_77624_3_, boolean p_77624_4_) {}
+    public void addInformation(ItemStack p_77624_1_, EntityPlayer p_77624_2_, List p_77624_3_, boolean p_77624_4_) {}
 
     public void onUpdate(
             ItemStack p_77663_1_, World p_77663_2_, Entity p_77663_3_, int p_77663_4_, boolean p_77663_5_) {}
 
-    public EnumAction getItemUseAction() {
+    public EnumAction getItemUseAction(ItemStack p_77661_1_) {
         return EnumAction.none;
     }
 
