@@ -25,6 +25,7 @@ import kubatech.api.utils.ModUtils;
 import kubatech.loaders.ItemLoader;
 import kubatech.loaders.item.ItemProxy;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -39,7 +40,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.AchievementPage;
 
 public class Tea extends ItemProxy {
-    protected static AchievementPage teapage;
+    protected static TeaPage teapage;
     protected static LinkedList<Achievement> achievements;
     protected Achievement achievement;
     private final String achievementname;
@@ -69,9 +70,9 @@ public class Tea extends ItemProxy {
     public void ItemInit(int index) {
         super.ItemInit(index);
         if (teapage == null) {
-            teapage = new AchievementPage("Tea");
+            teapage = new TeaPage();
             AchievementPage.registerAchievementPage(teapage);
-            achievements = (LinkedList<Achievement>) teapage.getAchievements();
+            achievements = teapage.getAchievementsOriginal();
         }
         achievements.add(
                 achievement = new Achievement(
@@ -160,5 +161,33 @@ public class Tea extends ItemProxy {
         if (tag.hasKey("display")) tag.removeTag("display");
         if (tag.hasKey("TeaOwner")) return;
         tag.setString("TeaOwner", p_77663_3_.getPersistentID().toString());
+    }
+
+    private static class TeaPage extends AchievementPage {
+
+        public TeaPage() {
+            super("Tea");
+        }
+
+        LinkedList<Achievement> unlockedAchievements = new LinkedList<>();
+
+        @Override
+        public List<Achievement> getAchievements() {
+            if (!ModUtils.isClientSided) return super.getAchievements();
+
+            if (new Throwable().getStackTrace()[1].getMethodName().equals("isAchievementInPages"))
+                return super.getAchievements(); // 5HEAD FIX
+
+            EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
+            unlockedAchievements.clear();
+            for (Achievement achievement : achievements)
+                if (player.getStatFileWriter().hasAchievementUnlocked(achievement))
+                    unlockedAchievements.add(achievement);
+            return unlockedAchievements;
+        }
+
+        private LinkedList<Achievement> getAchievementsOriginal() {
+            return (LinkedList<Achievement>) super.getAchievements();
+        }
     }
 }
