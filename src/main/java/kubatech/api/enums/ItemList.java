@@ -15,6 +15,19 @@ import net.minecraft.item.ItemStack;
 
 public enum ItemList implements IItemContainer {
     ExtremeExterminationChamber,
+    LegendaryBlackTea,
+    LegendaryButterflyTea,
+    LegendaryEarlGrayTea,
+    LegendaryGreenTea,
+    LegendaryLemonTea,
+    LegendaryMilkTea,
+    LegendaryOolongTea,
+    LegendaryPeppermintTea,
+    LegendaryPuerhTea,
+    LegendaryRedTea,
+    LegendaryWhiteTea,
+    LegendaryYellowTea,
+    LegendaryUltimateTea,
     BlackTea,
     ButterflyTea,
     EarlGrayTea,
@@ -27,7 +40,6 @@ public enum ItemList implements IItemContainer {
     RedTea,
     WhiteTea,
     YellowTea,
-    UltimateTea,
     ;
 
     private ItemStack mStack;

@@ -26,6 +26,8 @@ import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.*;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
+import java.util.List;
+import kubatech.api.enums.ItemList;
 import kubatech.api.network.CustomTileEntityPacket;
 import kubatech.api.network.LoadConfigPacket;
 import net.minecraft.creativetab.CreativeTabs;
@@ -64,6 +66,12 @@ public class kubatech {
         @Override
         public String getTranslatedTabLabel() {
             return Tags.MODNAME;
+        }
+
+        @Override
+        public void displayAllReleventItems(List p_78018_1_) {
+            super.displayAllReleventItems(p_78018_1_);
+            p_78018_1_.add(ItemList.ExtremeExterminationChamber.get(1));
         }
     };
 
