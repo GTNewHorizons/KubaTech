@@ -37,7 +37,7 @@ public class ItemProxy {
     private int itemID;
 
     public ItemProxy(String unlocalizedName, String texture) {
-        this.unlocalizedName = "item.kubaitem." + unlocalizedName;
+        this.unlocalizedName = "kubaitem." + unlocalizedName;
         texturepath = Tags.MODID + ":" + texture;
     }
 

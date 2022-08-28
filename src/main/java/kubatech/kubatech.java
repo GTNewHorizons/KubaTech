@@ -19,7 +19,7 @@
 
 package kubatech;
 
-import static kubatech.api.enums.ItemList.RedTea;
+import static kubatech.api.enums.ItemList.LegendaryRedTea;
 
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
@@ -44,7 +44,7 @@ import org.apache.logging.log4j.Logger;
         acceptedMinecraftVersions = "[1.7.10]",
         dependencies = "required-after:gregtech; " + "required-after:spongemixins@[1.4.0,); " + "after:EnderIO; "
                 + "after:AWWayofTime; " + "after:ExtraUtilities; " + "after: InfernalMobs; " + "after: Thaumcraft; "
-                + "after: MineTweaker3; ")
+                + "after: MineTweaker3; " + "after: miscutils; " + "after: harvestcraft; ")
 public class kubatech {
 
     public static kubatech instance = null;
@@ -54,7 +54,7 @@ public class kubatech {
 
         @Override
         public ItemStack getIconItemStack() {
-            if (iconItemStack == null) iconItemStack = RedTea.get(1);
+            if (iconItemStack == null) iconItemStack = LegendaryRedTea.get(1);
             return iconItemStack;
         }
 

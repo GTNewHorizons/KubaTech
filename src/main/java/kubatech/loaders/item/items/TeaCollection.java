@@ -93,12 +93,12 @@ public class TeaCollection extends ItemProxy {
                         .getString("TeaOwner")
                         .equals(entity.getUniqueID().toString())) {
             tooltipList.add(EnumChatFormatting.GRAY + "" + EnumChatFormatting.BOLD + "" + EnumChatFormatting.ITALIC
-                    + StatCollector.translateToLocal("item.notyours"));
+                    + StatCollector.translateToLocal("kubaitem.notyours"));
             return;
         }
-        tooltipList.add(EnumChatFormatting.GRAY + StatCollector.translateToLocal("item.fromcollection"));
+        tooltipList.add(EnumChatFormatting.GRAY + StatCollector.translateToLocal("kubaitem.fromcollection"));
         tooltipList.add(EnumChatFormatting.GRAY + "" + EnumChatFormatting.BOLD + "" + EnumChatFormatting.ITALIC + ""
-                + EnumChatFormatting.UNDERLINE + StatCollector.translateToLocal("item.teacollection"));
+                + EnumChatFormatting.UNDERLINE + StatCollector.translateToLocal("kubaitem.teacollection"));
     }
 
     @Override
@@ -126,7 +126,7 @@ public class TeaCollection extends ItemProxy {
                 .getString("TeaOwner")
                 .equals(entity.getUniqueID().toString())) return stack;
         entity.addChatComponentMessage(new ChatComponentText(
-                EnumChatFormatting.GREEN + StatCollector.translateToLocal("item.teacollection.mmm")));
+                EnumChatFormatting.GREEN + StatCollector.translateToLocal("kubaitem.teacollection.mmm")));
         entity.triggerAchievement(achievement);
         return stack;
     }
