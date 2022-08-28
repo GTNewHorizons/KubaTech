@@ -30,6 +30,7 @@ import gregtech.api.metatileentity.MetaTileEntity;
 import gregtech.api.util.GT_ModHandler;
 import gregtech.api.util.GT_Utility;
 import gtPlusPlus.core.lib.CORE;
+import java.lang.reflect.InvocationTargetException;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.enums.ItemList;
@@ -83,11 +84,10 @@ public class RecipeLoader {
     }
 
     private static boolean registerMTE(
-        ItemList item, Class<? extends MetaTileEntity> mte, String aName, String aNameRegional, boolean... deps) {
+            ItemList item, Class<? extends MetaTileEntity> mte, String aName, String aNameRegional, boolean... deps) {
         boolean dep = true;
         for (boolean i : deps)
-            if(!i)
-            {
+            if (!i) {
                 dep = false;
                 break;
             }
@@ -102,9 +102,14 @@ public class RecipeLoader {
                 item.set(mte.getConstructor(int.class, String.class, String.class)
                         .newInstance(MTEID, aName, aNameRegional)
                         .getStackForm(1));
+            } catch (InvocationTargetException ex) {
+                Throwable original_ex = ex.getCause();
+                if (original_ex instanceof RuntimeException) throw (RuntimeException) original_ex;
+                throw new RuntimeException(original_ex.getMessage());
+            } catch (RuntimeException ex) {
+                throw ex;
             } catch (Exception ex) {
-                dep = false;
-                ex.printStackTrace();
+                throw new RuntimeException(ex.getMessage());
             }
         }
         MTEID++;
