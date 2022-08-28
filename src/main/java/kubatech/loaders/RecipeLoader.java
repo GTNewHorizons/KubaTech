@@ -26,6 +26,7 @@ import cpw.mods.fml.common.registry.GameRegistry;
 import gregtech.api.enums.GT_Values;
 import gregtech.api.enums.Materials;
 import gregtech.api.enums.OrePrefixes;
+import gregtech.api.metatileentity.MetaTileEntity;
 import gregtech.api.util.GT_ModHandler;
 import gregtech.api.util.GT_Utility;
 import gtPlusPlus.core.lib.CORE;
@@ -52,10 +53,12 @@ public class RecipeLoader {
     private static final int MTEIDMax = 14300;
 
     public static void addRecipes() {
-        if (LoaderReference.EnderIO) {
-            ItemList.ExtremeExterminationChamber.set(new GT_MetaTileEntity_ExtremeExterminationChamber(
-                            MTEID++, "multimachine.exterminationchamber", "Extreme Extermination Chamber")
-                    .getStackForm(1L));
+        if (registerMTE(
+                ExtremeExterminationChamber,
+                GT_MetaTileEntity_ExtremeExterminationChamber.class,
+                "multimachine.exterminationchamber",
+                "Extreme Extermination Chamber",
+                LoaderReference.EnderIO)) {
             GT_ModHandler.addCraftingRecipe(ItemList.ExtremeExterminationChamber.get(1), bitsd, new Object[] {
                 "RCR",
                 "CHC",
@@ -72,6 +75,40 @@ public class RecipeLoader {
         }
         RegisterTeaLine();
         if (MTEID > MTEIDMax + 1) throw new RuntimeException("MTE ID's");
+    }
+
+    private static boolean registerMTE(
+            ItemList item, Class<? extends MetaTileEntity> mte, String aName, String aNameRegional) {
+        return registerMTE(item, mte, aName, aNameRegional, true);
+    }
+
+    private static boolean registerMTE(
+        ItemList item, Class<? extends MetaTileEntity> mte, String aName, String aNameRegional, boolean... deps) {
+        boolean dep = true;
+        for (boolean i : deps)
+            if(!i)
+            {
+                dep = false;
+                break;
+            }
+        return registerMTE(item, mte, aName, aNameRegional, dep);
+    }
+
+    private static boolean registerMTE(
+            ItemList item, Class<? extends MetaTileEntity> mte, String aName, String aNameRegional, boolean dep) {
+        if (MTEID > MTEIDMax) throw new RuntimeException("MTE ID's");
+        if (dep) {
+            try {
+                item.set(mte.getConstructor(int.class, String.class, String.class)
+                        .newInstance(MTEID, aName, aNameRegional)
+                        .getStackForm(1));
+            } catch (Exception ex) {
+                dep = false;
+                ex.printStackTrace();
+            }
+        }
+        MTEID++;
+        return dep;
     }
 
     private static boolean lateRecipesInitialized = false;
