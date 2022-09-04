@@ -341,17 +341,18 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
 
     @Override
     public void onScrewdriverRightClick(byte aSide, EntityPlayer aPlayer, float aX, float aY, float aZ) {
-        if (!LoaderReference.BloodMagic) return;
         if (this.mMaxProgresstime > 0) {
             GT_Utility.sendChatToPlayer(aPlayer, "Can't change mode when running !");
             return;
         }
         if (aPlayer.isSneaking()) {
+            if(!LoaderReference.InfernalMobs) return;
             mIsProducingInfernalDrops = !mIsProducingInfernalDrops;
             if (!mIsProducingInfernalDrops)
                 GT_Utility.sendChatToPlayer(aPlayer, "Mobs will now be prevented from spawning infernal");
             else GT_Utility.sendChatToPlayer(aPlayer, "Mobs can spawn infernal now");
         } else {
+            if (!LoaderReference.BloodMagic) return;
             isInRitualMode = !isInRitualMode;
             if (!isInRitualMode) {
                 GT_Utility.sendChatToPlayer(aPlayer, "Ritual mode disabled");
