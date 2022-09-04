@@ -576,6 +576,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     public String[] getInfoData() {
         ArrayList<String> info = new ArrayList<>(Arrays.asList(super.getInfoData()));
         info.add("Animations: " + EnumChatFormatting.YELLOW + (mAnimationEnabled ? "Enabled" : "Disabled"));
+        info.add("Is allowed to produce infernal drops: " + EnumChatFormatting.YELLOW
+                + (mIsProducingInfernalDrops ? "Yes" : "No"));
         info.add("Is in ritual mode: " + EnumChatFormatting.YELLOW + (isInRitualMode ? "Yes" : "No"));
         if (isInRitualMode)
             info.add("Is connected to ritual: "
