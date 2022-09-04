@@ -346,7 +346,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             return;
         }
         if (aPlayer.isSneaking()) {
-            if(!LoaderReference.InfernalMobs) return;
+            if (!LoaderReference.InfernalMobs) return;
             mIsProducingInfernalDrops = !mIsProducingInfernalDrops;
             if (!mIsProducingInfernalDrops)
                 GT_Utility.sendChatToPlayer(aPlayer, "Mobs will now be prevented from spawning infernal");
