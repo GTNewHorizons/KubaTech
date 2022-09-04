@@ -455,13 +455,11 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         } else {
             double attackDamage = 9d; // damage from spikes
             GT_MetaTileEntity_Hatch_InputBus inputbus = this.mInputBusses.size() == 0 ? null : this.mInputBusses.get(0);
-            if (inputbus == null || !isValidMetaTileEntity(inputbus)) {
-                weaponCache.isValid = false;
-                return false;
-            }
-            ItemStack lootingholder = inputbus.getStackInSlot(0);
+            if (inputbus == null || !isValidMetaTileEntity(inputbus)) inputbus = null;
+            ItemStack lootingholder = inputbus == null ? null : inputbus.getStackInSlot(0);
             weaponCheck:
             {
+                //noinspection EqualsBetweenInconvertibleTypes
                 if (weaponCache.isValid && weaponCache.id.equals(lootingholder)) break weaponCheck;
                 if (lootingholder == null || !Enchantment.looting.canApply(lootingholder)) {
                     weaponCache.isValid = false;
@@ -490,9 +488,11 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                     recipe.generateOutputs(rand, this, attackDamage, weaponCache.isValid ? weaponCache.looting : 0);
             int eut = this.mEUt;
             calculatePerfectOverclockedNessMulti(this.mEUt, this.mMaxProgresstime, 2, getMaxInputVoltage());
+            //noinspection ConstantConditions
             if (weaponCache.isValid && lootingholder.isItemStackDamageable()) {
                 do {
                     if (lootingholder.attemptDamageItem(1, rand)) {
+                        //noinspection ConstantConditions
                         inputbus.setInventorySlotContents(0, null);
                         break;
                     }
