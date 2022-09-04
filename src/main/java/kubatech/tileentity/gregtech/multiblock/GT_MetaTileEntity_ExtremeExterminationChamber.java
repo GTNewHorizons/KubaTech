@@ -455,7 +455,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         } else {
             double attackDamage = 9d; // damage from spikes
             GT_MetaTileEntity_Hatch_InputBus inputbus = this.mInputBusses.size() == 0 ? null : this.mInputBusses.get(0);
-            if (inputbus == null || !isValidMetaTileEntity(inputbus)) inputbus = null;
+            if (inputbus != null && !isValidMetaTileEntity(inputbus)) inputbus = null;
             ItemStack lootingholder = inputbus == null ? null : inputbus.getStackInSlot(0);
             weaponCheck:
             {
