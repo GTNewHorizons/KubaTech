@@ -171,6 +171,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     private int mCasing = 0;
     private byte mGlassTier = 0;
     private boolean mAnimationEnabled = true;
+    private boolean mIsProducingInfernalDrops = true;
 
     private EntityRenderer entityRenderer = null;
     private boolean renderEntity = false;
@@ -181,6 +182,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         aNBT.setBoolean("isInRitualMode", isInRitualMode);
         aNBT.setBoolean("mAnimationEnabled", mAnimationEnabled);
         aNBT.setByte("mGlassTier", mGlassTier);
+        aNBT.setBoolean("mIsProducingInfernalDrops", mIsProducingInfernalDrops);
     }
 
     @Override
@@ -189,6 +191,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         isInRitualMode = aNBT.getBoolean("isInRitualMode");
         mAnimationEnabled = !aNBT.hasKey("mAnimationEnabled") || aNBT.getBoolean("mAnimationEnabled");
         mGlassTier = aNBT.getByte("mGlassTier");
+        mIsProducingInfernalDrops =
+                !aNBT.hasKey("mIsProducingInfernalDrops") || aNBT.getBoolean("mIsProducingInfernalDrops");
     }
 
     @Override
@@ -209,6 +213,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 .addInfo("Also produces 120 Liquid XP per operation")
                 .addInfo("If the mob spawns infernal")
                 .addInfo("it will drain 8 times more power")
+                .addInfo("You can prevent infernal spawns shift by clicking with a screwdriver")
+                .addInfo("Note: If the mob has forced infernal spawn, it will do it anyway")
                 .addInfo("You can enable ritual mode with a screwdriver")
                 .addInfo("When in ritual mode and Well Of Suffering ritual is built directly on the machine in center")
                 .addInfo("The mobs will start to buffer and die very slowly by a ritual")
@@ -340,13 +346,20 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             GT_Utility.sendChatToPlayer(aPlayer, "Can't change mode when running !");
             return;
         }
-        isInRitualMode = !isInRitualMode;
-        if (!isInRitualMode) {
-            GT_Utility.sendChatToPlayer(aPlayer, "Ritual mode disabled");
+        if (aPlayer.isSneaking()) {
+            mIsProducingInfernalDrops = !mIsProducingInfernalDrops;
+            if (!mIsProducingInfernalDrops)
+                GT_Utility.sendChatToPlayer(aPlayer, "Mobs will now be prevented from spawning infernal");
+            else GT_Utility.sendChatToPlayer(aPlayer, "Mobs can spawn infernal now");
         } else {
-            GT_Utility.sendChatToPlayer(aPlayer, "Ritual mode enabled");
-            if (connectToRitual()) GT_Utility.sendChatToPlayer(aPlayer, "Successfully connected to the ritual");
-            else GT_Utility.sendChatToPlayer(aPlayer, "Can't connect to the ritual");
+            isInRitualMode = !isInRitualMode;
+            if (!isInRitualMode) {
+                GT_Utility.sendChatToPlayer(aPlayer, "Ritual mode disabled");
+            } else {
+                GT_Utility.sendChatToPlayer(aPlayer, "Ritual mode enabled");
+                if (connectToRitual()) GT_Utility.sendChatToPlayer(aPlayer, "Successfully connected to the ritual");
+                else GT_Utility.sendChatToPlayer(aPlayer, "Can't connect to the ritual");
+            }
         }
     }
 
@@ -451,7 +464,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             this.mMaxProgresstime = 400;
             this.mEUt /= 4;
             this.mOutputFluids = new FluidStack[] {FluidRegistry.getFluidStack("xpjuice", 5000)};
-            this.mOutputItems = recipe.generateOutputs(rand, this, 3, 0);
+            this.mOutputItems = recipe.generateOutputs(rand, this, 3, 0, mIsProducingInfernalDrops);
         } else {
             double attackDamage = 9d; // damage from spikes
             GT_MetaTileEntity_Hatch_InputBus inputbus = this.mInputBusses.size() == 0 ? null : this.mInputBusses.get(0);
@@ -484,8 +497,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             }
             if (weaponCache.isValid) attackDamage += weaponCache.attackdamage;
 
-            this.mOutputItems =
-                    recipe.generateOutputs(rand, this, attackDamage, weaponCache.isValid ? weaponCache.looting : 0);
+            this.mOutputItems = recipe.generateOutputs(
+                    rand, this, attackDamage, weaponCache.isValid ? weaponCache.looting : 0, mIsProducingInfernalDrops);
             int eut = this.mEUt;
             calculatePerfectOverclockedNessMulti(this.mEUt, this.mMaxProgresstime, 2, getMaxInputVoltage());
             //noinspection ConstantConditions
