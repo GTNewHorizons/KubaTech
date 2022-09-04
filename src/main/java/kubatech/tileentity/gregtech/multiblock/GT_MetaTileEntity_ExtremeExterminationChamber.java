@@ -213,7 +213,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 .addInfo("Also produces 120 Liquid XP per operation")
                 .addInfo("If the mob spawns infernal")
                 .addInfo("it will drain 8 times more power")
-                .addInfo("You can prevent infernal spawns shift by clicking with a screwdriver")
+                .addInfo("You can prevent infernal spawns by shift clicking with a screwdriver")
                 .addInfo("Note: If the mob has forced infernal spawn, it will do it anyway")
                 .addInfo("You can enable ritual mode with a screwdriver")
                 .addInfo("When in ritual mode and Well Of Suffering ritual is built directly on the machine in center")
