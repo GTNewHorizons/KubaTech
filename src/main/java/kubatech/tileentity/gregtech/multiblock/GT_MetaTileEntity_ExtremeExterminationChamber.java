@@ -207,6 +207,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 .addInfo("Controller block for Extreme Extermination Chamber")
                 .addInfo(Author)
                 .addInfo("Spawns and Exterminates monsters for you")
+                .addInfo("You need to insert the powered spawner in controller")
                 .addInfo("Base energy usage: 2,000 EU/t")
                 .addInfo("Recipe time is based on mob health and the weapon")
                 .addInfo("You have to put a weapon in ULV Input Bus (optional)")
