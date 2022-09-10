@@ -677,8 +677,6 @@ public class MobRecipeLoader {
         ((Map<String, Class<? extends Entity>>) EntityList.stringToClassMapping).forEach((k, v) -> {
             if (v == null) return;
 
-            LOG.info("Generating entry for mob: " + k);
-
             if (Modifier.isAbstract(v.getModifiers())) {
                 LOG.info("Entity " + k + " is abstract, skipping");
                 return;
@@ -734,8 +732,6 @@ public class MobRecipeLoader {
             droplist additionaldrops = new droplist();
             droplist dropslooting = new droplist();
 
-            LOG.info("Generating normal drops");
-
             frand.newRound();
             collector.newRound();
 
@@ -774,14 +770,12 @@ public class MobRecipeLoader {
                 collector.addDrop(drops, e.capturedDrops, frand.chance);
 
                 if (second && frand.chance < 0.0000001d) {
-                    LOG.info("Skipping " + k + " normal dropmap because it's too randomized");
+                    LOG.warn("Skipping " + k + " normal dropmap because it's too randomized");
                     break;
                 }
                 second = true;
 
             } while (frand.nextRound());
-
-            LOG.info("Generating normal drops with looting");
 
             frand.newRound();
             collector.newRound();
@@ -821,14 +815,12 @@ public class MobRecipeLoader {
                 collector.addDrop(dropslooting, e.capturedDrops, frand.chance);
 
                 if (second && frand.chance < 0.0000001d) {
-                    LOG.info("Skipping " + k + " normal dropmap because it's too randomized");
+                    LOG.warn("Skipping " + k + " normal dropmap because it's too randomized");
                     break;
                 }
                 second = true;
 
             } while (frand.nextRound());
-
-            LOG.info("Generating rare drops");
 
             frand.newRound();
             collector.newRound();
@@ -844,14 +836,12 @@ public class MobRecipeLoader {
                 collector.addDrop(raredrops, e.capturedDrops, frand.chance);
 
                 if (second && frand.chance < 0.0000001d) {
-                    LOG.info("Skipping " + k + " rare dropmap because it's too randomized");
+                    LOG.warn("Skipping " + k + " rare dropmap because it's too randomized");
                     break;
                 }
                 second = true;
 
             } while (frand.nextRound());
-
-            LOG.info("Generating super rare drops");
 
             frand.newRound();
             collector.newRound();
@@ -867,14 +857,12 @@ public class MobRecipeLoader {
                 collector.addDrop(superraredrops, e.capturedDrops, frand.chance);
 
                 if (second && frand.chance < 0.0000001d) {
-                    LOG.info("Skipping " + k + " rare dropmap because it's too randomized");
+                    LOG.warn("Skipping " + k + " rare dropmap because it's too randomized");
                     break;
                 }
                 second = true;
 
             } while (frand.nextRound());
-
-            LOG.info("Generating additional drops");
 
             frand.newRound();
             collector.newRound();
@@ -972,7 +960,7 @@ public class MobRecipeLoader {
             if (drops.isEmpty() && raredrops.isEmpty() && additionaldrops.isEmpty()) {
                 ArrayList<MobDrop> arr = new ArrayList<>();
                 GeneralMobList.put(k, new GeneralMappedMob(e, new MobRecipe(e, arr), arr));
-                LOG.info("Entity " + k + " doesn't drop any items, skipping EEC Recipe map");
+                LOG.info("Mapped " + k);
                 return;
             }
 
