@@ -1118,7 +1118,7 @@ public class MobRecipeLoader {
                 Optionals.parseMTAdditions(k, drops, recipe);
             }
 
-            OverridesConfig.MobOverride override = null;
+            OverridesConfig.MobOverride override;
             if ((override = OverridesConfig.overrides.get(k)) != null) {
                 if (override.removeAll) {
                     drops.clear();
@@ -1165,7 +1165,7 @@ public class MobRecipeLoader {
                 Optionals.parseMTAdditions(k, drops, recipe);
             }
 
-            OverridesConfig.MobOverride override = null;
+            OverridesConfig.MobOverride override;
             if ((override = overrides.get(k)) != null) {
                 if (override.removeAll) {
                     drops.clear();
