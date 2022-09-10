@@ -627,7 +627,7 @@ public class MobRecipeLoader {
                     LOG.info("Cached map version mismatch, generating a new one");
                 }
             } catch (Exception ignored) {
-                LOG.info("There was an exception while parsing cached map, generating a new one");
+                LOG.warn("There was an exception while parsing cached map, generating a new one");
             } finally {
                 if (reader != null)
                     try {
@@ -945,7 +945,7 @@ public class MobRecipeLoader {
                     Arrays.fill(e.getLastActiveItems(), null);
 
                     if (second && frand.chance < 0.0000001d) {
-                        LOG.info("Skipping " + k + " additional dropmap because it's too randomized");
+                        LOG.warn("Skipping " + k + " additional dropmap because it's too randomized");
                         break;
                     }
                     second = true;
