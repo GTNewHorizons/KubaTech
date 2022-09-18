@@ -145,8 +145,15 @@ public class EntityRenderer extends EntityFX {
             }
         }
 
-        stackdepth -= GL11.glGetInteger(GL_MODELVIEW_STACK_DEPTH);
+        GL11.glMatrixMode(GL11.GL_MODELVIEW_MATRIX);
+        stackdepth -= GL11.glGetInteger(GL11.GL_MODELVIEW_STACK_DEPTH);
         if (stackdepth < 0) for (; stackdepth < 0; stackdepth++) GL11.glPopMatrix();
+        if (stackdepth > 0) for (; stackdepth > 0; stackdepth--) GL11.glPushMatrix();
+
+        int err;
+        while ((err = GL11.glGetError()) != GL11.GL_NO_ERROR) {
+            // LOG.error("GL ERROR: " + err);
+        }
 
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glDisable(GL11.GL_COLOR_MATERIAL);

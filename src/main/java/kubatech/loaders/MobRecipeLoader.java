@@ -82,7 +82,7 @@ import thaumcraft.common.items.wands.ItemWandCasting;
 
 public class MobRecipeLoader {
 
-    private static final Logger LOG = LogManager.getLogger(Tags.MODID + "[Mob Handler]");
+    private static final Logger LOG = LogManager.getLogger(Tags.MODID + "[Mob Recipe Loader]");
 
     public static final MobRecipeLoader instance = new MobRecipeLoader();
 
