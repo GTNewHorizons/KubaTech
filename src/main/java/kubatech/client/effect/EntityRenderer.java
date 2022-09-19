@@ -1,7 +1,6 @@
 package kubatech.client.effect;
 
 import static net.minecraft.client.renderer.entity.RenderManager.*;
-import static org.lwjgl.opengl.GL11.GL_MODELVIEW_STACK_DEPTH;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -138,7 +137,7 @@ public class EntityRenderer extends EntityFX {
 
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
 
-        int stackdepth = GL11.glGetInteger(GL_MODELVIEW_STACK_DEPTH);
+        int stackdepth = GL11.glGetInteger(GL11.GL_MODELVIEW_STACK_DEPTH);
         GL11.glPushMatrix();
         GL11.glTranslatef(
                 (float) (this.posX - renderPosX), (float) (this.posY - renderPosY), (float) (this.posZ - renderPosZ));
