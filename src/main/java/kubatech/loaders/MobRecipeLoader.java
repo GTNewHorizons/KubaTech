@@ -582,7 +582,7 @@ public class MobRecipeLoader {
 
         if (alreadyGenerated) return;
         alreadyGenerated = true;
-        if (!Config.mobHandlerEnabled) return;
+        if (!Config.MobHandler.mobHandlerEnabled) return;
 
         World f = new GT_DummyWorld() {
             @Override
@@ -616,17 +616,18 @@ public class MobRecipeLoader {
         Gson gson = GSONUtils.GSON_BUILDER.create();
 
         String modlistversion;
-        if (Config.regenerationTrigger == Config._CacheRegenerationTrigger.ModAdditionRemoval)
+        if (Config.MobHandler.regenerationTrigger == Config.MobHandler._CacheRegenerationTrigger.ModAdditionRemoval)
             modlistversion = ModUtils.getModListVersionIgnoringModVersions();
         else modlistversion = ModUtils.getModListVersion();
 
-        if (Config.regenerationTrigger != Config._CacheRegenerationTrigger.Always && cache.exists()) {
+        if (Config.MobHandler.regenerationTrigger != Config.MobHandler._CacheRegenerationTrigger.Always
+                && cache.exists()) {
             LOG.info("Parsing Cached map");
             Reader reader = null;
             try {
                 reader = Files.newReader(cache, StandardCharsets.UTF_8);
                 MobRecipeLoaderCacheStructure s = gson.fromJson(reader, MobRecipeLoaderCacheStructure.class);
-                if (Config.regenerationTrigger == Config._CacheRegenerationTrigger.Never
+                if (Config.MobHandler.regenerationTrigger == Config.MobHandler._CacheRegenerationTrigger.Never
                         || s.version.equals(modlistversion)) {
                     for (Map.Entry<String, ArrayList<MobDrop>> entry : s.moblist.entrySet()) {
                         try {
@@ -1146,7 +1147,7 @@ public class MobRecipeLoader {
         for (Map.Entry<String, GeneralMappedMob> entry : GeneralMobList.entrySet()) {
             String k = entry.getKey();
             GeneralMappedMob v = entry.getValue();
-            if (Arrays.asList(Config.mobBlacklist).contains(k)) {
+            if (Arrays.asList(Config.MobHandler.mobBlacklist).contains(k)) {
                 LOG.info("Entity " + k + " is blacklisted, skipping");
                 continue;
             }
@@ -1180,7 +1181,7 @@ public class MobRecipeLoader {
 
             if (drops.isEmpty()) {
                 LOG.info("Entity " + k + " doesn't drop any items, skipping EEC map");
-                if (!Config.includeEmptyMobs) continue;
+                if (!Config.MobHandler.includeEmptyMobs) continue;
                 LoadConfigPacket.instance.mobsToLoad.add(k);
                 LOG.info("Registered " + k);
                 continue;

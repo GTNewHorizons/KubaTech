@@ -43,6 +43,7 @@ import kubatech.api.utils.FastRandom;
 import kubatech.api.utils.InfernalHelper;
 import kubatech.api.utils.MobUtils;
 import kubatech.api.utils.ModUtils;
+import kubatech.config.Config;
 import kubatech.kubatech;
 import kubatech.loaders.MobRecipeLoader;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
@@ -69,6 +70,7 @@ import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.glu.GLU;
 
 public class Mob_Handler extends TemplateRecipeHandler {
 
@@ -316,9 +318,9 @@ public class Mob_Handler extends TemplateRecipeHandler {
         GL11.glPopAttrib();
 
         int err;
-        while ((err = GL11.glGetError()) != GL11.GL_NO_ERROR) {
-            // LOG.error("GL ERROR: " + err);
-        }
+        while ((err = GL11.glGetError()) != GL11.GL_NO_ERROR)
+            if (Config.Debug.showRenderErrors)
+                LOG.error(currentrecipe.mobname + " | GL ERROR: " + err + " / " + GLU.gluErrorString(err));
 
         GL11.glDisable(GL11.GL_DEPTH_TEST);
     }

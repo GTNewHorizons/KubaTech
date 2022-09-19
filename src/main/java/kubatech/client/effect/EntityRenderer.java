@@ -5,19 +5,26 @@ import static org.lwjgl.opengl.GL11.GL_MODELVIEW_STACK_DEPTH;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import kubatech.Tags;
 import kubatech.api.utils.MobUtils;
+import kubatech.config.Config;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.EntityFX;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.world.World;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
+import org.lwjgl.util.glu.GLU;
 
 @SideOnly(Side.CLIENT)
 public class EntityRenderer extends EntityFX {
+    private static final Logger LOG = LogManager.getLogger(Tags.MODID + "[Entity Renderer]");
     private EntityLiving entityToRender = null;
 
     public EntityRenderer(World p_i1218_1_, double x, double y, double z, int age) {
@@ -156,9 +163,10 @@ public class EntityRenderer extends EntityFX {
         GL11.glPopAttrib();
 
         int err;
-        while ((err = GL11.glGetError()) != GL11.GL_NO_ERROR) {
-            // LOG.error("GL ERROR: " + err);
-        }
+        while ((err = GL11.glGetError()) != GL11.GL_NO_ERROR)
+            if (Config.Debug.showRenderErrors)
+                LOG.error(EntityList.getEntityString(entityToRender) + " | GL ERROR: " + err + " / "
+                        + GLU.gluErrorString(err));
 
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glDisable(GL11.GL_COLOR_MATERIAL);

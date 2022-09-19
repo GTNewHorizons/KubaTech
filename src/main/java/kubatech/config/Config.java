@@ -25,26 +25,49 @@ import net.minecraftforge.common.config.Configuration;
 
 public class Config {
 
-    private static class Categories {
-        public static final String mobHandler = "MobHandler";
-    }
+    private enum Category {
+        MOB_HANDLER("MobHandler"),
+        DEBUG("Debug");
+        String categoryName = "";
 
-    public static boolean mobHandlerEnabled = true;
+        Category(String s) {
+            categoryName = s;
+        }
 
-    public enum _CacheRegenerationTrigger {
-        Never,
-        ModAdditionRemoval,
-        ModAdditionRemovalChange,
-        Always;
+        public String get() {
+            return categoryName;
+        }
 
-        public static _CacheRegenerationTrigger get(int oridinal) {
-            return values()[oridinal];
+        @Override
+        public String toString() {
+            return get();
         }
     }
 
-    public static _CacheRegenerationTrigger regenerationTrigger = _CacheRegenerationTrigger.ModAdditionRemovalChange;
-    public static boolean includeEmptyMobs = true;
-    public static String[] mobBlacklist;
+    public static class MobHandler {
+
+        public static boolean mobHandlerEnabled = true;
+        public static _CacheRegenerationTrigger regenerationTrigger =
+                _CacheRegenerationTrigger.ModAdditionRemovalChange;
+        public static boolean includeEmptyMobs = true;
+        public static String[] mobBlacklist;
+
+        public enum _CacheRegenerationTrigger {
+            Never,
+            ModAdditionRemoval,
+            ModAdditionRemovalChange,
+            Always;
+
+            public static _CacheRegenerationTrigger get(int oridinal) {
+                return values()[oridinal];
+            }
+        }
+    }
+
+    public static class Debug {
+        public static boolean showRenderErrors = false;
+    }
+
     public static File configFile;
     public static File configDirectory;
 
@@ -61,29 +84,35 @@ public class Config {
         Configuration configuration = new Configuration(configFile);
         configuration.load();
 
-        mobHandlerEnabled = configuration
-                .get(
-                        Categories.mobHandler,
-                        "Enabled",
-                        true,
-                        "Enable \"Mob Drops\" NEI page and Extreme Extermination Chamber")
+        loadMobHandlerConfig(configuration);
+        loadDebugConfig(configuration);
+
+        if (configuration.hasChanged()) {
+            configuration.save();
+        }
+    }
+
+    private static void loadMobHandlerConfig(Configuration configuration) {
+        Category category = Category.MOB_HANDLER;
+        MobHandler.mobHandlerEnabled = configuration
+                .get(category.get(), "Enabled", true, "Enable \"Mob Drops\" NEI page and Extreme Extermination Chamber")
                 .getBoolean();
         StringBuilder c = new StringBuilder("When will cache regeneration trigger? ");
-        for (_CacheRegenerationTrigger value : _CacheRegenerationTrigger.values())
+        for (MobHandler._CacheRegenerationTrigger value : MobHandler._CacheRegenerationTrigger.values())
             c.append(value.ordinal()).append(" - ").append(value.name()).append(", ");
-        regenerationTrigger = _CacheRegenerationTrigger.get(configuration
+        MobHandler.regenerationTrigger = MobHandler._CacheRegenerationTrigger.get(configuration
                 .get(
-                        Categories.mobHandler,
+                        category.get(),
                         "CacheRegenerationTrigger",
-                        _CacheRegenerationTrigger.ModAdditionRemovalChange.ordinal(),
+                        MobHandler._CacheRegenerationTrigger.ModAdditionRemovalChange.ordinal(),
                         c.toString())
                 .getInt());
-        includeEmptyMobs = configuration
-                .get(Categories.mobHandler, "IncludeEmptyMobs", true, "Include mobs that have no drops in NEI")
+        MobHandler.includeEmptyMobs = configuration
+                .get(category.get(), "IncludeEmptyMobs", true, "Include mobs that have no drops in NEI")
                 .getBoolean();
-        mobBlacklist = configuration
+        MobHandler.mobBlacklist = configuration
                 .get(
-                        Categories.mobHandler,
+                        category.get(),
                         "MobBlacklist",
                         new String[] {
                             "Giant",
@@ -109,9 +138,11 @@ public class Config {
                         },
                         "These mobs will be skipped when generating recipe map")
                 .getStringList();
+    }
 
-        if (configuration.hasChanged()) {
-            configuration.save();
-        }
+    private static void loadDebugConfig(Configuration configuration) {
+        Category category = Category.DEBUG;
+        Debug.showRenderErrors =
+                configuration.get(category.get(), "ShowRenderErrors", false).getBoolean();
     }
 }
