@@ -128,6 +128,9 @@ public class EntityRenderer extends EntityFX {
         GL11.glColor4f(1f, 1f, 1f, 1F);
         RenderHelper.enableStandardItemLighting();
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
+
+        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+
         int stackdepth = GL11.glGetInteger(GL_MODELVIEW_STACK_DEPTH);
         GL11.glPushMatrix();
         GL11.glTranslatef(
@@ -149,6 +152,8 @@ public class EntityRenderer extends EntityFX {
         stackdepth -= GL11.glGetInteger(GL11.GL_MODELVIEW_STACK_DEPTH);
         if (stackdepth < 0) for (; stackdepth < 0; stackdepth++) GL11.glPopMatrix();
         if (stackdepth > 0) for (; stackdepth > 0; stackdepth--) GL11.glPushMatrix();
+
+        GL11.glPopAttrib();
 
         int err;
         while ((err = GL11.glGetError()) != GL11.GL_NO_ERROR) {

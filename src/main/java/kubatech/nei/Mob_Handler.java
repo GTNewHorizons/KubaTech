@@ -282,6 +282,8 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
         int stackdepth = GL11.glGetInteger(GL11.GL_MODELVIEW_STACK_DEPTH);
 
+        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+
         GL11.glPushMatrix();
 
         try {
@@ -310,6 +312,8 @@ public class Mob_Handler extends TemplateRecipeHandler {
         stackdepth -= GL11.glGetInteger(GL11.GL_MODELVIEW_STACK_DEPTH);
         if (stackdepth < 0) for (; stackdepth < 0; stackdepth++) GL11.glPopMatrix();
         if (stackdepth > 0) for (; stackdepth > 0; stackdepth--) GL11.glPushMatrix();
+
+        GL11.glPopAttrib();
 
         int err;
         while ((err = GL11.glGetError()) != GL11.GL_NO_ERROR) {
