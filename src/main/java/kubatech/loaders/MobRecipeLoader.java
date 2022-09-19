@@ -57,6 +57,7 @@ import minetweaker.MineTweakerAPI;
 import minetweaker.api.entity.IEntityDefinition;
 import minetweaker.api.item.IItemStack;
 import minetweaker.mc1710.item.MCItemStack;
+import net.minecraft.block.Block;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
@@ -67,6 +68,7 @@ import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.entity.monster.EntitySlime;
 import net.minecraft.entity.monster.IMob;
+import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -592,6 +594,17 @@ public class MobRecipeLoader {
             @Override
             public List getEntitiesWithinAABB(Class p_72872_1_, AxisAlignedBB p_72872_2_) {
                 return new ArrayList();
+            }
+
+            @Override
+            public Block getBlock(int aX, int aY, int aZ) {
+                if (LoaderReference.TwilightForest
+                        && new Throwable()
+                                .getStackTrace()[1]
+                                .getClassName()
+                                .equals("twilightforest.client.renderer.entity.RenderTFSnowQueenIceShield"))
+                    return Blocks.packed_ice;
+                return super.getBlock(aX, aY, aZ);
             }
         };
         f.isRemote = true; // quick hack to get around achievements
