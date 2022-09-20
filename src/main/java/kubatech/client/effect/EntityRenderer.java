@@ -102,8 +102,8 @@ public class EntityRenderer extends EntityFX {
 
         {
             double y1 = this.posY + entityToRender.getEyeHeight();
-            double y2 = mc.thePlayer.posY;
-            double d = mc.thePlayer.getDistance(this.posX, mc.thePlayer.posY + mc.thePlayer.getEyeHeight(), this.posZ);
+            double y2 = mc.thePlayer.posY + mc.thePlayer.getEyeHeight();
+            double d = mc.thePlayer.getDistance(this.posX, y2, this.posZ);
             double k = Math.toDegrees(Math.atan2(y1 - y2, d));
             if (k < 0d) k += 360d;
             headrotation = k;
