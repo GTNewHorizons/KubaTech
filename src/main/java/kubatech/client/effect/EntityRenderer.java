@@ -85,38 +85,36 @@ public class EntityRenderer extends EntityFX {
         entityToRender.worldObj = this.worldObj;
         entityToRender.setPosition(this.posX, this.posY, this.posZ);
 
+        Minecraft mc = Minecraft.getMinecraft();
+
         double rotation;
-        // double headrotation;
+        double headrotation;
         {
             double x1 = this.posX;
-            double x2 = Minecraft.getMinecraft().thePlayer.posX;
+            double x2 = mc.thePlayer.posX;
             double y1 = this.posZ;
-            double y2 = Minecraft.getMinecraft().thePlayer.posZ;
+            double y2 = mc.thePlayer.posZ;
             double k = Math.toDegrees(Math.atan2(x2 - x1, y1 - y2));
             if (k < 0d) k += 360d;
             k -= 180d;
             rotation = k;
         }
-        /*
-               {
-                   double y1 = this.posY;
-                   double y2 = Minecraft.getMinecraft().thePlayer.posY;
-                   double d = Minecraft.getMinecraft()
-                           .thePlayer
-                           .getDistance(this.posX, Minecraft.getMinecraft().thePlayer.posY, this.posZ);
-                   double k = Math.toDegrees(Math.atan2(y1 - y2, d));
-                   if (k < 0d) k += 360d;
-                   headrotation = k;
-               }
 
-        */
+        {
+            double y1 = this.posY + entityToRender.getEyeHeight();
+            double y2 = mc.thePlayer.posY;
+            double d = mc.thePlayer.getDistance(this.posX, mc.thePlayer.posY + mc.thePlayer.getEyeHeight(), this.posZ);
+            double k = Math.toDegrees(Math.atan2(y1 - y2, d));
+            if (k < 0d) k += 360d;
+            headrotation = k;
+        }
 
         entityToRender.prevRotationYawHead = entityToRender.rotationYawHead;
         entityToRender.prevRenderYawOffset = entityToRender.renderYawOffset;
-        // entityToRender.prevRotationPitch = entityToRender.rotationPitch;
+        entityToRender.prevRotationPitch = entityToRender.rotationPitch;
         entityToRender.renderYawOffset = (float) rotation;
         entityToRender.rotationYawHead = (float) rotation;
-        // entityToRender.rotationPitch = (float)headrotation;
+        entityToRender.rotationPitch = (float) headrotation;
 
         float p_147936_2_ = 0.5f;
 
