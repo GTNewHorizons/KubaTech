@@ -473,11 +473,14 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 && this.getBaseMetaTileEntity().getWorld().difficultySetting == EnumDifficulty.PEACEFUL) return false;
 
         if (isInRitualMode && isRitualValid()) {
+            if (getMaxInputVoltage() < recipe.mEUt / 4) return false;
+            this.mEUt = recipe.mEUt / 4;
             this.mMaxProgresstime = 400;
-            this.mEUt /= 4;
             this.mOutputFluids = new FluidStack[] {FluidRegistry.getFluidStack("xpjuice", 5000)};
             this.mOutputItems = recipe.generateOutputs(rand, this, 3, 0, mIsProducingInfernalDrops);
         } else {
+            if (getMaxInputVoltage() < recipe.mEUt) return false;
+
             double attackDamage = DIAMOND_SPIKES_DAMAGE; // damage from spikes
             GT_MetaTileEntity_Hatch_InputBus inputbus = this.mInputBusses.size() == 0 ? null : this.mInputBusses.get(0);
             if (inputbus != null && !isValidMetaTileEntity(inputbus)) inputbus = null;

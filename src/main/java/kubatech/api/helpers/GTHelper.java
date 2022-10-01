@@ -15,7 +15,7 @@ public class GTHelper {
             GT_MetaTileEntity_MultiBlockBase mte, long aEUt, int aDuration, boolean perfect) {
         long maxInputVoltage = getMaxInputEU(mte);
         int tiers = (int) (Math.log((double) maxInputVoltage / (double) aEUt) / ln4);
-        if (tiers == 0) {
+        if (tiers <= 0) {
             mte.mEUt = (int) aEUt;
             mte.mMaxProgresstime = aDuration;
             return 0;
