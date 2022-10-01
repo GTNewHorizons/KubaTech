@@ -60,6 +60,7 @@ import java.util.HashMap;
 import java.util.Random;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
+import kubatech.api.helpers.GTHelper;
 import kubatech.api.helpers.ReflectionHelper;
 import kubatech.api.network.CustomTileEntityPacket;
 import kubatech.api.tileentity.CustomTileEntityPacketHandler;
@@ -510,19 +511,17 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
 
             this.mOutputItems = recipe.generateOutputs(
                     rand, this, attackDamage, weaponCache.isValid ? weaponCache.looting : 0, mIsProducingInfernalDrops);
-            int eut = this.mEUt;
-            calculatePerfectOverclockedNessMulti(this.mEUt, this.mMaxProgresstime, 2, getMaxInputVoltage());
+            this.mOutputFluids = new FluidStack[] {FluidRegistry.getFluidStack("xpjuice", 120)};
+            int times = GTHelper.calculateOverclockedNessMulti(this, this.mEUt, this.mMaxProgresstime, true);
             //noinspection ConstantConditions
             if (weaponCache.isValid && lootingholder.isItemStackDamageable()) {
-                do {
+                for (int i = 0; i < times + 1; i++)
                     if (lootingholder.attemptDamageItem(1, rand)) {
                         //noinspection ConstantConditions
                         inputbus.setInventorySlotContents(0, null);
                         break;
                     }
-                } while ((eut <<= 2) < this.mEUt);
             }
-            this.mOutputFluids = new FluidStack[] {FluidRegistry.getFluidStack("xpjuice", 120)};
         }
         if (this.mEUt > 0) this.mEUt = -this.mEUt;
         this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
