@@ -4,6 +4,8 @@ import static gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Mult
 
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energy;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_MultiBlockBase;
+import java.util.ArrayList;
+import java.util.Arrays;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
 
@@ -13,8 +15,8 @@ public class GTHelper {
 
     public static int calculateOverclockedNessMulti(
             GT_MetaTileEntity_MultiBlockBase mte, long aEUt, int aDuration, boolean perfect) {
-        long maxInputVoltage = getMaxInputEU(mte);
-        int tiers = (int) (Math.log((double) maxInputVoltage / (double) aEUt) / ln4);
+        final long maxInputVoltage = getMaxInputEU(mte);
+        final int tiers = (int) (Math.log((double) maxInputVoltage / (double) aEUt) / ln4);
         if (tiers <= 0) {
             mte.mEUt = (int) aEUt;
             mte.mMaxProgresstime = aDuration;
@@ -22,12 +24,19 @@ public class GTHelper {
         }
         mte.mEUt = (int) (aEUt << (tiers << 1));
         int dMulti = 1;
-        int aDurationModifier = perfect ? 2 : 1;
+        final int aDurationModifier = perfect ? 2 : 1;
         for (int i = 0; i < tiers; i++)
             if (aDuration > 1) aDuration >>= aDurationModifier;
             else dMulti <<= aDurationModifier;
         if (dMulti > 1) {
-            for (ItemStack mOutputItem : mte.mOutputItems) mOutputItem.stackSize *= dMulti;
+            final ArrayList<ItemStack> stacks = new ArrayList<>(Arrays.asList(mte.mOutputItems));
+            for (ItemStack mOutputItem : mte.mOutputItems) {
+                mOutputItem.stackSize *= dMulti;
+                int maxSize = mOutputItem.getMaxStackSize();
+                while (mOutputItem.stackSize > maxSize)
+                    stacks.add(mOutputItem.splitStack(Math.min(mOutputItem.stackSize - maxSize, maxSize)));
+            }
+            if (stacks.size() != mte.mOutputItems.length) mte.mOutputItems = stacks.toArray(new ItemStack[0]);
             for (FluidStack mOutputFluid : mte.mOutputFluids) mOutputFluid.amount *= dMulti;
         }
         if (aDuration <= 0) aDuration = 1;
