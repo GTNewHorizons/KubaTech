@@ -214,6 +214,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 .addInfo("Spawns and Exterminates monsters for you")
                 .addInfo("You have to insert the powered spawner in controller")
                 .addInfo("Base energy usage: 2,000 EU/t")
+                .addInfo("Supports perfect OC and past 1 tick (multiplies outputs)")
                 .addInfo("Recipe time is based on mob health")
                 .addInfo("You can additionally put a weapon to the ULV input bus")
                 .addInfo("It will speed up the process and apply looting level from the weapon")
