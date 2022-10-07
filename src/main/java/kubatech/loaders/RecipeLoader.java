@@ -34,6 +34,7 @@ import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.enums.ItemList;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
+import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialApiary;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -73,6 +74,12 @@ public class RecipeLoader {
                 GT_ModHandler.getModItem("OpenBlocks", "vacuumhopper", 1, new ItemStack(Blocks.hopper))
             });
         }
+        registerMTE(
+                ExtremeIndustrialApiary,
+                GT_MetaTileEntity_ExtremeIndustrialApiary.class,
+                "multimachine.extremeapiary",
+                "Industrial Apicultural Acclimatiser and Drone Domestication Station",
+                LoaderReference.Forestry);
         RegisterTeaLine();
         if (MTEID > MTEIDMax + 1) throw new RuntimeException("MTE ID's");
     }

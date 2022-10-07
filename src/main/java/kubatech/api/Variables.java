@@ -23,6 +23,16 @@ import net.minecraft.util.EnumChatFormatting;
 
 public class Variables {
     public static final String Author = "Author: " + EnumChatFormatting.GOLD + "kuba6000";
+    public static String buildAuthorList(String... authors){
+        if(authors.length == 0)
+            return "Author: Unknown";
+        StringBuilder b = new StringBuilder("Author: ").append(EnumChatFormatting.GOLD).append(authors[0]);
+        for (int i = 1; i < authors.length; i++) {
+            String author = authors[i];
+            b.append(EnumChatFormatting.RESET).append(" & ").append(EnumChatFormatting.GOLD).append(author);
+        }
+        return b.toString();
+    }
     public static final String StructureHologram =
             "To see the structure, use a " + EnumChatFormatting.BLUE + "Tec" + EnumChatFormatting.DARK_BLUE + "Tech"
                     + EnumChatFormatting.RESET + "" + EnumChatFormatting.GRAY + " Blueprint on the Controller!";
