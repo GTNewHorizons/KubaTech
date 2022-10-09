@@ -5,7 +5,7 @@ dependencies {
     compile("com.github.GTNewHorizons:EnderCore:0.2.6:dev")
     compile("com.github.GTNewHorizons:EnderIO:2.3.1.29:dev")
     compile("com.github.GTNewHorizons:Infernal-Mobs:1.7.5-GTNH:dev")
-    compile("com.github.GTNewHorizons:ForestryMC:4.4.15:dev")
+    compile("com.github.GTNewHorizons:ForestryMC:4.5.0:dev")
     compileOnly("com.github.GTNewHorizons:GTplusplus:1.7.76:dev")
     {
         transitive = false

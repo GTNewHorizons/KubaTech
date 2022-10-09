@@ -1,3 +1,22 @@
+/*
+ * KubaTech - Gregtech Addon
+ * Copyright (C) 2022  kuba6000
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library. If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
 package kubatech.tileentity.gregtech.multiblock;
 
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.*;
@@ -13,6 +32,7 @@ import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import forestry.api.apiculture.*;
 import forestry.apiculture.blocks.BlockAlveary;
 import forestry.apiculture.blocks.BlockApicultureType;
+import forestry.apiculture.genetics.Bee;
 import forestry.plugins.PluginApiculture;
 import gregtech.api.GregTech_API;
 import gregtech.api.enums.GT_Values;
@@ -482,20 +502,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
             GT_Utility.ItemId id;
             public BeeDrop(ItemStack stack, float chance, float beeSpeed){
                 this.stack = stack;
-
-
-                double p = 2.f; // full upgrade
-                double s = beeSpeed;
-                double x = chance * 100;
-                double t = 8.f; // UV
-
-                this.amount = Math.exp(-x) + (1d + t / 6d) * Math.sqrt(x) * 2d * (1d + s) + Math.pow(p, 4d);
-                this.amount /= 100d;
-
-
-
-                //this.amount = Math.min(1d, (double)chance * (double)beeSpeed * 4.3d);
-
+                this.amount = Bee.getFinalChance(chance, beeSpeed, 2.f, 8.f);
                 id = GT_Utility.ItemId.createNoCopy(stack);
             }
 
