@@ -23,6 +23,7 @@ import static kubatech.loaders.ItemLoader.RegisterItems;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.*;
+import kubatech.commands.CommandBees;
 import kubatech.commands.CommandConfig;
 import kubatech.commands.CommandHandler;
 import kubatech.commands.CommandHelp;
@@ -52,6 +53,7 @@ public class CommonProxy {
         CommandHandler cmd = new CommandHandler();
         cmd.addCommand(new CommandHelp());
         cmd.addCommand(new CommandConfig());
+        cmd.addCommand(new CommandBees());
         event.registerServerCommand(cmd);
     }
 

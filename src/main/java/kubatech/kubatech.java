@@ -73,6 +73,7 @@ public class kubatech {
         public void displayAllReleventItems(List p_78018_1_) {
             super.displayAllReleventItems(p_78018_1_);
             p_78018_1_.add(ItemList.ExtremeExterminationChamber.get(1));
+            p_78018_1_.add(ItemList.ExtremeIndustrialApiary.get(1));
         }
     };
 
