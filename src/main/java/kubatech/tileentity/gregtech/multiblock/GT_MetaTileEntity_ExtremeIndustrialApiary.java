@@ -45,6 +45,9 @@ import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energ
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import kubatech.Tags;
 import kubatech.api.helpers.GTHelper;
 import net.minecraft.entity.player.EntityPlayer;
@@ -52,13 +55,6 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
-import org.spongepowered.asm.mixin.injection.struct.InjectorGroupInfo;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class GT_MetaTileEntity_ExtremeIndustrialApiary
         extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_ExtremeIndustrialApiary> {
@@ -73,40 +69,342 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
     private static final ItemStack royal_jelly_consumption = PluginApiculture.items.royalJelly.getItemStack(51);
     private static final int CASING_INDEX = 10;
     private static final String STRUCTURE_PIECE_MAIN = "main";
+    /*
+                       {"               ","               ","               ","      HHH      ","    HHAAAHH    ","    HAPLPAH    ","   HAPAAAPAH   ","   HALAAALAH   ","   HAPAAAPAH   ","    HAPLPAH    ","    HHAAAHH    ","      HHH      ","               ","               ","               "},
+                       {"               ","               ","      GGG      ","   GGG   GG    ","   G       G   ","   G       G   ","  G         G  ","  G         G  ","  G         G  ","   G       G   ","   G       G   ","    GG   GG    ","      GGG      ","               ","               "},
+                       {"               ","      HHH      ","   HHH   HHH   ","  H        GH  ","  H         H  ","  H         H  "," H           H "," H           H "," H           H ","  H         H  ","  H         H  ","  HG       GH  ","   HHH   HHH   ","      HHH      ","               "},
+                       {"      GGG      ","   GGG   GGG   ","  G         G  "," G           G "," G           G "," G           G ","G             G","G             G","G             G"," G           G "," G           G "," G           G ","  G         G  ","   GGG   GGG   ","      GGG      "},
+                       {"      AAA      ","   OLA   ALO   ","  P         P  "," O           O "," L           L "," A           A ","A             A","A             A","A             A"," A           A "," L           L "," O           O ","  P         P  ","   OLA   ALO   ","      AAA      "},
+                       {"     AAAAA     ","   NA     AO   ","  P         P  "," N           O "," A           A ","A             A","A     III     A","A     III     A","A     III     A","A             A"," A           A "," N           N ","  P         P  ","   NA     AN   ","     AAAAA     "},
+                       {"     AAAAA     ","   NA     AO   ","  P         P  "," N           O "," A           A ","A             A","A     JJJ     A","A     JKJ     A","A     JJJ     A","A             A"," A           A "," N           N ","  P         P  ","   NA     AN   ","     AAAAA     "},
+                       {"      AAA      ","   OLA   ALO   ","  P         P  "," O           O "," L           L "," A           A ","A     KKK     A","A     KKK     A","A     KKK     A"," A           A "," L           L "," O           O ","  P         P  ","   OLA   ALO   ","      AAA      "},
+                       {"      G~G      ","   GGGBBBGGG   ","  GBB     BBG  "," GB        BBG "," GB         BG "," G           G ","GB    KKK    BG","GB    KJK    BG","GB    KKK    BG"," G           G "," GB         BG "," GBB       BBG ","  GBB     BBG  ","   GGGBBBGGG   ","      GGG      "},
+                       {"      HHH      ","    HHBBBHH    ","  HHBBBBBBBHH  ","  HBBBWWWBBBH  "," HBBWWWWWWWBBH "," HBBWBBBBBWWBH ","HBBWWBBBBBBWBBH","HBBWBBBBBBBWBBH","HBBWBBBBBBWWBBH"," HBWWBBBBBWWBH "," HBBWWWBBWWBBH ","  HBBBWWWWBBH  ","  HHBBBBBBBHH  ","    HHBBBHH    ","      HHH      "},
+                       {"               ","     GGGGG     ","   GGGBBBBGG   ","  GBBBBBBBBBG  ","  GBBBBBBBBBG  "," GBBBBBBBBBBBG "," GBBBBBBBBBBBG "," GBBBBBBBBBBBG "," GBBBBBBBBBBBG "," GBBBBBBBBBBBG ","  GBBBBBBBBBG  ","  GBBBBBBBBBG  ","   GGBBBBBGG   ","     GGGGG     ","               "},
+                       {"               ","      HHH      ","    HHBBBHH    ","   HBBBBBBBH   ","  HBBBBBBBBBH  ","  HBBBBBBBBBH  "," HBBBBBBBBBBBH "," HBBBBBBBBBBBH "," HBBBBBBBBBBBH ","  HBBBBBBBBBH  ","  HBBBBBBBBBH  ","   HBBBBBBBH   ","    HHBBBHH    ","      HHH      ","               "},
+                       {"               ","               ","      GGG      ","    GGBBBGG    ","   GBBBBBBBG   ","   GBBBBBBBG   ","  GBBBBBBBBBG  ","  GBBBBBBBBBG  ","  GBBBBBBBBBG  ","   GBBBBBBBG   ","   GBBBBBBBG   ","    GGBBBGG    ","      GGG      ","               ","               "},
+                       {"               ","               ","       H       ","     HHBHH     ","    HBBBBBH    ","   HBBBBBBBH   ","   HBBBBBBBH   ","  HBBBBBBBBBH  ","   HBBBBBBBH   ","   HBBBBBBBH   ","    HBBBBBH    ","     HHBHH     ","       H       ","               ","               "},
+                       {"               ","               ","               ","       G       ","     GGBGG     ","    GBBBBBG    ","    GBBBBBG    ","   GBBBBBBBG   ","    GBBBBBG    ","    GBBBBBG    ","     GGBGG     ","       G       ","               ","               ","               "},
+                       {"               ","               ","               ","               ","      HHH      ","     HHHHH     ","    HHBBBHH    ","    HHBBBHH    ","    HHBBBHH    ","     HHBHH     ","      HHH      ","               ","               ","               ","               "},
+                       {"               ","               ","               ","               ","               ","               ","      GGG      ","      GHG      ","      GGG      ","               ","               ","               ","               ","               ","               "}
+    */
+
     private static final IStructureDefinition<GT_MetaTileEntity_ExtremeIndustrialApiary> STRUCTURE_DEFINITION =
             StructureDefinition.<GT_MetaTileEntity_ExtremeIndustrialApiary>builder()
                     .addShape(STRUCTURE_PIECE_MAIN, transpose(new String[][] {
-                        {"               ","               ","               ","      HHH      ","    HHAAAHH    ","    HAPLPAH    ","   HAPAAAPAH   ","   HALAAALAH   ","   HAPAAAPAH   ","    HAPLPAH    ","    HHAAAHH    ","      HHH      ","               ","               ","               "},
-                        {"               ","               ","      GGG      ","   GGG   GG    ","   G       G   ","   G       G   ","  G         G  ","  G         G  ","  G         G  ","   G       G   ","   G       G   ","    GG   GG    ","      GGG      ","               ","               "},
-                        {"               ","      HHH      ","   HHH   HHH   ","  H        GH  ","  H         H  ","  H         H  "," H           H "," H           H "," H           H ","  H         H  ","  H         H  ","  HG       GH  ","   HHH   HHH   ","      HHH      ","               "},
-                        {"      GGG      ","   GGG   GGG   ","  G         G  "," G           G "," G           G "," G           G ","G             G","G             G","G             G"," G           G "," G           G "," G           G ","  G         G  ","   GGG   GGG   ","      GGG      "},
-                        {"      AAA      ","   OLA   ALO   ","  P         P  "," O           O "," L           L "," A           A ","A             A","A             A","A             A"," A           A "," L           L "," O           O ","  P         P  ","   OLA   ALO   ","      AAA      "},
-                        {"     AAAAA     ","   NA     AO   ","  P         P  "," N           O "," A           A ","A             A","A     III     A","A     III     A","A     III     A","A             A"," A           A "," N           N ","  P         P  ","   NA     AN   ","     AAAAA     "},
-                        {"     AAAAA     ","   NA     AO   ","  P         P  "," N           O "," A           A ","A             A","A     JJJ     A","A     JKJ     A","A     JJJ     A","A             A"," A           A "," N           N ","  P         P  ","   NA     AN   ","     AAAAA     "},
-                        {"      AAA      ","   OLA   ALO   ","  P         P  "," O           O "," L           L "," A           A ","A     KKK     A","A     KKK     A","A     KKK     A"," A           A "," L           L "," O           O ","  P         P  ","   OLA   ALO   ","      AAA      "},
-                        {"      G~G      ","   GGGBBBGGG   ","  GBB     BBG  "," GB        BBG "," GB         BG "," G           G ","GB    KKK    BG","GB    KJK    BG","GB    KKK    BG"," G           G "," GB         BG "," GBB       BBG ","  GBB     BBG  ","   GGGBBBGGG   ","      GGG      "},
-                        {"      HHH      ","    HHBBBHH    ","  HHBBBBBBBHH  ","  HBBBWWWBBBH  "," HBBWWWWWWWBBH "," HBBWBBBBBWWBH ","HBBWWBBBBBBWBBH","HBBWBBBBBBBWBBH","HBBWBBBBBBWWBBH"," HBWWBBBBBWWBH "," HBBWWWBBWWBBH ","  HBBBWWWWBBH  ","  HHBBBBBBBHH  ","    HHBBBHH    ","      HHH      "},
-                        {"               ","     GGGGG     ","   GGGBBBBGG   ","  GBBBBBBBBBG  ","  GBBBBBBBBBG  "," GBBBBBBBBBBBG "," GBBBBBBBBBBBG "," GBBBBBBBBBBBG "," GBBBBBBBBBBBG "," GBBBBBBBBBBBG ","  GBBBBBBBBBG  ","  GBBBBBBBBBG  ","   GGBBBBBGG   ","     GGGGG     ","               "},
-                        {"               ","      HHH      ","    HHBBBHH    ","   HBBBBBBBH   ","  HBBBBBBBBBH  ","  HBBBBBBBBBH  "," HBBBBBBBBBBBH "," HBBBBBBBBBBBH "," HBBBBBBBBBBBH ","  HBBBBBBBBBH  ","  HBBBBBBBBBH  ","   HBBBBBBBH   ","    HHBBBHH    ","      HHH      ","               "},
-                        {"               ","               ","      GGG      ","    GGBBBGG    ","   GBBBBBBBG   ","   GBBBBBBBG   ","  GBBBBBBBBBG  ","  GBBBBBBBBBG  ","  GBBBBBBBBBG  ","   GBBBBBBBG   ","   GBBBBBBBG   ","    GGBBBGG    ","      GGG      ","               ","               "},
-                        {"               ","               ","       H       ","     HHBHH     ","    HBBBBBH    ","   HBBBBBBBH   ","   HBBBBBBBH   ","  HBBBBBBBBBH  ","   HBBBBBBBH   ","   HBBBBBBBH   ","    HBBBBBH    ","     HHBHH     ","       H       ","               ","               "},
-                        {"               ","               ","               ","       G       ","     GGBGG     ","    GBBBBBG    ","    GBBBBBG    ","   GBBBBBBBG   ","    GBBBBBG    ","    GBBBBBG    ","     GGBGG     ","       G       ","               ","               ","               "},
-                        {"               ","               ","               ","               ","      HHH      ","     HHHHH     ","    HHBBBHH    ","    HHBBBHH    ","    HHBBBHH    ","     HHBHH     ","      HHH      ","               ","               ","               ","               "},
-                        {"               ","               ","               ","               ","               ","               ","      GGG      ","      GHG      ","      GGG      ","               ","               ","               ","               ","               ","               "}
+                        {
+                            "               ",
+                            "               ",
+                            "               ",
+                            "      HHH      ",
+                            "    HHAAAHH    ",
+                            "    HAPLPAH    ",
+                            "   HAPAAAPAH   ",
+                            "   HALAAALAH   ",
+                            "   HAPAAAPAH   ",
+                            "    HAPLPAH    ",
+                            "    HHAAAHH    ",
+                            "      HHH      ",
+                            "               ",
+                            "               ",
+                            "               "
+                        },
+                        {
+                            "               ",
+                            "               ",
+                            "      GGG      ",
+                            "   GGG   GG    ",
+                            "   G       G   ",
+                            "   G       G   ",
+                            "  G         G  ",
+                            "  G         G  ",
+                            "  G         G  ",
+                            "   G       G   ",
+                            "   G       G   ",
+                            "    GG   GG    ",
+                            "      GGG      ",
+                            "               ",
+                            "               "
+                        },
+                        {
+                            "               ",
+                            "      HHH      ",
+                            "   HHH   HHH   ",
+                            "  H        GH  ",
+                            "  H         H  ",
+                            "  H         H  ",
+                            " H           H ",
+                            " H           H ",
+                            " H           H ",
+                            "  H         H  ",
+                            "  H         H  ",
+                            "  HG       GH  ",
+                            "   HHH   HHH   ",
+                            "      HHH      ",
+                            "               "
+                        },
+                        {
+                            "      GGG      ",
+                            "   GGG   GGG   ",
+                            "  G         G  ",
+                            " G           G ",
+                            " G           G ",
+                            " G           G ",
+                            "G             G",
+                            "G             G",
+                            "G             G",
+                            " G           G ",
+                            " G           G ",
+                            " G           G ",
+                            "  G         G  ",
+                            "   GGG   GGG   ",
+                            "      GGG      "
+                        },
+                        {
+                            "      AAA      ",
+                            "   OLA   ALO   ",
+                            "  P         P  ",
+                            " O           O ",
+                            " L           L ",
+                            " A           A ",
+                            "A             A",
+                            "A             A",
+                            "A             A",
+                            " A           A ",
+                            " L           L ",
+                            " O           O ",
+                            "  P         P  ",
+                            "   OLA   ALO   ",
+                            "      AAA      "
+                        },
+                        {
+                            "     AAAAA     ",
+                            "   NA     AO   ",
+                            "  P         P  ",
+                            " N           O ",
+                            " A           A ",
+                            "A             A",
+                            "A     III     A",
+                            "A     III     A",
+                            "A     III     A",
+                            "A             A",
+                            " A           A ",
+                            " N           N ",
+                            "  P         P  ",
+                            "   NA     AN   ",
+                            "     AAAAA     "
+                        },
+                        {
+                            "     AAAAA     ",
+                            "   NA     AO   ",
+                            "  P         P  ",
+                            " N           O ",
+                            " A           A ",
+                            "A             A",
+                            "A     JJJ     A",
+                            "A     JKJ     A",
+                            "A     JJJ     A",
+                            "A             A",
+                            " A           A ",
+                            " N           N ",
+                            "  P         P  ",
+                            "   NA     AN   ",
+                            "     AAAAA     "
+                        },
+                        {
+                            "      AAA      ",
+                            "   OLA   ALO   ",
+                            "  P         P  ",
+                            " O           O ",
+                            " L           L ",
+                            " A           A ",
+                            "A     KKK     A",
+                            "A     KKK     A",
+                            "A     KKK     A",
+                            " A           A ",
+                            " L           L ",
+                            " O           O ",
+                            "  P         P  ",
+                            "   OLA   ALO   ",
+                            "      AAA      "
+                        },
+                        {
+                            "      G~G      ",
+                            "   GGGBBBGGG   ",
+                            "  GBB     BBG  ",
+                            " GB        BBG ",
+                            " GB         BG ",
+                            " G           G ",
+                            "GB    KKK    BG",
+                            "GB    KJK    BG",
+                            "GB    KKK    BG",
+                            " G           G ",
+                            " GB         BG ",
+                            " GBB       BBG ",
+                            "  GBB     BBG  ",
+                            "   GGGBBBGGG   ",
+                            "      GGG      "
+                        },
+                        {
+                            "      HHH      ",
+                            "    HHBBBHH    ",
+                            "  HHBBBBBBBHH  ",
+                            "  HBBBWWWBBBH  ",
+                            " HBBWWWWWWWBBH ",
+                            " HBBWBBBBBWWBH ",
+                            "HBBWWBBBBBBWBBH",
+                            "HBBWBBBBBBBWBBH",
+                            "HBBWBBBBBBWWBBH",
+                            " HBWWBBBBBWWBH ",
+                            " HBBWWWBBWWBBH ",
+                            "  HBBBWWWWBBH  ",
+                            "  HHBBBBBBBHH  ",
+                            "    HHBBBHH    ",
+                            "      HHH      "
+                        },
+                        {
+                            "               ",
+                            "     GGGGG     ",
+                            "   GGGBBBBGG   ",
+                            "  GBBBBBBBBBG  ",
+                            "  GBBBBBBBBBG  ",
+                            " GBBBBBBBBBBBG ",
+                            " GBBBBBBBBBBBG ",
+                            " GBBBBBBBBBBBG ",
+                            " GBBBBBBBBBBBG ",
+                            " GBBBBBBBBBBBG ",
+                            "  GBBBBBBBBBG  ",
+                            "  GBBBBBBBBBG  ",
+                            "   GGBBBBBGG   ",
+                            "     GGGGG     ",
+                            "               "
+                        },
+                        {
+                            "               ",
+                            "      HHH      ",
+                            "    HHBBBHH    ",
+                            "   HBBBBBBBH   ",
+                            "  HBBBBBBBBBH  ",
+                            "  HBBBBBBBBBH  ",
+                            " HBBBBBBBBBBBH ",
+                            " HBBBBBBBBBBBH ",
+                            " HBBBBBBBBBBBH ",
+                            "  HBBBBBBBBBH  ",
+                            "  HBBBBBBBBBH  ",
+                            "   HBBBBBBBH   ",
+                            "    HHBBBHH    ",
+                            "      HHH      ",
+                            "               "
+                        },
+                        {
+                            "               ",
+                            "               ",
+                            "      GGG      ",
+                            "    GGBBBGG    ",
+                            "   GBBBBBBBG   ",
+                            "   GBBBBBBBG   ",
+                            "  GBBBBBBBBBG  ",
+                            "  GBBBBBBBBBG  ",
+                            "  GBBBBBBBBBG  ",
+                            "   GBBBBBBBG   ",
+                            "   GBBBBBBBG   ",
+                            "    GGBBBGG    ",
+                            "      GGG      ",
+                            "               ",
+                            "               "
+                        },
+                        {
+                            "               ",
+                            "               ",
+                            "       H       ",
+                            "     HHBHH     ",
+                            "    HBBBBBH    ",
+                            "   HBBBBBBBH   ",
+                            "   HBBBBBBBH   ",
+                            "  HBBBBBBBBBH  ",
+                            "   HBBBBBBBH   ",
+                            "   HBBBBBBBH   ",
+                            "    HBBBBBH    ",
+                            "     HHBHH     ",
+                            "       H       ",
+                            "               ",
+                            "               "
+                        },
+                        {
+                            "               ",
+                            "               ",
+                            "               ",
+                            "       G       ",
+                            "     GGBGG     ",
+                            "    GBBBBBG    ",
+                            "    GBBBBBG    ",
+                            "   GBBBBBBBG   ",
+                            "    GBBBBBG    ",
+                            "    GBBBBBG    ",
+                            "     GGBGG     ",
+                            "       G       ",
+                            "               ",
+                            "               ",
+                            "               "
+                        },
+                        {
+                            "               ",
+                            "               ",
+                            "               ",
+                            "               ",
+                            "      HHH      ",
+                            "     HHHHH     ",
+                            "    HHBBBHH    ",
+                            "    HHBBBHH    ",
+                            "    HHBBBHH    ",
+                            "     HHBHH     ",
+                            "      HHH      ",
+                            "               ",
+                            "               ",
+                            "               ",
+                            "               "
+                        },
+                        {
+                            "               ",
+                            "               ",
+                            "               ",
+                            "               ",
+                            "               ",
+                            "               ",
+                            "      GGG      ",
+                            "      GHG      ",
+                            "      GGG      ",
+                            "               ",
+                            "               ",
+                            "               ",
+                            "               ",
+                            "               ",
+                            "               "
+                        }
                     }))
                     .addElement(
                             'A', BorosilicateGlass.ofBoroGlass((byte) 0, (t, v) -> t.mGlassTier = v, t -> t.mGlassTier))
-                    .addElement('B', ofChain (
-                        ofBlockAnyMeta(Blocks.dirt, 0),
-                        ofBlock(Blocks.grass, 0)
-                    ))
-                    .addElement('G', ofChain(
-                        onElementPass(t -> t.mCasing++, ofBlock(GregTech_API.sBlockCasings1, 10)),
-                        ofHatchAdder(GT_MetaTileEntity_ExtremeIndustrialApiary::addInputToMachineList, CASING_INDEX, 1),
-                        ofHatchAdder(GT_MetaTileEntity_ExtremeIndustrialApiary::addOutputToMachineList, CASING_INDEX, 1),
-                        ofHatchAdder(GT_MetaTileEntity_ExtremeIndustrialApiary::addEnergyInputToMachineList, CASING_INDEX, 1),
-                        ofHatchAdder(GT_MetaTileEntity_ExtremeIndustrialApiary::addMaintenanceToMachineList, CASING_INDEX, 1)
-                    ))
+                    .addElement('B', ofChain(ofBlockAnyMeta(Blocks.dirt, 0), ofBlock(Blocks.grass, 0)))
+                    .addElement(
+                            'G',
+                            ofChain(
+                                    onElementPass(t -> t.mCasing++, ofBlock(GregTech_API.sBlockCasings1, 10)),
+                                    ofHatchAdder(
+                                            GT_MetaTileEntity_ExtremeIndustrialApiary::addInputToMachineList,
+                                            CASING_INDEX,
+                                            1),
+                                    ofHatchAdder(
+                                            GT_MetaTileEntity_ExtremeIndustrialApiary::addOutputToMachineList,
+                                            CASING_INDEX,
+                                            1),
+                                    ofHatchAdder(
+                                            GT_MetaTileEntity_ExtremeIndustrialApiary::addEnergyInputToMachineList,
+                                            CASING_INDEX,
+                                            1),
+                                    ofHatchAdder(
+                                            GT_MetaTileEntity_ExtremeIndustrialApiary::addMaintenanceToMachineList,
+                                            CASING_INDEX,
+                                            1)))
                     .addElement('H', ofBlockAnyMeta(Blocks.planks, 5))
                     .addElement('I', ofBlockAnyMeta(Blocks.wooden_slab, 5))
                     .addElement('J', ofBlock(PluginApiculture.blocks.apiculture, BlockApicultureType.APIARY.getMeta()))
@@ -200,7 +498,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
         mGlassTier = aNBT.getByte("mGlassTier");
         mPrimaryMode = aNBT.getInteger("mPrimaryMode");
         mSecondaryMode = aNBT.getInteger("mSecondaryMode");
-        for(int i = 0, isize = aNBT.getInteger("mStorageSize"); i < isize; i++)
+        for (int i = 0, isize = aNBT.getInteger("mStorageSize"); i < isize; i++)
             mStorage.add(new BeeSimulator(aNBT.getCompoundTag("mStorage." + i)));
     }
 
@@ -215,10 +513,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
             GT_Utility.sendChatToPlayer(aPlayer, "Can't change mode when running !");
             return;
         }
-        if(!aPlayer.isSneaking()) {
+        if (!aPlayer.isSneaking()) {
             mPrimaryMode++;
-            if (mPrimaryMode == 3)
-                mPrimaryMode = 0;
+            if (mPrimaryMode == 3) mPrimaryMode = 0;
             switch (mPrimaryMode) {
                 case 0:
                     GT_Utility.sendChatToPlayer(aPlayer, "Changed mode to: Input mode");
@@ -230,48 +527,40 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
                     GT_Utility.sendChatToPlayer(aPlayer, "Changed mode to: Operating mode");
                     break;
             }
-        }
-        else {
-            if(!mStorage.isEmpty())
-            {
+        } else {
+            if (!mStorage.isEmpty()) {
                 GT_Utility.sendChatToPlayer(aPlayer, "Can't change operating mode when the multi is not empty !");
                 return;
             }
             mSecondaryMode++;
-            if(mSecondaryMode == 2)
-                mSecondaryMode = 0;
+            if (mSecondaryMode == 2) mSecondaryMode = 0;
         }
     }
 
     private void updateMaxSlots() {
         long v = GTHelper.getMaxInputEU(this);
         if (v < GT_Values.V[8]) mMaxSlots = 0;
-        else if(mSecondaryMode == 0) mMaxSlots = (int)(v / GT_Values.V[8]);
+        else if (mSecondaryMode == 0) mMaxSlots = (int) (v / GT_Values.V[8]);
         else mMaxSlots = 1;
     }
-
 
     @Override
     public void onPostTick(IGregTechTileEntity aBaseMetaTileEntity, long aTick) {
         super.onPostTick(aBaseMetaTileEntity, aTick);
-        if(this.mMaxProgresstime > 0 && mPrimaryMode < 2 && aTick % 10 == 0) {
+        if (this.mMaxProgresstime > 0 && mPrimaryMode < 2 && aTick % 10 == 0) {
             if (mPrimaryMode == 0 && mStorage.size() < mMaxSlots) {
                 startRecipeProcessing();
                 ArrayList<ItemStack> inputs = getStoredInputs();
-                for(ItemStack input : inputs){
-                    if(beeRoot.getType(input) == EnumBeeType.QUEEN)
-                    {
+                for (ItemStack input : inputs) {
+                    if (beeRoot.getType(input) == EnumBeeType.QUEEN) {
                         BeeSimulator bs = new BeeSimulator(input, aBaseMetaTileEntity.getWorld());
-                        if(bs.isValid)
-                            mStorage.add(bs);
+                        if (bs.isValid) mStorage.add(bs);
                     }
                 }
                 updateSlots();
                 endRecipeProcessing();
-            }
-            else if (mPrimaryMode == 1 && mStorage.size() > 0) {
-                for(int i = 0, imax = Math.min(10, mStorage.size()); i < imax; i++)
-                {
+            } else if (mPrimaryMode == 1 && mStorage.size() > 0) {
+                for (int i = 0, imax = Math.min(10, mStorage.size()); i < imax; i++) {
                     addOutput(mStorage.get(0).queenStack);
                     mStorage.remove(0);
                 }
@@ -283,26 +572,23 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
     public boolean checkRecipe(ItemStack aStack) {
         updateMaxSlots();
 
-        if(mPrimaryMode == 0) {
-            if(mStorage.size() >= mMaxSlots) return false;
+        if (mPrimaryMode == 0) {
+            if (mStorage.size() >= mMaxSlots) return false;
             mMaxProgresstime = 20;
             mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
             mEfficiencyIncrease = 10000;
             mEUt = 0;
             return true;
-        }
-        else if(mPrimaryMode == 1)
-        {
-            if(mStorage.size() == 0) return false;
+        } else if (mPrimaryMode == 1) {
+            if (mStorage.size() == 0) return false;
             mMaxProgresstime = 20;
             mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
             mEfficiencyIncrease = 10000;
             mEUt = 0;
             return true;
-        }
-        else if(mPrimaryMode == 2) {
+        } else if (mPrimaryMode == 2) {
             if (mMaxSlots > 0 && !mStorage.isEmpty()) {
-                if(mSecondaryMode == 0) {
+                if (mSecondaryMode == 0) {
                     this.mEUt = -((int) GT_Values.V[8] * mStorage.size());
                     this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
                     this.mEfficiencyIncrease = 10000;
@@ -310,19 +596,18 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
                     List<ItemStack> stacks = new ArrayList<>();
                     for (int i = 0, mStorageSize = Math.min(mStorage.size(), mMaxSlots); i < mStorageSize; i++) {
                         BeeSimulator beeSimulator = mStorage.get(i);
-                        if (!beeSimulator.isInfinite && !depleteInput(royal_jelly_consumption.copy()))
-                            continue;
+                        if (!beeSimulator.isInfinite && !depleteInput(royal_jelly_consumption.copy())) continue;
                         stacks.addAll(beeSimulator.getDrops(25_600));
                     }
                     this.mOutputItems = stacks.toArray(new ItemStack[0]);
                     return this.mOutputItems.length > 0;
-                }
-                else {
-                    if(!depleteInput(PluginApiculture.items.royalJelly.getItemStack(64)) && !depleteInput(PluginApiculture.items.royalJelly.getItemStack(36))) return false;
-                    calculateOverclockedNessMulti((int)GT_Values.V[5], 1200, 2, getMaxInputVoltage());
+                } else {
+                    if (!depleteInput(PluginApiculture.items.royalJelly.getItemStack(64))
+                            && !depleteInput(PluginApiculture.items.royalJelly.getItemStack(36))) return false;
+                    calculateOverclockedNessMulti((int) GT_Values.V[5], 1200, 2, getMaxInputVoltage());
                     this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
                     this.mEfficiencyIncrease = 10000;
-                    this.mOutputItems = new ItemStack[]{ this.mStorage.get(0).createIgnobleCopy() };
+                    this.mOutputItems = new ItemStack[] {this.mStorage.get(0).createIgnobleCopy()};
                     return true;
                 }
             }
@@ -335,7 +620,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
     public boolean checkMachine(IGregTechTileEntity aBaseMetaTileEntity, ItemStack aStack) {
         mGlassTier = 0;
         mCasing = 0;
-        if(!checkPiece(STRUCTURE_PIECE_MAIN, 7, 8, 0)) return false;
+        if (!checkPiece(STRUCTURE_PIECE_MAIN, 7, 8, 0)) return false;
         if (this.mGlassTier < 8 && !this.mEnergyHatches.isEmpty())
             for (GT_MetaTileEntity_Hatch_Energy hatchEnergy : this.mEnergyHatches)
                 if (this.mGlassTier < hatchEnergy.mTier) return false;
@@ -402,10 +687,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
         return new ITexture[] {Textures.BlockIcons.getCasingTextureForId(CASING_INDEX)};
     }
 
-    private static class BeeSimulator{
+    private static class BeeSimulator {
         ItemStack queenStack;
         boolean isValid;
-        //boolean isBreadingMode;
+        // boolean isBreadingMode;
         boolean isInfinite;
         List<BeeDrop> drops;
         List<BeeDrop> specialDrops;
@@ -413,37 +698,39 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
 
         float maxBeeCycles;
 
-        public BeeSimulator(ItemStack queenStack, World world)
-        {
+        public BeeSimulator(ItemStack queenStack, World world) {
             isValid = false;
             this.queenStack = queenStack.copy();
-            if(beeRoot.getType(this.queenStack) != EnumBeeType.QUEEN) return;
+            if (beeRoot.getType(this.queenStack) != EnumBeeType.QUEEN) return;
             IBee queen = beeRoot.getMember(this.queenStack);
             IBeekeepingMode mode = beeRoot.getBeekeepingMode(world);
             IBeeModifier beeModifier = mode.getBeeModifier();
             float mod = beeModifier.getLifespanModifier(null, null, 1.f);
             int h = queen.getMaxHealth();
-            maxBeeCycles = (float)h / (1.f / mod);
+            maxBeeCycles = (float) h / (1.f / mod);
             IBeeGenome genome = queen.getGenome();
             isInfinite = queen.isNatural();
-            if(!isInfinite && h < 4) return;
+            if (!isInfinite && h < 4) return;
             IAlleleBeeSpecies primary = genome.getPrimary();
             drops = new ArrayList<>();
             specialDrops = new ArrayList<>();
             beeSpeed = genome.getSpeed() * beeModifier.getProductionModifier(null, 1.f);
-            genome.getPrimary().getProductChances().forEach((key, value) -> drops.add(new BeeDrop(key, value, beeSpeed)));
-            genome.getSecondary().getProductChances().forEach((key, value) -> drops.add(new BeeDrop(key, value / 2.f, beeSpeed)));
+            genome.getPrimary()
+                    .getProductChances()
+                    .forEach((key, value) -> drops.add(new BeeDrop(key, value, beeSpeed)));
+            genome.getSecondary()
+                    .getProductChances()
+                    .forEach((key, value) -> drops.add(new BeeDrop(key, value / 2.f, beeSpeed)));
             primary.getSpecialtyChances().forEach((key, value) -> specialDrops.add(new BeeDrop(key, value, beeSpeed)));
 
             isValid = true;
             queenStack.stackSize--;
         }
 
-        public BeeSimulator(NBTTagCompound tag)
-        {
+        public BeeSimulator(NBTTagCompound tag) {
             queenStack = ItemStack.loadItemStackFromNBT(tag.getCompoundTag("queenstack"));
             isValid = tag.getBoolean("isValid");
-            //isBreadingMode = tag.getBoolean("isBreadingMode");
+            // isBreadingMode = tag.getBoolean("isBreadingMode");
             isInfinite = tag.getBoolean("isInfinite");
             drops = new ArrayList<>();
             specialDrops = new ArrayList<>();
@@ -455,17 +742,17 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
             maxBeeCycles = tag.getFloat("maxBeeCycles");
         }
 
-        public NBTTagCompound toNBTTagCompound(){
+        public NBTTagCompound toNBTTagCompound() {
             NBTTagCompound tag = new NBTTagCompound();
             tag.setTag("queenStack", queenStack.writeToNBT(new NBTTagCompound()));
             tag.setBoolean("isValid", isValid);
-            //tag.setBoolean("isBreadingMode", isBreadingMode);
+            // tag.setBoolean("isBreadingMode", isBreadingMode);
             tag.setBoolean("isInfinite", isInfinite);
             tag.setInteger("dropssize", drops.size());
-            for(int i = 0; i < drops.size(); i++)
+            for (int i = 0; i < drops.size(); i++)
                 tag.setTag("drops" + i, drops.get(i).toNBTTagCompound());
             tag.setInteger("specialDropssize", drops.size());
-            for(int i = 0; i < specialDrops.size(); i++)
+            for (int i = 0; i < specialDrops.size(); i++)
                 tag.setTag("specialDrops" + i, specialDrops.get(i).toNBTTagCompound());
             tag.setFloat("beeSpeed", beeSpeed);
             tag.setFloat("maxBeeCycles", maxBeeCycles);
@@ -474,14 +761,14 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
 
         HashMap<BeeDrop, Double> dropProgress = new HashMap<>();
 
-        public List<ItemStack> getDrops(final int timePassed){
-            drops.forEach(d->dropProgress.merge(d, d.getAmount((double)timePassed / 550d), Double::sum));
-            specialDrops.forEach(d->dropProgress.merge(d, d.getAmount((double)timePassed / 550d), Double::sum));
+        public List<ItemStack> getDrops(final int timePassed) {
+            drops.forEach(d -> dropProgress.merge(d, d.getAmount((double) timePassed / 550d), Double::sum));
+            specialDrops.forEach(d -> dropProgress.merge(d, d.getAmount((double) timePassed / 550d), Double::sum));
             List<ItemStack> currentDrops = new ArrayList<>();
-            dropProgress.entrySet().forEach(e->{
+            dropProgress.entrySet().forEach(e -> {
                 double v = e.getValue();
-                while(v > 1.f){
-                    int size = Math.min((int)v, 64);
+                while (v > 1.f) {
+                    int size = Math.min((int) v, 64);
                     currentDrops.add(e.getKey().get(size));
                     v -= size;
                     e.setValue(v);
@@ -490,39 +777,40 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
             return currentDrops;
         }
 
-        public ItemStack createIgnobleCopy(){
+        public ItemStack createIgnobleCopy() {
             IBee princess = beeRoot.getMember(queenStack);
             princess.setIsNatural(false);
             return beeRoot.getMemberStack(princess, EnumBeeType.PRINCESS.ordinal());
         }
 
-        private static class BeeDrop{
+        private static class BeeDrop {
             ItemStack stack;
             double amount;
             GT_Utility.ItemId id;
-            public BeeDrop(ItemStack stack, float chance, float beeSpeed){
+
+            public BeeDrop(ItemStack stack, float chance, float beeSpeed) {
                 this.stack = stack;
                 this.amount = Bee.getFinalChance(chance, beeSpeed, 2.f, 8.f);
                 id = GT_Utility.ItemId.createNoCopy(stack);
             }
 
-            public double getAmount(double speedModifier){
+            public double getAmount(double speedModifier) {
                 return amount * speedModifier;
             }
 
-            public ItemStack get(int amount){
+            public ItemStack get(int amount) {
                 ItemStack r = stack.copy();
                 r.stackSize = amount;
                 return r;
             }
 
-            public BeeDrop(NBTTagCompound tag){
+            public BeeDrop(NBTTagCompound tag) {
                 stack = ItemStack.loadItemStackFromNBT(tag.getCompoundTag("stack"));
                 amount = tag.getDouble("amount");
                 id = GT_Utility.ItemId.createNoCopy(stack);
             }
 
-            public NBTTagCompound toNBTTagCompound(){
+            public NBTTagCompound toNBTTagCompound() {
                 NBTTagCompound tag = new NBTTagCompound();
                 tag.setTag("stack", stack.writeToNBT(new NBTTagCompound()));
                 tag.setDouble("amount", amount);

@@ -19,21 +19,19 @@
 
 package kubatech.commands;
 
+import static forestry.api.apiculture.BeeManager.beeRoot;
+
 import com.google.common.io.Files;
 import forestry.api.apiculture.IAlleleBeeSpecies;
 import forestry.api.apiculture.IBee;
 import forestry.api.apiculture.IBeeGenome;
-import forestry.apiculture.genetics.Bee;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.ICommandSender;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
-import static forestry.api.apiculture.BeeManager.beeRoot;
+import net.minecraft.command.CommandBase;
+import net.minecraft.command.ICommandSender;
 
 public class CommandBees extends CommandBase {
     @Override
@@ -58,11 +56,12 @@ public class CommandBees extends CommandBase {
             BufferedWriter writer = Files.newWriter(f, StandardCharsets.UTF_8);
             String delimer = ",";
 
-            writer.write("Bee,OLD_0.6S_0UP,OLD_0.6S_8UP,OLD_1.7S_0UP,OLD_1.7S_8UP,NEW_0.6S_0UP_1T,NEW_0.6S_8UP_1T,NEW_1.7S_0UP_1T,NEW_1.7S_8UP_1T,NEW_1.7S_8UP_8T\n");
+            writer.write(
+                    "Bee,OLD_0.6S_0UP,OLD_0.6S_8UP,OLD_1.7S_0UP,OLD_1.7S_8UP,NEW_0.6S_0UP_1T,NEW_0.6S_8UP_1T,NEW_1.7S_0UP_1T,NEW_1.7S_8UP_1T,NEW_1.7S_8UP_8T\n");
 
             List<IBee> bees = beeRoot.getIndividualTemplates();
-            for(IBee bee : bees){
-                //System.out.println("Bee: " + bee.getDisplayName());
+            for (IBee bee : bees) {
+                // System.out.println("Bee: " + bee.getDisplayName());
                 StringBuilder b = new StringBuilder(bee.getDisplayName());
                 b.append(",-,-,-,-,-,-,-,-,-\n");
                 IBeeGenome genome = bee.getGenome();
@@ -147,20 +146,20 @@ public class CommandBees extends CommandBase {
         }
     }
 
-    private String format(double chance){
-        return String.format("%.2f%%", chance*100d);
+    private String format(double chance) {
+        return String.format("%.2f%%", chance * 100d);
     }
 
-    private double productChanceNew(int upgradeCount, double beeSpeed, double chance, int t){
+    private double productChanceNew(int upgradeCount, double beeSpeed, double chance, int t) {
         chance *= 100f;
-        float productionModifier = (float)upgradeCount * 0.25f;
+        float productionModifier = (float) upgradeCount * 0.25f;
         return (float) (((1f + t / 6f) * Math.sqrt(chance) * 2f * (1f + beeSpeed)
-            + Math.pow(productionModifier, Math.cbrt(chance))
-            - 3f)
-            / 100f);
+                        + Math.pow(productionModifier, Math.cbrt(chance))
+                        - 3f)
+                / 100f);
     }
 
-    private double productChanceOld(int upgradeCount, double beeSpeed, double chance){
+    private double productChanceOld(int upgradeCount, double beeSpeed, double chance) {
         return chance * beeSpeed * Math.pow(1.2d, upgradeCount);
     }
 }
