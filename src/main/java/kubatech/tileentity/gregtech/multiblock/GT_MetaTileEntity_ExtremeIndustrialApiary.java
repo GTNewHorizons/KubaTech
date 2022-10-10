@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import kubatech.Tags;
+import kubatech.api.LoaderReference;
 import kubatech.api.helpers.GTHelper;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
@@ -383,7 +384,11 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
                         }
                     }))
                     .addElement(
-                            'A', BorosilicateGlass.ofBoroGlass((byte) 0, (t, v) -> t.mGlassTier = v, t -> t.mGlassTier))
+                            'A',
+                            LoaderReference.Bartworks
+                                    ? BorosilicateGlass.ofBoroGlass(
+                                            (byte) 0, (t, v) -> t.mGlassTier = v, t -> t.mGlassTier)
+                                    : onElementPass(t -> t.mGlassTier = 100, ofBlock(Blocks.glass, 0)))
                     .addElement('B', ofChain(ofBlockAnyMeta(Blocks.dirt, 0), ofBlock(Blocks.grass, 0)))
                     .addElement(
                             'G',
