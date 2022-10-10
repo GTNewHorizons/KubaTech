@@ -74,12 +74,33 @@ public class RecipeLoader {
                 GT_ModHandler.getModItem("OpenBlocks", "vacuumhopper", 1, new ItemStack(Blocks.hopper))
             });
         }
-        registerMTE(
+        if (registerMTE(
                 ExtremeIndustrialApiary,
                 GT_MetaTileEntity_ExtremeIndustrialApiary.class,
                 "multimachine.extremeapiary",
                 "Industrial Apicultural Acclimatiser and Drone Domestication Station",
-                LoaderReference.Forestry);
+                LoaderReference.Forestry)) {
+            GT_Values.RA.addAssemblylineRecipe(
+                    gregtech.api.enums.ItemList.Machine_IndustrialApiary.get(1),
+                    10000,
+                    new Object[] {
+                        gregtech.api.enums.ItemList.Machine_IndustrialApiary.get(64L),
+                        gregtech.api.enums.ItemList.IndustrialApiary_Upgrade_Acceleration_8_Upgraded.get(64L),
+                        gregtech.api.enums.ItemList.IndustrialApiary_Upgrade_STABILIZER.get(64L),
+                        gregtech.api.enums.ItemList.Robot_Arm_UV.get(16L),
+                        new Object[] {OrePrefixes.circuit.get(Materials.Infinite), 4L},
+                        new Object[] {OrePrefixes.circuit.get(Materials.Infinite), 4L},
+                        new Object[] {OrePrefixes.circuit.get(Materials.Infinite), 4L},
+                        new Object[] {OrePrefixes.circuit.get(Materials.Infinite), 4L},
+                    },
+                    new FluidStack[] {
+                        FluidRegistry.getFluidStack("molten.indalloy140", 28800),
+                        FluidRegistry.getFluidStack("honey", 20000)
+                    },
+                    ExtremeIndustrialApiary.get(1),
+                    6000,
+                    2_048_000);
+        }
         RegisterTeaLine();
         if (MTEID > MTEIDMax + 1) throw new RuntimeException("MTE ID's");
     }
