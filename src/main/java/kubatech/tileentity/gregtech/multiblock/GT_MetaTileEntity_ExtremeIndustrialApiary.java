@@ -64,8 +64,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
     private int mMaxSlots = 0;
     private int mPrimaryMode = 0;
     private int mSecondaryMode = 0;
-    private ArrayList<BeeSimulator> mStorage = new ArrayList<>();
+    private final ArrayList<BeeSimulator> mStorage = new ArrayList<>();
 
+    private static final ItemStack royalJelly = PluginApiculture.items.royalJelly.getItemStack(1);
     private static final int CASING_INDEX = 10;
     private static final String STRUCTURE_PIECE_MAIN = "main";
     /*
@@ -607,7 +608,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
                     int maxConsume = Math.min(mStorage.size(), mMaxSlots) * 40;
                     int toConsume = maxConsume;
                     ArrayList<ItemStack> inputs = getStoredInputs();
-                    ItemStack royalJelly = PluginApiculture.items.royalJelly.getItemStack(1);
+
                     for (ItemStack input : inputs) {
                         if (!input.isItemEqual(royalJelly)) continue;
                         int consumed = Math.min(input.stackSize, toConsume);
