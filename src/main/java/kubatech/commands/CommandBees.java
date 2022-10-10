@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
+import net.minecraft.item.ItemStack;
 
 public class CommandBees extends CommandBase {
     @Override
@@ -57,85 +58,19 @@ public class CommandBees extends CommandBase {
             String delimer = ",";
 
             writer.write(
-                    "Bee,OLD_0.6S_0UP,OLD_0.6S_8UP,OLD_1.7S_0UP,OLD_1.7S_8UP,NEW_0.6S_0UP_1T,NEW_0.6S_8UP_1T,NEW_1.7S_0UP_1T,NEW_1.7S_8UP_1T,NEW_1.7S_8UP_8T\n");
+                    "Bee,CHANCE,OLD_0.6S_0UP,OLD_0.6S_8UP,OLD_1.7S_0UP,OLD_1.7S_8UP,NEW_0.6S_0UP_1T,NEW_0.6S_8UP_1T,NEW_1.7S_0UP_1T,NEW_1.7S_8UP_1T,NEW_1.7S_8UP_8T\n");
 
             List<IBee> bees = beeRoot.getIndividualTemplates();
             for (IBee bee : bees) {
                 // System.out.println("Bee: " + bee.getDisplayName());
                 StringBuilder b = new StringBuilder(bee.getDisplayName());
-                b.append(",-,-,-,-,-,-,-,-,-\n");
+                b.append(",-,-,-,-,-,-,-,-,-,-\n");
                 IBeeGenome genome = bee.getGenome();
                 IAlleleBeeSpecies primary = genome.getPrimary();
                 IAlleleBeeSpecies secondary = genome.getSecondary();
-                primary.getProductChances().forEach((k, v) -> {
-                    b.append("[PRIMARY]");
-                    b.append(k.toString());
-                    b.append(delimer);
-                    b.append(format(productChanceOld(0, 0.6d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceOld(8, 0.6d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceOld(0, 1.7d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceOld(8, 1.7d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(0, 0.6d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(8, 0.6d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(0, 1.7d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(8, 1.7d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(8, 1.7d, v, 8)));
-                    b.append("\n");
-                });
-                secondary.getProductChances().forEach((k, v) -> {
-                    b.append("[SECONDARY]");
-                    b.append(k.toString());
-                    b.append(delimer);
-                    b.append(format(productChanceOld(0, 0.6d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceOld(8, 0.6d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceOld(0, 1.7d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceOld(8, 1.7d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(0, 0.6d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(8, 0.6d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(0, 1.7d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(8, 1.7d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(8, 1.7d, v, 8)));
-                    b.append("\n");
-                });
-                primary.getSpecialtyChances().forEach((k, v) -> {
-                    b.append("[SPECIALITY]");
-                    b.append(k.toString());
-                    b.append(delimer);
-                    b.append(format(productChanceOld(0, 0.6d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceOld(8, 0.6d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceOld(0, 1.7d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceOld(8, 1.7d, v)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(0, 0.6d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(8, 0.6d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(0, 1.7d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(8, 1.7d, v, 1)));
-                    b.append(delimer);
-                    b.append(format(productChanceNew(8, 1.7d, v, 8)));
-                    b.append("\n");
-                });
+                primary.getProductChances().forEach((k, v) -> printData("[PRIMARY]", k, v, delimer, b));
+                secondary.getProductChances().forEach((k, v) -> printData("[SECONDARY]", k, v / 2f, delimer, b));
+                primary.getSpecialtyChances().forEach((k, v) -> printData("[SPECIALITY]", k, v, delimer, b));
                 writer.write(b.toString());
             }
 
@@ -144,6 +79,32 @@ public class CommandBees extends CommandBase {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void printData(String nameOfData, ItemStack k, float v, String delimer, StringBuilder b) {
+        b.append(nameOfData);
+        b.append(k.toString());
+        b.append(delimer);
+        b.append(format(v));
+        b.append(delimer);
+        b.append(format(productChanceOld(0, 0.6d, v)));
+        b.append(delimer);
+        b.append(format(productChanceOld(8, 0.6d, v)));
+        b.append(delimer);
+        b.append(format(productChanceOld(0, 1.7d, v)));
+        b.append(delimer);
+        b.append(format(productChanceOld(8, 1.7d, v)));
+        b.append(delimer);
+        b.append(format(productChanceNew(0, 0.6d, v, 1)));
+        b.append(delimer);
+        b.append(format(productChanceNew(8, 0.6d, v, 1)));
+        b.append(delimer);
+        b.append(format(productChanceNew(0, 1.7d, v, 1)));
+        b.append(delimer);
+        b.append(format(productChanceNew(8, 1.7d, v, 1)));
+        b.append(delimer);
+        b.append(format(productChanceNew(8, 1.7d, v, 8)));
+        b.append("\n");
     }
 
     private String format(double chance) {
