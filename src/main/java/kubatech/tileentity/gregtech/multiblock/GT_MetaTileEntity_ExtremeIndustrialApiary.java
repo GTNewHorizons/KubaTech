@@ -66,7 +66,6 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
     private int mSecondaryMode = 0;
     private ArrayList<BeeSimulator> mStorage = new ArrayList<>();
 
-    private static final ItemStack royal_jelly_consumption = PluginApiculture.items.royalJelly.getItemStack(51);
     private static final int CASING_INDEX = 10;
     private static final String STRUCTURE_PIECE_MAIN = "main";
     /*
@@ -452,20 +451,23 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
                 .addInfo("- Will give your bees back to output bus")
                 .addInfo("------------------- OPERATING MODE -------------------")
                 .addInfo("- NORMAL:")
-                .addInfo("  - For each UV amp you can insert 1 bee")
+                .addInfo("  - For each LuV amp you can insert 1 bee")
                 .addInfo("  - Processing time: 5 seconds")
-                .addInfo("  - Uses 1 UV amp per bee")
-                .addInfo("  - All bees are accelerated 256 times")
-                .addInfo("  - Max production upgrades are applied")
-                .addInfo("  - Ignoble bees needs royal jelly, provide it in input bus constantly")
-                .addInfo("  - Additionally you can enable bonus 100% production bonus with wire-cutters:")
-                .addInfo("    - Will consume royal jelly")
-                .addInfo("    - Ignoble bees only gets 50%")
+                .addInfo("  - Uses 1 LuV amp per bee")
+                .addInfo("  - All bees are accelerated 64 times")
+                .addInfo("  - 8 production upgrades are applied")
+                .addInfo("  - Additionally you can provide royal jelly to increase the outputs:")
+                .addInfo("    - 1 royal jelly grants 5% bonus")
+                .addInfo("    - They will be consumed on each start of operation")
+                .addInfo("    - and be applied to that operation only")
+                .addInfo("    - Max bonus: 200%")
                 .addInfo("- SWARMER:")
                 .addInfo("  - You can only insert 1 queen")
                 .addInfo("  - It will slowly produce ignoble princesses")
+                .addInfo("  - Consumes 100 royal jelly per operation")
                 .addInfo("  - Base processing time: 1 minute")
                 .addInfo("  - Uses 1 amp IV")
+                .addInfo("  - Can overclock")
                 .addInfo(StructureHologram)
                 .addSeparator()
                 .beginStructureBlock(15, 17, 15, false)
@@ -518,13 +520,13 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
             if (mPrimaryMode == 3) mPrimaryMode = 0;
             switch (mPrimaryMode) {
                 case 0:
-                    GT_Utility.sendChatToPlayer(aPlayer, "Changed mode to: Input mode");
+                    GT_Utility.sendChatToPlayer(aPlayer, "Changed primary mode to: Input mode");
                     break;
                 case 1:
-                    GT_Utility.sendChatToPlayer(aPlayer, "Changed mode to: Output mode");
+                    GT_Utility.sendChatToPlayer(aPlayer, "Changed primary mode to: Output mode");
                     break;
                 case 2:
-                    GT_Utility.sendChatToPlayer(aPlayer, "Changed mode to: Operating mode");
+                    GT_Utility.sendChatToPlayer(aPlayer, "Changed primary mode to: Operating mode");
                     break;
             }
         } else {
@@ -534,13 +536,21 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
             }
             mSecondaryMode++;
             if (mSecondaryMode == 2) mSecondaryMode = 0;
+            switch (mSecondaryMode) {
+                case 0:
+                    GT_Utility.sendChatToPlayer(aPlayer, "Changed secondary mode to: Normal mode");
+                    break;
+                case 1:
+                    GT_Utility.sendChatToPlayer(aPlayer, "Changed secondary mode to: Swarmer mode");
+                    break;
+            }
         }
     }
 
     private void updateMaxSlots() {
         long v = GTHelper.getMaxInputEU(this);
-        if (v < GT_Values.V[8]) mMaxSlots = 0;
-        else if (mSecondaryMode == 0) mMaxSlots = (int) (v / GT_Values.V[8]);
+        if (v < GT_Values.V[6]) mMaxSlots = 0;
+        else if (mSecondaryMode == 0) mMaxSlots = (int) (v / GT_Values.V[6]);
         else mMaxSlots = 1;
     }
 
@@ -589,25 +599,46 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
         } else if (mPrimaryMode == 2) {
             if (mMaxSlots > 0 && !mStorage.isEmpty()) {
                 if (mSecondaryMode == 0) {
-                    this.mEUt = -((int) GT_Values.V[8] * mStorage.size());
+                    this.mEUt = -((int) GT_Values.V[6] * mStorage.size());
                     this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
                     this.mEfficiencyIncrease = 10000;
                     this.mMaxProgresstime = 100;
+
+                    int maxConsume = Math.min(mStorage.size(), mMaxSlots) * 40;
+                    int toConsume = maxConsume;
+                    ArrayList<ItemStack> inputs = getStoredInputs();
+                    ItemStack royalJelly = PluginApiculture.items.royalJelly.getItemStack(1);
+                    for (ItemStack input : inputs) {
+                        if (!input.isItemEqual(royalJelly)) continue;
+                        int consumed = Math.min(input.stackSize, toConsume);
+                        toConsume -= consumed;
+                        input.stackSize -= toConsume;
+                        if (toConsume == 0) break;
+                    }
+                    double boosted = 1d;
+                    if (toConsume != maxConsume) {
+                        boosted += (((double) maxConsume - (double) toConsume) / (double) maxConsume) * 2d;
+                        this.updateSlots();
+                    }
+
                     List<ItemStack> stacks = new ArrayList<>();
                     for (int i = 0, mStorageSize = Math.min(mStorage.size(), mMaxSlots); i < mStorageSize; i++) {
                         BeeSimulator beeSimulator = mStorage.get(i);
-                        if (!beeSimulator.isInfinite && !depleteInput(royal_jelly_consumption.copy())) continue;
-                        stacks.addAll(beeSimulator.getDrops(25_600));
+                        stacks.addAll(beeSimulator.getDrops(64_00d * boosted));
                     }
                     this.mOutputItems = stacks.toArray(new ItemStack[0]);
                     return this.mOutputItems.length > 0;
                 } else {
                     if (!depleteInput(PluginApiculture.items.royalJelly.getItemStack(64))
-                            && !depleteInput(PluginApiculture.items.royalJelly.getItemStack(36))) return false;
+                            && !depleteInput(PluginApiculture.items.royalJelly.getItemStack(36))) {
+                        this.updateSlots();
+                        return false;
+                    }
                     calculateOverclockedNessMulti((int) GT_Values.V[5], 1200, 2, getMaxInputVoltage());
                     this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
                     this.mEfficiencyIncrease = 10000;
                     this.mOutputItems = new ItemStack[] {this.mStorage.get(0).createIgnobleCopy()};
+                    this.updateSlots();
                     return true;
                 }
             }
@@ -691,7 +722,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
         ItemStack queenStack;
         boolean isValid;
         // boolean isBreadingMode;
-        boolean isInfinite;
+        // boolean isInfinite;
         List<BeeDrop> drops;
         List<BeeDrop> specialDrops;
         float beeSpeed;
@@ -709,8 +740,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
             int h = queen.getMaxHealth();
             maxBeeCycles = (float) h / (1.f / mod);
             IBeeGenome genome = queen.getGenome();
-            isInfinite = queen.isNatural();
-            if (!isInfinite && h < 4) return;
+            // isInfinite = queen.isNatural();
+            // if (!isInfinite && h < 4) return;
             IAlleleBeeSpecies primary = genome.getPrimary();
             drops = new ArrayList<>();
             specialDrops = new ArrayList<>();
@@ -731,7 +762,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
             queenStack = ItemStack.loadItemStackFromNBT(tag.getCompoundTag("queenstack"));
             isValid = tag.getBoolean("isValid");
             // isBreadingMode = tag.getBoolean("isBreadingMode");
-            isInfinite = tag.getBoolean("isInfinite");
+            // isInfinite = tag.getBoolean("isInfinite");
             drops = new ArrayList<>();
             specialDrops = new ArrayList<>();
             for (int i = 0, isize = tag.getInteger("dropssize"); i < isize; i++)
@@ -747,7 +778,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
             tag.setTag("queenStack", queenStack.writeToNBT(new NBTTagCompound()));
             tag.setBoolean("isValid", isValid);
             // tag.setBoolean("isBreadingMode", isBreadingMode);
-            tag.setBoolean("isInfinite", isInfinite);
+            // tag.setBoolean("isInfinite", isInfinite);
             tag.setInteger("dropssize", drops.size());
             for (int i = 0; i < drops.size(); i++)
                 tag.setTag("drops" + i, drops.get(i).toNBTTagCompound());
@@ -761,9 +792,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
 
         HashMap<BeeDrop, Double> dropProgress = new HashMap<>();
 
-        public List<ItemStack> getDrops(final int timePassed) {
-            drops.forEach(d -> dropProgress.merge(d, d.getAmount((double) timePassed / 550d), Double::sum));
-            specialDrops.forEach(d -> dropProgress.merge(d, d.getAmount((double) timePassed / 550d), Double::sum));
+        public List<ItemStack> getDrops(final double timePassed) {
+            drops.forEach(d -> dropProgress.merge(d, d.getAmount(timePassed / 550d), Double::sum));
+            specialDrops.forEach(d -> dropProgress.merge(d, d.getAmount(timePassed / 550d), Double::sum));
             List<ItemStack> currentDrops = new ArrayList<>();
             dropProgress.entrySet().forEach(e -> {
                 double v = e.getValue();
