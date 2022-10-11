@@ -27,6 +27,7 @@ import static gregtech.api.util.GT_StructureUtility.ofHatchAdder;
 import static kubatech.api.Variables.*;
 
 import com.github.bartimaeusnek.bartworks.API.BorosilicateGlass;
+import com.gtnewhorizon.structurelib.alignment.IAlignmentLimits;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import forestry.api.apiculture.*;
@@ -438,6 +439,11 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
     @Override
     public IStructureDefinition<GT_MetaTileEntity_ExtremeIndustrialApiary> getStructureDefinition() {
         return STRUCTURE_DEFINITION;
+    }
+
+    @Override
+    protected IAlignmentLimits getInitialAlignmentLimits() {
+        return (d, r, f) -> d.offsetY == 0 && r.isNotRotated();
     }
 
     @Override
