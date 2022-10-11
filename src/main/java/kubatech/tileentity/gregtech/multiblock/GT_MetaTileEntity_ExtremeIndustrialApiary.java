@@ -462,6 +462,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
                 .addInfo("  - Uses 1 LuV amp per bee")
                 .addInfo("  - All bees are accelerated 64 times")
                 .addInfo("  - 8 production upgrades are applied")
+                .addInfo("  - Genetic Stabilizer upgrade applied")
+                .addInfo("  - Simulates perfect environment for your bees")
                 .addInfo("  - Additionally you can provide royal jelly to increase the outputs:")
                 .addInfo("    - 1 royal jelly grants 5% bonus")
                 .addInfo("    - They will be consumed on each start of operation")
