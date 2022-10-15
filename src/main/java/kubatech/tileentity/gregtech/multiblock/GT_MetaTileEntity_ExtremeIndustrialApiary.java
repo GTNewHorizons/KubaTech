@@ -339,7 +339,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
                         stacks.addAll(beeSimulator.getDrops(64_00d * boosted));
                     }
                     this.mOutputItems = stacks.toArray(new ItemStack[0]);
-                    return this.mOutputItems.length > 0;
+                    return true;
                 } else {
                     if (!depleteInput(PluginApiculture.items.royalJelly.getItemStack(64))
                             && !depleteInput(PluginApiculture.items.royalJelly.getItemStack(36))) {
