@@ -280,41 +280,30 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
     @Override
     public void onPostTick(IGregTechTileEntity aBaseMetaTileEntity, long aTick) {
         super.onPostTick(aBaseMetaTileEntity, aTick);
-        if (this.mMaxProgresstime > 0 && mPrimaryMode < 2 && aTick % 10 == 0) {
-            if (mPrimaryMode == 0 && mStorage.size() < mMaxSlots) {
-                startRecipeProcessing();
-                ArrayList<ItemStack> inputs = getStoredInputs();
-                for (ItemStack input : inputs) {
-                    if (beeRoot.getType(input) == EnumBeeType.QUEEN) {
-                        BeeSimulator bs = new BeeSimulator(input, aBaseMetaTileEntity.getWorld());
-                        if (bs.isValid) mStorage.add(bs);
-                    }
-                }
-                updateSlots();
-                endRecipeProcessing();
-            } else if (mPrimaryMode == 1 && mStorage.size() > 0) {
-                for (int i = 0, imax = Math.min(10, mStorage.size()); i < imax; i++) {
-                    addOutput(mStorage.get(0).queenStack);
-                    mStorage.remove(0);
-                }
-            }
-        }
+        // Beeeee rendering inside ?
     }
 
     @Override
     public boolean checkRecipe(ItemStack aStack) {
         updateMaxSlots();
-
-        if (mPrimaryMode == 0) {
-            if (mStorage.size() >= mMaxSlots) return false;
-            mMaxProgresstime = 20;
-            mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
-            mEfficiencyIncrease = 10000;
-            mEUt = 0;
-            return true;
-        } else if (mPrimaryMode == 1) {
-            if (mStorage.size() == 0) return false;
-            mMaxProgresstime = 20;
+        if (mPrimaryMode < 2) {
+            if (mPrimaryMode == 0 && mStorage.size() < mMaxSlots) {
+                World w = getBaseMetaTileEntity().getWorld();
+                ArrayList<ItemStack> inputs = getStoredInputs();
+                for (ItemStack input : inputs) {
+                    if (beeRoot.getType(input) == EnumBeeType.QUEEN) {
+                        BeeSimulator bs = new BeeSimulator(input, w);
+                        if (bs.isValid) mStorage.add(bs);
+                    }
+                }
+                updateSlots();
+            } else if (mPrimaryMode == 1 && mStorage.size() > 0) {
+                for (int i = 0, imax = Math.min(10, mStorage.size()); i < imax; i++) {
+                    addOutput(mStorage.get(0).queenStack);
+                    mStorage.remove(0);
+                }
+            } else return false;
+            mMaxProgresstime = 10;
             mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
             mEfficiencyIncrease = 10000;
             mEUt = 0;
