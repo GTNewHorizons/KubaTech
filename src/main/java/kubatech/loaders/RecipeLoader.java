@@ -34,7 +34,7 @@ import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.enums.ItemList;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
-import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialApiary;
+import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_MegaIndustrialApiary;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -76,7 +76,7 @@ public class RecipeLoader {
         }
         if (registerMTE(
                 ExtremeIndustrialApiary,
-                GT_MetaTileEntity_ExtremeIndustrialApiary.class,
+                GT_MetaTileEntity_MegaIndustrialApiary.class,
                 "multimachine.extremeapiary",
                 "Industrial Apicultural Acclimatiser and Drone Domestication Station",
                 LoaderReference.Forestry)) {

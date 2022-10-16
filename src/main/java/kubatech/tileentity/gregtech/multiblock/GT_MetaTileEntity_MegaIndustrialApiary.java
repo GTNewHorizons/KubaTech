@@ -58,8 +58,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
-public class GT_MetaTileEntity_ExtremeIndustrialApiary
-        extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_ExtremeIndustrialApiary> {
+public class GT_MetaTileEntity_MegaIndustrialApiary
+        extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_MegaIndustrialApiary> {
 
     private byte mGlassTier = 0;
     private int mCasing = 0;
@@ -72,8 +72,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
     private static final int CASING_INDEX = 10;
     private static final String STRUCTURE_PIECE_MAIN = "main";
 
-    private static final IStructureDefinition<GT_MetaTileEntity_ExtremeIndustrialApiary> STRUCTURE_DEFINITION =
-            StructureDefinition.<GT_MetaTileEntity_ExtremeIndustrialApiary>builder()
+    private static final IStructureDefinition<GT_MetaTileEntity_MegaIndustrialApiary> STRUCTURE_DEFINITION =
+            StructureDefinition.<GT_MetaTileEntity_MegaIndustrialApiary>builder()
                     .addShape(STRUCTURE_PIECE_MAIN, transpose(new String[][] { // spotless:off
                         {"               ","               ","               ","      HHH      ","    HHAAAHH    ","    HAPLPAH    ","   HAPAAAPAH   ","   HALAAALAH   ","   HAPAAAPAH   ","    HAPLPAH    ","    HHAAAHH    ","      HHH      ","               ","               ","               "},
                         {"               ","               ","      GGG      ","   GGG   GG    ","   G       G   ","   G       G   ","  G         G  ","  G         G  ","  G         G  ","   G       G   ","   G       G   ","    GG   GG    ","      GGG      ","               ","               "},
@@ -105,19 +105,19 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
                             ofChain(
                                     onElementPass(t -> t.mCasing++, ofBlock(GregTech_API.sBlockCasings1, 10)),
                                     ofHatchAdder(
-                                            GT_MetaTileEntity_ExtremeIndustrialApiary::addInputToMachineList,
+                                            GT_MetaTileEntity_MegaIndustrialApiary::addInputToMachineList,
                                             CASING_INDEX,
                                             1),
                                     ofHatchAdder(
-                                            GT_MetaTileEntity_ExtremeIndustrialApiary::addOutputToMachineList,
+                                            GT_MetaTileEntity_MegaIndustrialApiary::addOutputToMachineList,
                                             CASING_INDEX,
                                             1),
                                     ofHatchAdder(
-                                            GT_MetaTileEntity_ExtremeIndustrialApiary::addEnergyInputToMachineList,
+                                            GT_MetaTileEntity_MegaIndustrialApiary::addEnergyInputToMachineList,
                                             CASING_INDEX,
                                             1),
                                     ofHatchAdder(
-                                            GT_MetaTileEntity_ExtremeIndustrialApiary::addMaintenanceToMachineList,
+                                            GT_MetaTileEntity_MegaIndustrialApiary::addMaintenanceToMachineList,
                                             CASING_INDEX,
                                             1)))
                     .addElement('H', ofBlockAnyMeta(Blocks.planks, 5))
@@ -132,11 +132,11 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
                     .build();
 
     @SuppressWarnings("unused")
-    public GT_MetaTileEntity_ExtremeIndustrialApiary(int aID, String aName, String aNameRegional) {
+    public GT_MetaTileEntity_MegaIndustrialApiary(int aID, String aName, String aNameRegional) {
         super(aID, aName, aNameRegional);
     }
 
-    public GT_MetaTileEntity_ExtremeIndustrialApiary(String aName) {
+    public GT_MetaTileEntity_MegaIndustrialApiary(String aName) {
         super(aName);
     }
 
@@ -146,7 +146,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
     }
 
     @Override
-    public IStructureDefinition<GT_MetaTileEntity_ExtremeIndustrialApiary> getStructureDefinition() {
+    public IStructureDefinition<GT_MetaTileEntity_MegaIndustrialApiary> getStructureDefinition() {
         return STRUCTURE_DEFINITION;
     }
 
@@ -162,6 +162,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
                 .addInfo("Controller block for Industrial Apicultural Acclimatiser and Drone Domestication Station")
                 .addInfo(buildAuthorList("kuba6000", "Runakai"))
                 .addInfo("The ideal home for your bees")
+                .addInfo("AKA. Mega Apiary")
                 .addInfo("Use scredriver to change primary mode (INPUT/OUTPUT/OPERATING)")
                 .addInfo("Use scredriver + shift to change operation mode (NORMAL/SWARMER)")
                 .addInfo("--------------------- INPUT MODE ---------------------")
@@ -389,7 +390,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialApiary
 
     @Override
     public IMetaTileEntity newMetaEntity(IGregTechTileEntity aTileEntity) {
-        return new GT_MetaTileEntity_ExtremeIndustrialApiary(this.mName);
+        return new GT_MetaTileEntity_MegaIndustrialApiary(this.mName);
     }
 
     @Override
