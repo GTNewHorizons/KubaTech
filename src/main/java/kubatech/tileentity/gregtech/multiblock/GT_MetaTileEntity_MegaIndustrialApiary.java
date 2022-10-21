@@ -509,7 +509,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         }
 
         public BeeSimulator(NBTTagCompound tag) {
-            queenStack = ItemStack.loadItemStackFromNBT(tag.getCompoundTag("queenstack"));
+            queenStack = ItemStack.loadItemStackFromNBT(tag.getCompoundTag("queenStack"));
             isValid = tag.getBoolean("isValid");
             // isBreadingMode = tag.getBoolean("isBreadingMode");
             // isInfinite = tag.getBoolean("isInfinite");
@@ -532,7 +532,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             tag.setInteger("dropssize", drops.size());
             for (int i = 0; i < drops.size(); i++)
                 tag.setTag("drops" + i, drops.get(i).toNBTTagCompound());
-            tag.setInteger("specialDropssize", drops.size());
+            tag.setInteger("specialDropssize", specialDrops.size());
             for (int i = 0; i < specialDrops.size(); i++)
                 tag.setTag("specialDrops" + i, specialDrops.get(i).toNBTTagCompound());
             tag.setFloat("beeSpeed", beeSpeed);
