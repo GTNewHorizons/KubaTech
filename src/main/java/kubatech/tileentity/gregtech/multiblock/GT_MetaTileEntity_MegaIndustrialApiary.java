@@ -406,7 +406,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         mGlassTier = 0;
         mCasing = 0;
         if (!checkPiece(STRUCTURE_PIECE_MAIN, 7, 8, 0)) return false;
-        if (this.mGlassTier < 8 && !this.mEnergyHatches.isEmpty())
+        if (this.mGlassTier < 10 && !this.mEnergyHatches.isEmpty())
             for (GT_MetaTileEntity_Hatch_Energy hatchEnergy : this.mEnergyHatches)
                 if (this.mGlassTier < hatchEnergy.mTier) return false;
         boolean valid = this.mMaintenanceHatches.size() == 1 && this.mEnergyHatches.size() >= 1 && this.mCasing >= 190;
