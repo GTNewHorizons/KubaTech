@@ -157,7 +157,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         return (d, r, f) -> d.offsetY == 0 && r.isNotRotated();
     }
 
-    private String voltageFormatted(int v){
+    private String voltageFormatted(int v) {
         return GT_Values.TIER_COLORS[v] + GT_Values.VN[v] + EnumChatFormatting.GRAY;
     }
 
