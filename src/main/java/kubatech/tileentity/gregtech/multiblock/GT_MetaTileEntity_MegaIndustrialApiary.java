@@ -157,6 +157,10 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         return (d, r, f) -> d.offsetY == 0 && r.isNotRotated();
     }
 
+    private String voltageFormatted(int v){
+        return GT_Values.TIER_COLORS[v] + GT_Values.VN[v] + EnumChatFormatting.GRAY;
+    }
+
     @Override
     protected GT_Multiblock_Tooltip_Builder createTooltip() {
         GT_Multiblock_Tooltip_Builder tt = new GT_Multiblock_Tooltip_Builder();
@@ -165,8 +169,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .addInfo(buildAuthorList("kuba6000", "Runakai"))
                 .addInfo("The ideal home for your bees")
                 .addInfo("AKA. Mega Apiary")
-                .addInfo("Use scredriver to change primary mode (INPUT/OUTPUT/OPERATING)")
-                .addInfo("Use scredriver + shift to change operation mode (NORMAL/SWARMER)")
+                .addInfo("Use screwdriver to change primary mode (INPUT/OUTPUT/OPERATING)")
+                .addInfo("Use screwdriver + shift to change operation mode (NORMAL/SWARMER)")
                 .addInfo("--------------------- INPUT MODE ---------------------")
                 .addInfo("- Does not take power")
                 .addInfo("- Put your queens in the input bus to put them in the internal buffer")
@@ -175,9 +179,9 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .addInfo("- Will give your bees back to output bus")
                 .addInfo("------------------- OPERATING MODE -------------------")
                 .addInfo("- NORMAL:")
-                .addInfo("  - For each LuV amp you can insert 1 bee")
+                .addInfo("  - For each " + voltageFormatted(6) + " amp you can insert 1 bee")
                 .addInfo("  - Processing time: 5 seconds")
-                .addInfo("  - Uses 1 LuV amp per queen")
+                .addInfo("  - Uses 1 " + voltageFormatted(6) + " amp per queen")
                 .addInfo("  - All bees are accelerated 64 times")
                 .addInfo("  - 8 production upgrades are applied")
                 .addInfo("  - Genetic Stabilizer upgrade applied")
@@ -192,7 +196,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .addInfo("  - It will slowly produce ignoble princesses")
                 .addInfo("  - Consumes 100 royal jelly per operation")
                 .addInfo("  - Base processing time: 1 minute")
-                .addInfo("  - Uses 1 amp IV")
+                .addInfo("  - Uses 1 amp " + voltageFormatted(5))
                 .addInfo("  - Can overclock")
                 .addInfo(StructureHologram)
                 .addSeparator()
