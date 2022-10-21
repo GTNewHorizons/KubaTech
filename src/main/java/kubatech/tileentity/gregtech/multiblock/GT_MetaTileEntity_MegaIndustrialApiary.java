@@ -388,6 +388,9 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             builder.append(": ");
             builder.append(EnumChatFormatting.GOLD);
             builder.append(mStorage.get(i).queenStack.getDisplayName());
+            builder.append(EnumChatFormatting.GREEN);
+            mStorage.get(i).dropProgress.values().forEach(v -> builder.append(" ")
+                    .append(String.format("%.2f%%", v * 100d)));
             info.add(builder.toString());
         }
 
