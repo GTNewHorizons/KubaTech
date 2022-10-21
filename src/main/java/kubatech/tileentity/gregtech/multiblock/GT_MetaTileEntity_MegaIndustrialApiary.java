@@ -47,6 +47,7 @@ import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import kubatech.Tags;
@@ -56,6 +57,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class GT_MetaTileEntity_MegaIndustrialApiary
@@ -362,6 +364,34 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         }
 
         return false;
+    }
+
+    @Override
+    public String[] getInfoData() {
+        ArrayList<String> info = new ArrayList<>(Arrays.asList(super.getInfoData()));
+        info.add("Running in mode: " + EnumChatFormatting.GOLD
+                + (mPrimaryMode == 0
+                        ? "Input mode"
+                        : (mPrimaryMode == 1
+                                ? "Output mode"
+                                : (mSecondaryMode == 0 ? "Operating mode (NORMAL)" : "Operating mode (SWARMER)"))));
+        info.add("Bee storage (" + EnumChatFormatting.GOLD + mStorage.size() + EnumChatFormatting.RESET + "/"
+                + (mStorage.size() > mMaxSlots
+                        ? EnumChatFormatting.DARK_RED.toString()
+                        : EnumChatFormatting.GOLD.toString())
+                + mMaxSlots + EnumChatFormatting.RESET + "):");
+        for (int i = 0; i < mStorage.size(); i++) {
+            StringBuilder builder = new StringBuilder();
+            if (i > mMaxSlots) builder.append(EnumChatFormatting.DARK_RED);
+            builder.append("#");
+            builder.append(i);
+            builder.append(": ");
+            builder.append(EnumChatFormatting.GOLD);
+            builder.append(mStorage.get(i).queenStack.getDisplayName());
+            info.add(builder.toString());
+        }
+
+        return info.toArray(new String[0]);
     }
 
     @Override
