@@ -52,6 +52,7 @@ public class CommonProxy {
 
     public void serverStarting(FMLServerStartingEvent event) {
         RecipeLoader.addRecipesLate();
+        if (LoaderReference.Thaumcraft) TCLoader.lateLoad();
         CommandHandler cmd = new CommandHandler();
         cmd.addCommand(new CommandHelp());
         cmd.addCommand(new CommandConfig());

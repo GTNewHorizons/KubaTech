@@ -21,7 +21,13 @@ import thaumcraft.api.research.ResearchItem;
 import thaumcraft.api.research.ResearchPage;
 
 public class TCLoader {
-    public static void load() {
+    private static boolean lateLoaded = false;
+
+    public static void load() {}
+
+    public static void lateLoad() {
+        if (lateLoaded) return;
+        lateLoaded = true;
         if (!LoaderReference.GTNHCoreMod || !LoaderReference.DraconicEvolution) return;
 
         final ItemStack[] components = new ItemStack[] {
