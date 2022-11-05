@@ -23,11 +23,13 @@ import static kubatech.loaders.ItemLoader.RegisterItems;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.*;
+import kubatech.api.LoaderReference;
 import kubatech.commands.CommandConfig;
 import kubatech.commands.CommandHandler;
 import kubatech.commands.CommandHelp;
 import kubatech.config.Config;
 import kubatech.loaders.RecipeLoader;
+import kubatech.loaders.TCLoader;
 
 public class CommonProxy {
 
@@ -39,6 +41,7 @@ public class CommonProxy {
         FMLCommonHandler.instance().bus().register(new FMLEventHandler());
         RegisterItems();
         RecipeLoader.addRecipes();
+        if (LoaderReference.Thaumcraft) TCLoader.load();
     }
 
     public void init(FMLInitializationEvent event) {}
