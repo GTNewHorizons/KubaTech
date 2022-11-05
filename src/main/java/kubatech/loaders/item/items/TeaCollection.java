@@ -105,12 +105,11 @@ public class TeaCollection extends ItemProxy {
     }
 
     @Override
-    public ItemStack onItemRightClick(ItemStack p_77659_1_, World p_77659_2_, EntityPlayer p_77659_3_) {
-        if (p_77659_1_.stackTagCompound == null || !p_77659_1_.stackTagCompound.hasKey("TeaOwner")) return p_77659_1_;
-        if (!p_77659_1_.stackTagCompound.getString("TeaOwner").equals(p_77659_3_.getCommandSenderName()))
-            return p_77659_1_;
-        p_77659_3_.setItemInUse(p_77659_1_, 32);
-        return p_77659_1_;
+    public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer entity) {
+        if (stack.stackTagCompound == null || !stack.stackTagCompound.hasKey("TeaOwner")) return stack;
+        if (!stack.stackTagCompound.getString("TeaOwner").equals(entity.getCommandSenderName())) return stack;
+        entity.setItemInUse(stack, 32);
+        return stack;
     }
 
     @Override
