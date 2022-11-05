@@ -22,24 +22,20 @@ package kubatech.loaders.item.items;
 import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
-import com.gtnewhorizons.modularui.api.screen.ModularUIContext;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
-import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
-import com.gtnewhorizons.modularui.common.builder.UIBuilder;
-import com.gtnewhorizons.modularui.common.builder.UIInfo;
-import com.gtnewhorizons.modularui.common.internal.wrapper.ModularGui;
-import com.gtnewhorizons.modularui.common.internal.wrapper.ModularUIContainer;
 import com.gtnewhorizons.modularui.common.widget.DynamicTextWidget;
 import kubatech.api.utils.ModUtils;
 import kubatech.api.utils.StringUtils;
+import kubatech.loaders.item.IItemProxyGUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagLong;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
-public class TeaUltimate extends TeaCollection {
+public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
     public TeaUltimate() {
         super("ultimate_tea");
     }
@@ -67,42 +63,34 @@ public class TeaUltimate extends TeaCollection {
         return EnumChatFormatting.GOLD + "" + EnumChatFormatting.BOLD + "" + EnumChatFormatting.ITALIC + "???????";
     }
 
-    private long teaAmount = 0L;
-
-    private ModularWindow createWindow() {
+    @Override
+    public ModularWindow createWindow(ItemStack stack, EntityPlayer player) {
         ModularWindow.Builder builder = ModularWindow.builder(200, 150);
         builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
-        DynamicTextWidget text = new DynamicTextWidget(() -> new Text("Tea: " + teaAmount).color(Color.GREEN.normal));
+        DynamicTextWidget text =
+                new DynamicTextWidget(() -> new Text("Tea: " + getTeaAmount(stack)).color(Color.GREEN.normal));
         builder.widget(text.setPos(20, 20));
         return builder.build();
     }
 
-    // private static final
-
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer entity) {
         if (world.isRemote) return stack;
-        UIInfo<?, ?> TeaUI = UIBuilder.of()
-                .container((player, w, x, y, z) -> {
-                    UIBuildContext context = new UIBuildContext(player);
-                    ModularWindow window = createWindow();
-                    return new ModularUIContainer(
-                            new ModularUIContext(context, () -> player.inventoryContainer.detectAndSendChanges()),
-                            window);
-                })
-                .gui((player, w, x, y, z) -> {
-                    UIBuildContext context = new UIBuildContext(player);
-                    ModularWindow window = createWindow();
-                    return new ModularGui(new ModularUIContainer(
-                            new ModularUIContext(context, () -> player.inventory.markDirty()), window));
-                })
-                .build();
-        TeaUI.open(entity);
+        openHeldItemGUI(entity);
         return stack;
     }
 
     @Override
     public void onUpdate(ItemStack stack, World world, Entity entity, int slot, boolean isCurrentItem) {
-        teaAmount++;
+        if (world.isRemote) return;
+        setTeaAmount(stack, getTeaAmount(stack) + 1);
+    }
+
+    private long getTeaAmount(ItemStack stack) {
+        return stack.stackTagCompound == null ? 0 : stack.stackTagCompound.getLong("teaAmount");
+    }
+
+    private void setTeaAmount(ItemStack stack, long teaAmount) {
+        stack.setTagInfo("teaAmount", new NBTTagLong(teaAmount));
     }
 }
