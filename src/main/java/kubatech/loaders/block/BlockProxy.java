@@ -3,6 +3,7 @@ package kubatech.loaders.block;
 import static kubatech.loaders.block.KubaBlock.defaultTileEntityUI;
 
 import com.gtnewhorizons.modularui.api.screen.ITileWithModularUI;
+import java.util.List;
 import kubatech.Tags;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.EntityLivingBase;
@@ -40,7 +41,7 @@ public class BlockProxy {
         return false;
     }
 
-    public void onBlockPlaced(World world, int x, int y, int z, EntityLivingBase player) {}
+    public void onBlockPlaced(World world, int x, int y, int z, EntityLivingBase player, ItemStack stack) {}
 
     public void registerIcon(IIconRegister iconRegister) {
         icon = iconRegister.registerIcon(texturepath);
@@ -57,4 +58,6 @@ public class BlockProxy {
     public String getDisplayName(ItemStack stack) {
         return StatCollector.translateToLocal(this.unlocalizedName + ".name").trim();
     }
+
+    public void addInformation(ItemStack stack, EntityPlayer entity, List<String> tooltipList, boolean showDebugInfo) {}
 }
