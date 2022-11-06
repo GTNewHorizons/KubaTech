@@ -29,7 +29,7 @@ command.config.success=§aConfig reloaded successfully !
 command.config.usage=<option>
 
 #Blocks
-kubablock.tea_acceptor.name=§4§lTea acceptor
+kubablock.tea_acceptor.name=§4§lTea Acceptor
 
 #Items
 kubaitem.fromcollection=This item is from
