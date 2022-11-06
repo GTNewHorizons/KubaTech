@@ -38,6 +38,7 @@ public class TeaAcceptorTile extends TileEntity
 
     @Override
     public void readFromNBT(NBTTagCompound NBTData) {
+        super.readFromNBT(NBTData);
         tileOwner = NBTData.getString("tileOwner");
         if (!tileOwner.isEmpty()) {
             playerData = PlayerDataManager.getPlayer(tileOwner);
@@ -46,6 +47,7 @@ public class TeaAcceptorTile extends TileEntity
 
     @Override
     public void writeToNBT(NBTTagCompound NBTData) {
+        super.writeToNBT(NBTData);
         NBTData.setString("tileOwner", tileOwner);
     }
 
