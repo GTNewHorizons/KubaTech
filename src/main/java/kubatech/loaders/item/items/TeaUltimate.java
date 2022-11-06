@@ -24,6 +24,7 @@ import com.gtnewhorizons.modularui.api.drawable.ItemDrawable;
 import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
+import com.gtnewhorizons.modularui.api.widget.Widget;
 import com.gtnewhorizons.modularui.common.widget.*;
 import kubatech.api.enums.ItemList;
 import kubatech.api.utils.ModUtils;
@@ -68,40 +69,45 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
         ModularWindow.Builder builder = ModularWindow.builder(200, 150);
         builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
         final PlayerData playerData = PlayerDataManager.getPlayer(player.getCommandSenderName());
-        return builder.widget(new TabContainer()
-                        .setButtonSize(28, 32)
-                        .addTabButton(new TabButton(0)
-                                .setBackground(
-                                        false, ModularUITextures.VANILLA_TAB_TOP_START.getSubArea(0, 0, 1f, 0.5f))
-                                .setBackground(
-                                        true, ModularUITextures.VANILLA_TAB_TOP_START.getSubArea(0, 0.5f, 1f, 1f))
-                                .setPos(0, -28))
-                        .addTabButton(new TabButton(1)
-                                .setBackground(
-                                        false, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0, 1f, 0.5f))
-                                .setBackground(
-                                        true, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0.5f, 1f, 1f))
-                                .setPos(28, -28))
-                        .addPage(new MultiChildWidget()
-                                .addChild(new TextWidget(new Text("STATUS")
-                                                .format(EnumChatFormatting.BOLD)
-                                                .format(EnumChatFormatting.GOLD))
-                                        .setPos(10, 5))
-                                .addChild(new DynamicTextWidget(() -> new Text(
-                                                        "Tea: " + (playerData == null ? "ERROR" : playerData.teaAmount))
+        builder.widget(new TabContainer()
+                .setButtonSize(28, 32)
+                .addTabButton(new TabButton(0)
+                        .setBackground(false, ModularUITextures.VANILLA_TAB_TOP_START.getSubArea(0, 0, 1f, 0.5f))
+                        .setBackground(true, ModularUITextures.VANILLA_TAB_TOP_START.getSubArea(0, 0.5f, 1f, 1f))
+                        .setPos(0, -28))
+                .addTabButton(new TabButton(1)
+                        .setBackground(false, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0, 1f, 0.5f))
+                        .setBackground(true, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0.5f, 1f, 1f))
+                        .setPos(28, -28))
+                .addPage(new MultiChildWidget()
+                        .addChild(new TextWidget(new Text("STATUS")
+                                        .format(EnumChatFormatting.BOLD)
+                                        .format(EnumChatFormatting.GOLD))
+                                .setPos(10, 5))
+                        .addChild(new DynamicTextWidget(
+                                        () -> new Text("Tea: " + (playerData == null ? "ERROR" : playerData.teaAmount))
                                                 .color(Color.GREEN.normal))
-                                        .setPos(20, 20)))
-                        .addPage(new MultiChildWidget()
-                                .addChild(new TextWidget(new Text("EXCHANGE")
-                                                .format(EnumChatFormatting.BOLD)
-                                                .format(EnumChatFormatting.GOLD))
-                                        .setPos(10, 5))
-                                .addChild(new ItemDrawable()
-                                        .setItem(ItemList.TeaAcceptorResearchNote.get(1))
-                                        .asWidget()
-                                        .addTooltip("Tea Acceptor Research Note")
-                                        .setPos(20, 20))))
-                .build();
+                                .setPos(20, 20)))
+                .addPage(new MultiChildWidget()
+                        .addChild(new TextWidget(new Text("EXCHANGE")
+                                        .format(EnumChatFormatting.BOLD)
+                                        .format(EnumChatFormatting.GOLD))
+                                .setPos(10, 5))
+                        .addChild(new ButtonWidget()
+                                .setOnClick((Widget.ClickData clickData, Widget widget) -> {
+                                    if (!(player instanceof EntityPlayerMP)) return;
+                                    if (playerData == null || playerData.teaAmount < 50000L) return;
+                                    playerData.teaAmount -= 50000L;
+                                    playerData.markDirty();
+                                    if (player.inventory.addItemStackToInventory(
+                                            ItemList.TeaAcceptorResearchNote.get(1))) return;
+                                    player.entityDropItem(ItemList.TeaAcceptorResearchNote.get(1), 0.5f);
+                                })
+                                .setBackground(new ItemDrawable().setItem(ItemList.TeaAcceptorResearchNote.get(1)))
+                                .addTooltip("Tea Acceptor Research Note")
+                                .addTooltip(new Text("Cost: 50000 Tea").color(Color.GREY.normal))
+                                .setPos(20, 20))));
+        return builder.build();
     }
 
     @Override
