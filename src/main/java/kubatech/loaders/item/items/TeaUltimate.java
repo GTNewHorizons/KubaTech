@@ -105,7 +105,7 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                                 })
                                 .setBackground(new ItemDrawable().setItem(ItemList.TeaAcceptorResearchNote.get(1)))
                                 .addTooltip("Tea Acceptor Research Note")
-                                .addTooltip(new Text("Cost: 50000 Tea").format(EnumChatFormatting.GRAY))
+                                .addTooltip(new Text("Cost: 50000 Tea").color(Color.GREY.normal))
                                 .setPos(20, 20))));
         return builder.build();
     }
