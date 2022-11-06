@@ -10,7 +10,7 @@ import com.gtnewhorizons.modularui.common.builder.UIInfo;
 import com.gtnewhorizons.modularui.common.internal.wrapper.ModularUIContainer;
 import com.gtnewhorizons.modularui.common.widget.DynamicTextWidget;
 import com.gtnewhorizons.modularui.common.widget.TextWidget;
-import java.lang.reflect.Method;
+import java.text.NumberFormat;
 import java.util.function.BiFunction;
 import kubatech.api.enums.ItemList;
 import kubatech.api.utils.StringUtils;
@@ -141,8 +141,6 @@ public class TeaAcceptorTile extends TileEntity
         return UI;
     }
 
-    private static Method determineSizeMethod = null;
-
     private static TextWidget posCenteredHorizontally(int y, TextWidget textWidget) {
         return (TextWidget) textWidget.setPosProvider(posCenteredHorizontallyProvider.apply(textWidget, y));
     }
@@ -153,7 +151,7 @@ public class TeaAcceptorTile extends TileEntity
 
     @Override
     public ModularWindow createWindow(UIBuildContext buildContext) {
-        ModularWindow.Builder builder = ModularWindow.builder(150, 70);
+        ModularWindow.Builder builder = ModularWindow.builder(170, 70);
         builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
         EntityPlayer player = buildContext.getPlayer();
 
@@ -174,7 +172,7 @@ public class TeaAcceptorTile extends TileEntity
                                 (playerData == null
                                         ? "ERROR"
                                         : StringUtils.applyRainbow(
-                                                "" + playerData.teaAmount,
+                                                NumberFormat.getInstance().format(playerData.teaAmount),
                                                 (int) ((playerData.teaAmount / Math.max(1, averageInput * 10))
                                                         % Integer.MAX_VALUE),
                                                 EnumChatFormatting.BOLD.toString()))))),

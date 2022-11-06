@@ -26,6 +26,7 @@ import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.api.widget.Widget;
 import com.gtnewhorizons.modularui.common.widget.*;
+import java.text.NumberFormat;
 import kubatech.api.enums.ItemList;
 import kubatech.api.utils.ModUtils;
 import kubatech.api.utils.StringUtils;
@@ -84,9 +85,12 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                                         .format(EnumChatFormatting.BOLD)
                                         .format(EnumChatFormatting.GOLD))
                                 .setPos(10, 5))
-                        .addChild(new DynamicTextWidget(
-                                        () -> new Text("Tea: " + (playerData == null ? "ERROR" : playerData.teaAmount))
-                                                .color(Color.GREEN.normal))
+                        .addChild(new DynamicTextWidget(() -> new Text("Tea: "
+                                                + (playerData == null
+                                                        ? "ERROR"
+                                                        : NumberFormat.getInstance()
+                                                                .format(playerData.teaAmount)))
+                                        .color(Color.GREEN.normal))
                                 .setPos(20, 20)))
                 .addPage(new MultiChildWidget()
                         .addChild(new TextWidget(new Text("EXCHANGE")
@@ -96,8 +100,8 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                         .addChild(new ButtonWidget()
                                 .setOnClick((Widget.ClickData clickData, Widget widget) -> {
                                     if (!(player instanceof EntityPlayerMP)) return;
-                                    if (playerData == null || playerData.teaAmount < 50000L) return;
-                                    playerData.teaAmount -= 50000L;
+                                    if (playerData == null || playerData.teaAmount < 50_000L) return;
+                                    playerData.teaAmount -= 50_000L;
                                     playerData.markDirty();
                                     if (player.inventory.addItemStackToInventory(
                                             ItemList.TeaAcceptorResearchNote.get(1))) return;
@@ -105,7 +109,9 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                                 })
                                 .setBackground(new ItemDrawable().setItem(ItemList.TeaAcceptorResearchNote.get(1)))
                                 .addTooltip("Tea Acceptor Research Note")
-                                .addTooltip(new Text("Cost: 50000 Tea").color(Color.GREY.normal))
+                                .addTooltip(new Text("Cost: "
+                                                + NumberFormat.getInstance().format(50_000) + " Tea")
+                                        .color(Color.GREY.normal))
                                 .setPos(20, 20))));
         return builder.build();
     }
