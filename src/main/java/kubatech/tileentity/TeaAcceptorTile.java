@@ -175,13 +175,7 @@ public class TeaAcceptorTile extends TileEntity
                                         ? "ERROR"
                                         : StringUtils.applyRainbow(
                                                 "" + playerData.teaAmount,
-                                                (int) ((playerData.teaAmount
-                                                                / Math.pow(
-                                                                        10,
-                                                                        Math.max(
-                                                                                0,
-                                                                                ("" + playerData.teaAmount).length()
-                                                                                        - 2)))
+                                                (int) ((playerData.teaAmount / Math.max(1, averageInput * 10))
                                                         % Integer.MAX_VALUE),
                                                 EnumChatFormatting.BOLD.toString()))))),
                 posCenteredHorizontally(50, new DynamicTextWidget(() -> new Text("IN: " + averageInput + "/t")
