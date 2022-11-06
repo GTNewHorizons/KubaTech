@@ -28,6 +28,9 @@ command.config.invalid_option=§cInvalid option ! Possible options: reload
 command.config.success=§aConfig reloaded successfully !
 command.config.usage=<option>
 
+#Blocks
+kubablock.tea_acceptor.name=§4§lTea acceptor
+
 #Items
 kubaitem.fromcollection=This item is from
 kubaitem.notyours=It looks like that item is not yours

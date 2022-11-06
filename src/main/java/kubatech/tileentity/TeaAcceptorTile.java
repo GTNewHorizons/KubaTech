@@ -5,7 +5,6 @@ import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.screen.*;
 import com.gtnewhorizons.modularui.common.widget.DynamicTextWidget;
-import com.gtnewhorizons.modularui.common.widget.TextWidget;
 import kubatech.api.enums.ItemList;
 import kubatech.loaders.ItemLoader;
 import kubatech.savedata.PlayerData;
@@ -26,7 +25,7 @@ public class TeaAcceptorTile extends TileEntity implements IInventory, ITileWith
     private PlayerData playerData = null;
 
     public void setTeaOwner(String teaOwner) {
-        if (tileOwner == null) {
+        if (tileOwner == null || tileOwner.isEmpty()) {
             tileOwner = teaOwner;
             playerData = PlayerDataManager.getPlayer(tileOwner);
             markDirty();
@@ -36,6 +35,9 @@ public class TeaAcceptorTile extends TileEntity implements IInventory, ITileWith
     @Override
     public void readFromNBT(NBTTagCompound NBTData) {
         tileOwner = NBTData.getString("tileOwner");
+        if (!tileOwner.isEmpty()) {
+            playerData = PlayerDataManager.getPlayer(tileOwner);
+        }
     }
 
     @Override
@@ -118,14 +120,12 @@ public class TeaAcceptorTile extends TileEntity implements IInventory, ITileWith
         builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
         EntityPlayer player = buildContext.getPlayer();
 
-        DynamicTextWidget text = new DynamicTextWidget(
-                () -> {
-                    if (player.getCommandSenderName().equals(tileOwner))
-                        return new Text("Tea: " + (playerData == null ? "ERROR" : playerData.teaAmount))
-                            .color(Color.GREEN.normal);
-                    else
-                        return new Text("This is not your block").color(Color.RED.normal);
-                });
+        DynamicTextWidget text = new DynamicTextWidget(() -> {
+            if (player.getCommandSenderName().equals(tileOwner))
+                return new Text("Tea: " + (playerData == null ? "ERROR" : playerData.teaAmount))
+                        .color(Color.GREEN.normal);
+            else return new Text("This is not your block").color(Color.RED.normal);
+        });
         builder.widget(text.setPos(20, 20));
         return builder.build();
     }

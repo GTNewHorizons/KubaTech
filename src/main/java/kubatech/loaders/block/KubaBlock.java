@@ -14,17 +14,46 @@ import java.util.function.Function;
 import kubatech.loaders.BlockLoader;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
 
 public class KubaBlock extends Block {
 
-    private static final HashMap<Integer, BlockProxy> blocks = new HashMap<>();
+    public static final Function<IModularUIContainerCreator, UIInfo<?, ?>> TileEntityUIFactory =
+            containerConstructor -> UIBuilder.of()
+                    .container((player, world, x, y, z) -> {
+                        TileEntity te = world.getTileEntity(x, y, z);
+                        if (te instanceof ITileWithModularUI) {
+                            UIBuildContext buildContext = new UIBuildContext(player);
+                            ModularWindow window = ((ITileWithModularUI) te).createWindow(buildContext);
+                            return containerConstructor.createUIContainer(
+                                    new ModularUIContext(buildContext, te::markDirty), window);
+                        }
+                        return null;
+                    })
+                    .gui(((player, world, x, y, z) -> {
+                        if (!world.isRemote) return null;
+                        TileEntity te = world.getTileEntity(x, y, z);
+                        if (te instanceof ITileWithModularUI) {
+                            UIBuildContext buildContext = new UIBuildContext(player);
+                            ModularWindow window = ((ITileWithModularUI) te).createWindow(buildContext);
+                            return new ModularGui(containerConstructor.createUIContainer(
+                                    new ModularUIContext(buildContext, te::markDirty), window));
+                        }
+                        return null;
+                    }))
+                    .build();
+
+    public static final UIInfo<?, ?> defaultTileEntityUI = TileEntityUIFactory.apply(ModularUIContainer::new);
+
+    static final HashMap<Integer, BlockProxy> blocks = new HashMap<>();
     private static int idCounter = 0;
 
     public KubaBlock(Material p_i45394_1_) {
@@ -53,35 +82,25 @@ public class KubaBlock extends Block {
     }
 
     @Override
+    public void registerBlockIcons(IIconRegister p_149651_1_) {
+        blocks.values().forEach(b -> b.registerIcon(p_149651_1_));
+    }
+
+    @Override
+    public IIcon getIcon(int p_149691_1_, int p_149691_2_) {
+        return blocks.get(p_149691_2_).getIcon(p_149691_1_);
+    }
+
+    @Override
+    public String getLocalizedName() {
+        return "KUBABLOCK";
+    }
+
+    @Override
     public TileEntity createTileEntity(World world, int metadata) {
         if (!hasTileEntity(metadata)) return null;
         return ((IProxyTileEntityProvider) getBlock(metadata)).createTileEntity(world);
     }
-
-    public static final Function<IModularUIContainerCreator, UIInfo<?, ?>> TileEntityUIFactory =
-            containerConstructor -> UIBuilder.of()
-                    .container((player, world, x, y, z) -> {
-                        TileEntity te = world.getTileEntity(x, y, z);
-                        if (te instanceof ITileWithModularUI) {
-                            UIBuildContext buildContext = new UIBuildContext(player);
-                            ModularWindow window = ((ITileWithModularUI) te).createWindow(buildContext);
-                            return containerConstructor.createUIContainer(
-                                    new ModularUIContext(buildContext, te::markDirty), window);
-                        }
-                        return null;
-                    })
-                    .gui(((player, world, x, y, z) -> {
-                        if (!world.isRemote) return null;
-                        TileEntity te = world.getTileEntity(x, y, z);
-                        if (te instanceof ITileWithModularUI) {
-                            UIBuildContext buildContext = new UIBuildContext(player);
-                            ModularWindow window = ((ITileWithModularUI) te).createWindow(buildContext);
-                            return new ModularGui(containerConstructor.createUIContainer(
-                                    new ModularUIContext(buildContext, te::markDirty), window));
-                        }
-                        return null;
-                    }))
-                    .build();
 
     @Override
     public boolean onBlockActivated(
