@@ -30,6 +30,8 @@ import kubatech.commands.CommandHelp;
 import kubatech.config.Config;
 import kubatech.loaders.RecipeLoader;
 import kubatech.loaders.TCLoader;
+import kubatech.savedata.PlayerDataManager;
+import net.minecraftforge.common.MinecraftForge;
 
 public class CommonProxy {
 
@@ -39,6 +41,7 @@ public class CommonProxy {
         Config.init(event.getModConfigurationDirectory());
         Config.synchronizeConfiguration();
         FMLCommonHandler.instance().bus().register(new FMLEventHandler());
+        MinecraftForge.EVENT_BUS.register(new PlayerDataManager());
         RegisterItems();
         RecipeLoader.addRecipes();
         if (LoaderReference.Thaumcraft) TCLoader.load();

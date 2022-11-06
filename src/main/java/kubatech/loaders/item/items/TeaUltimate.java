@@ -27,11 +27,13 @@ import com.gtnewhorizons.modularui.common.widget.DynamicTextWidget;
 import kubatech.api.utils.ModUtils;
 import kubatech.api.utils.StringUtils;
 import kubatech.loaders.item.IItemProxyGUI;
+import kubatech.savedata.PlayerData;
+import kubatech.savedata.PlayerDataManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagLong;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
@@ -47,11 +49,7 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
     @Override
     public String getDisplayName(ItemStack stack) {
         if (!ModUtils.isClientSided) return super.getDisplayName(stack);
-        if (stack.stackTagCompound == null
-                || (!stack.stackTagCompound.hasKey("TeaOwner")
-                        || stack.stackTagCompound
-                                .getString("TeaOwner")
-                                .equals(Minecraft.getMinecraft().thePlayer.getCommandSenderName()))) {
+        if (checkTeaOwner(stack, Minecraft.getMinecraft().thePlayer.getCommandSenderName())) {
             long current = System.currentTimeMillis();
             if (current - timeCounter > 100) {
                 timeCounter = current;
@@ -67,8 +65,9 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
     public ModularWindow createWindow(ItemStack stack, EntityPlayer player) {
         ModularWindow.Builder builder = ModularWindow.builder(200, 150);
         builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
-        DynamicTextWidget text =
-                new DynamicTextWidget(() -> new Text("Tea: " + getTeaAmount(stack)).color(Color.GREEN.normal));
+        final PlayerData playerData = PlayerDataManager.getPlayer(player.getCommandSenderName());
+        DynamicTextWidget text = new DynamicTextWidget(() ->
+                new Text("Tea: " + (playerData == null ? "ERROR" : playerData.teaAmount)).color(Color.GREEN.normal));
         builder.widget(text.setPos(20, 20));
         return builder.build();
     }
@@ -76,6 +75,8 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer entity) {
         if (world.isRemote) return stack;
+        if (!(entity instanceof EntityPlayerMP)) return stack;
+        if (!checkTeaOwner(stack, entity.getCommandSenderName())) return stack;
         openHeldItemGUI(entity);
         return stack;
     }
@@ -83,14 +84,13 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
     @Override
     public void onUpdate(ItemStack stack, World world, Entity entity, int slot, boolean isCurrentItem) {
         if (world.isRemote) return;
-        setTeaAmount(stack, getTeaAmount(stack) + 1);
-    }
-
-    private long getTeaAmount(ItemStack stack) {
-        return stack.stackTagCompound == null ? 0 : stack.stackTagCompound.getLong("teaAmount");
-    }
-
-    private void setTeaAmount(ItemStack stack, long teaAmount) {
-        stack.setTagInfo("teaAmount", new NBTTagLong(teaAmount));
+        if (!(entity instanceof EntityPlayerMP)) return;
+        super.onUpdate(stack, world, entity, slot, isCurrentItem);
+        if (checkTeaOwner(stack, entity.getCommandSenderName())) {
+            PlayerData playerData = PlayerDataManager.getPlayer(entity.getCommandSenderName());
+            if (playerData == null) return;
+            playerData.teaAmount++;
+            playerData.markDirty();
+        }
     }
 }
