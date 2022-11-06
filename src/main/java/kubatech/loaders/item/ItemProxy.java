@@ -54,8 +54,7 @@ public class ItemProxy {
                 if (!(proxy instanceof IItemProxyGUI)) return null;
                 UIBuildContext context = new UIBuildContext(player);
                 ModularWindow window = ((IItemProxyGUI) proxy).createWindow(stack, player);
-                return new ModularGui(new ModularUIContainer(
-                        new ModularUIContext(context, () -> player.inventory.markDirty()), window));
+                return new ModularGui(new ModularUIContainer(new ModularUIContext(context, null), window));
             })
             .build();
     private final String unlocalizedName;
