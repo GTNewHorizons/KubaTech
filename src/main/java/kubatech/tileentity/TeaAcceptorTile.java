@@ -3,11 +3,17 @@ package kubatech.tileentity;
 import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
+import com.gtnewhorizons.modularui.api.math.Pos2d;
 import com.gtnewhorizons.modularui.api.screen.*;
+import com.gtnewhorizons.modularui.api.widget.Widget;
 import com.gtnewhorizons.modularui.common.builder.UIInfo;
 import com.gtnewhorizons.modularui.common.internal.wrapper.ModularUIContainer;
 import com.gtnewhorizons.modularui.common.widget.DynamicTextWidget;
+import com.gtnewhorizons.modularui.common.widget.TextWidget;
+import java.lang.reflect.Method;
+import java.util.function.BiFunction;
 import kubatech.api.enums.ItemList;
+import kubatech.api.utils.StringUtils;
 import kubatech.loaders.ItemLoader;
 import kubatech.loaders.block.KubaBlock;
 import kubatech.savedata.PlayerData;
@@ -17,6 +23,7 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumChatFormatting;
 
 public class TeaAcceptorTile extends TileEntity
         implements IInventory, ITileWithModularUI, KubaBlock.IModularUIProvider {
@@ -27,6 +34,9 @@ public class TeaAcceptorTile extends TileEntity
 
     private String tileOwner = null;
     private PlayerData playerData = null;
+    private long averageInput = 0L;
+    private long inAmount = 0L;
+    private int ticker = 0;
 
     public void setTeaOwner(String teaOwner) {
         if (tileOwner == null || tileOwner.isEmpty()) {
@@ -52,8 +62,11 @@ public class TeaAcceptorTile extends TileEntity
     }
 
     @Override
-    public boolean canUpdate() {
-        return false;
+    public void updateEntity() {
+        if (++ticker % 100 == 0) {
+            averageInput = inAmount / 100;
+            inAmount = 0;
+        }
     }
 
     @Override
@@ -81,6 +94,7 @@ public class TeaAcceptorTile extends TileEntity
         if (playerData != null) {
             playerData.teaAmount += p_70299_2_.stackSize;
             playerData.markDirty();
+            inAmount += p_70299_2_.stackSize;
         }
     }
 
@@ -127,19 +141,51 @@ public class TeaAcceptorTile extends TileEntity
         return UI;
     }
 
+    private static Method determineSizeMethod = null;
+
+    private static TextWidget posCenteredHorizontally(int y, TextWidget textWidget) {
+        return (TextWidget) textWidget.setPosProvider(posCenteredHorizontallyProvider.apply(textWidget, y));
+    }
+
+    private static final BiFunction<TextWidget, Integer, Widget.PosProvider> posCenteredHorizontallyProvider =
+            (TextWidget widget, Integer y) -> (Widget.PosProvider) (screenSize, window, parent) ->
+                    new Pos2d((window.getSize().width / 2) - (widget.getSize().width / 2), y);
+
     @Override
     public ModularWindow createWindow(UIBuildContext buildContext) {
-        ModularWindow.Builder builder = ModularWindow.builder(200, 150);
+        ModularWindow.Builder builder = ModularWindow.builder(150, 70);
         builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
         EntityPlayer player = buildContext.getPlayer();
 
-        DynamicTextWidget text = new DynamicTextWidget(() -> {
-            if (player.getCommandSenderName().equals(tileOwner))
-                return new Text("Tea: " + (playerData == null ? "ERROR" : playerData.teaAmount))
-                        .color(Color.GREEN.normal);
-            else return new Text("This is not your block").color(Color.RED.normal);
-        });
-        builder.widget(text.setPos(20, 20));
+        builder.widgets(
+                posCenteredHorizontally(
+                        10,
+                        new TextWidget(new Text("Tea Acceptor")
+                                .format(EnumChatFormatting.BOLD)
+                                .format(EnumChatFormatting.DARK_RED))),
+                posCenteredHorizontally(30, new DynamicTextWidget(() -> {
+                    if (player.getCommandSenderName().equals(tileOwner))
+                        return new Text("[Tea]").color(Color.GREEN.normal);
+                    else return new Text("This is not your block").color(Color.RED.normal);
+                })),
+                posCenteredHorizontally(
+                        40,
+                        new DynamicTextWidget(() -> new Text(
+                                (playerData == null
+                                        ? "ERROR"
+                                        : StringUtils.applyRainbow(
+                                                "" + playerData.teaAmount,
+                                                (int) ((playerData.teaAmount
+                                                                / Math.pow(
+                                                                        10,
+                                                                        Math.max(
+                                                                                0,
+                                                                                ("" + playerData.teaAmount).length()
+                                                                                        - 2)))
+                                                        % Integer.MAX_VALUE),
+                                                EnumChatFormatting.BOLD.toString()))))),
+                posCenteredHorizontally(50, new DynamicTextWidget(() -> new Text("IN: " + averageInput + "/t")
+                        .color(Color.BLACK.normal))));
         return builder.build();
     }
 }
