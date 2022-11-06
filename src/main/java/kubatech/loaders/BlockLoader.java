@@ -1,6 +1,7 @@
 package kubatech.loaders;
 
 import cpw.mods.fml.common.registry.GameRegistry;
+import kubatech.api.enums.ItemList;
 import kubatech.loaders.block.KubaBlock;
 import kubatech.loaders.block.KubaItemBlock;
 import kubatech.loaders.block.blocks.TeaAcceptor;
@@ -18,6 +19,6 @@ public class BlockLoader {
         GameRegistry.registerBlock(kubaBlock, null, "kubablocks");
         GameRegistry.registerItem(kubaItemBlock, "kubablocks");
 
-        kubaBlock.registerProxyBlock(new TeaAcceptor());
+        ItemList.TeaAcceptor.set(kubaBlock.registerProxyBlock(new TeaAcceptor()));
     }
 }

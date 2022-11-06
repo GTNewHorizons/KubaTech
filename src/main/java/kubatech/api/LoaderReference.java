@@ -16,4 +16,5 @@ public class LoaderReference {
     public static final boolean TwilightForest = Loader.isModLoaded("TwilightForest");
     public static final boolean Forestry = Loader.isModLoaded("Forestry");
     public static final boolean DraconicEvolution = Loader.isModLoaded("DraconicEvolution");
+    public static final boolean Avaritia = Loader.isModLoaded("Avaritia");
 }

@@ -22,6 +22,7 @@ package kubatech.loaders;
 import static kubatech.api.enums.ItemList.*;
 
 import cpw.mods.fml.common.registry.GameRegistry;
+import kubatech.loaders.item.ItemProxy;
 import kubatech.loaders.item.KubaItems;
 import kubatech.loaders.item.items.Tea;
 import kubatech.loaders.item.items.TeaCollection;
@@ -75,5 +76,8 @@ public class ItemLoader {
         FermentedTeaLeaf.set(kubaitems.registerProxyItem(new TeaIngredient("fermented_tea_leaf")));
         BruisedTeaLeaf.set(kubaitems.registerProxyItem(new TeaIngredient("bruised_tea_leaf")));
         PartiallyOxidizedTeaLeaf.set(kubaitems.registerProxyItem(new TeaIngredient("partially_oxidized_tea_leaf")));
+
+        TeaAcceptorResearchNote.set(
+                kubaitems.registerProxyItem(new ItemProxy("tea_acceptor_research_note", "research_note")));
     }
 }
