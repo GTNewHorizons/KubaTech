@@ -133,4 +133,9 @@ public class KubaBlock extends Block {
     public interface IModularUIContainerCreator {
         ModularUIContainer createUIContainer(ModularUIContext context, ModularWindow mainWindow);
     }
+
+    @FunctionalInterface
+    public interface IModularUIProvider {
+        UIInfo<?, ?> getUI();
+    }
 }

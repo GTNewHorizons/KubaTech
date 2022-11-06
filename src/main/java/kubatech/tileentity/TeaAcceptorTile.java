@@ -4,9 +4,12 @@ import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.screen.*;
+import com.gtnewhorizons.modularui.common.builder.UIInfo;
+import com.gtnewhorizons.modularui.common.internal.wrapper.ModularUIContainer;
 import com.gtnewhorizons.modularui.common.widget.DynamicTextWidget;
 import kubatech.api.enums.ItemList;
 import kubatech.loaders.ItemLoader;
+import kubatech.loaders.block.KubaBlock;
 import kubatech.savedata.PlayerData;
 import kubatech.savedata.PlayerDataManager;
 import net.minecraft.entity.player.EntityPlayer;
@@ -15,7 +18,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 
-public class TeaAcceptorTile extends TileEntity implements IInventory, ITileWithModularUI {
+public class TeaAcceptorTile extends TileEntity
+        implements IInventory, ITileWithModularUI, KubaBlock.IModularUIProvider {
 
     public TeaAcceptorTile() {
         super();
@@ -112,6 +116,13 @@ public class TeaAcceptorTile extends TileEntity implements IInventory, ITileWith
         return p_94041_2_.getItem() == ItemLoader.kubaitems
                 && p_94041_2_.getItemDamage() >= minDamage
                 && p_94041_2_.getItemDamage() <= maxDamage;
+    }
+
+    private static final UIInfo<?, ?> UI = KubaBlock.TileEntityUIFactory.apply(ModularUIContainer::new);
+
+    @Override
+    public UIInfo<?, ?> getUI() {
+        return UI;
     }
 
     @Override
