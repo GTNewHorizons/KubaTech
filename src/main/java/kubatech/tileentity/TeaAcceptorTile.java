@@ -166,18 +166,18 @@ public class TeaAcceptorTile extends TileEntity
                         return new Text("[Tea]").color(Color.GREEN.normal);
                     else return new Text("This is not your block").color(Color.RED.normal);
                 })),
-                posCenteredHorizontally(
-                        40,
-                        new DynamicTextWidget(() -> new Text(
+                posCenteredHorizontally(40, new DynamicTextWidget(() -> new Text(
                                 (playerData == null
                                         ? "ERROR"
                                         : StringUtils.applyRainbow(
                                                 NumberFormat.getInstance().format(playerData.teaAmount),
                                                 (int) ((playerData.teaAmount / Math.max(1, averageInput * 10))
                                                         % Integer.MAX_VALUE),
-                                                EnumChatFormatting.BOLD.toString()))))),
+                                                EnumChatFormatting.BOLD.toString())))
+                        .shadow())),
                 posCenteredHorizontally(50, new DynamicTextWidget(() -> new Text("IN: " + averageInput + "/t")
-                        .color(Color.BLACK.normal))));
+                                .color(Color.BLACK.normal)))
+                        .addTooltip(new Text("Average input from the last 5 seconds").color(Color.GREY.normal)));
         return builder.build();
     }
 }
