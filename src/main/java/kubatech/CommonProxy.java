@@ -19,7 +19,8 @@
 
 package kubatech;
 
-import static kubatech.loaders.ItemLoader.RegisterItems;
+import static kubatech.loaders.BlockLoader.registerBlocks;
+import static kubatech.loaders.ItemLoader.registerItems;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.*;
@@ -42,7 +43,8 @@ public class CommonProxy {
         Config.synchronizeConfiguration();
         FMLCommonHandler.instance().bus().register(new FMLEventHandler());
         MinecraftForge.EVENT_BUS.register(new PlayerDataManager());
-        RegisterItems();
+        registerItems();
+        registerBlocks();
         RecipeLoader.addRecipes();
         if (LoaderReference.Thaumcraft) TCLoader.load();
     }

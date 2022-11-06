@@ -31,7 +31,7 @@ import kubatech.loaders.item.items.TeaUltimate;
 public class ItemLoader {
     public static final KubaItems kubaitems = new KubaItems();
 
-    public static void RegisterItems() {
+    public static void registerItems() {
         GameRegistry.registerItem(kubaitems, "kubaitems");
 
         // DON'T EVER CHANGE ORDER IN HERE, ADD NEW ITEMS ON BOTTOM
