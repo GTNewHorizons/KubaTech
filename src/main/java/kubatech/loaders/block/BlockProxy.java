@@ -60,4 +60,8 @@ public class BlockProxy {
     }
 
     public void addInformation(ItemStack stack, EntityPlayer entity, List<String> tooltipList, boolean showDebugInfo) {}
+
+    public float getHardness() {
+        return 10.f;
+    }
 }
