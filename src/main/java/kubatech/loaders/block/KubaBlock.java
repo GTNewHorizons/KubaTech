@@ -8,6 +8,7 @@ import com.gtnewhorizons.modularui.common.builder.UIBuilder;
 import com.gtnewhorizons.modularui.common.builder.UIInfo;
 import com.gtnewhorizons.modularui.common.internal.wrapper.ModularGui;
 import com.gtnewhorizons.modularui.common.internal.wrapper.ModularUIContainer;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
@@ -16,6 +17,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -68,6 +70,16 @@ public class KubaBlock extends Block {
 
     private BlockProxy getBlock(int id) {
         return blocks.get(id);
+    }
+
+    WeakReference<World> lastAccessor = null;
+    int X, Y, Z;
+
+    public void setLastBlockAccess(World accessor, int x, int y, int z) {
+        lastAccessor = new WeakReference<>(accessor);
+        X = x;
+        Y = y;
+        Z = z;
     }
 
     @Override
@@ -133,6 +145,31 @@ public class KubaBlock extends Block {
     public float getBlockHardness(World p_149712_1_, int p_149712_2_, int p_149712_3_, int p_149712_4_) {
         return getBlock(p_149712_1_.getBlockMetadata(p_149712_2_, p_149712_3_, p_149712_4_))
                 .getHardness();
+    }
+
+    @Override
+    public Material getMaterial() {
+        if (lastAccessor == null) return super.getMaterial();
+        World world = lastAccessor.get();
+        if (world == null) {
+            lastAccessor = null;
+            return super.getMaterial();
+        }
+        if (world.getBlock(X, Y, Z) != this) return super.getMaterial();
+        return getBlock(world.getBlockMetadata(X, Y, Z)).getMaterial();
+    }
+
+    @Override
+    public float getExplosionResistance(
+            Entity par1Entity,
+            World world,
+            int x,
+            int y,
+            int z,
+            double explosionX,
+            double explosionY,
+            double explosionZ) {
+        return getBlock(world.getBlockMetadata(x, y, z)).getResistance();
     }
 
     @FunctionalInterface

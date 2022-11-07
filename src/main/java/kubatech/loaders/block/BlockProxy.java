@@ -5,6 +5,7 @@ import static kubatech.loaders.block.KubaBlock.defaultTileEntityUI;
 import com.gtnewhorizons.modularui.api.screen.ITileWithModularUI;
 import java.util.List;
 import kubatech.Tags;
+import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -63,5 +64,13 @@ public class BlockProxy {
 
     public float getHardness() {
         return 10.f;
+    }
+
+    public Material getMaterial() {
+        return Material.anvil;
+    }
+
+    public float getResistance() {
+        return 5.f;
     }
 }

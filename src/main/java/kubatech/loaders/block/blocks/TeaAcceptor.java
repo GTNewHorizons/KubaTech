@@ -34,4 +34,9 @@ public class TeaAcceptor extends BlockProxy implements IProxyTileEntityProvider 
         tooltipList.add("Accepts Tea items and adds them to your network");
         tooltipList.add("Can accept up to 10 stacks per tick");
     }
+
+    @Override
+    public float getResistance() {
+        return 999999999999.f;
+    }
 }
