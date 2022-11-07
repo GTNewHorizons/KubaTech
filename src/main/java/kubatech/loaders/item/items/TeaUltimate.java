@@ -20,6 +20,7 @@
 package kubatech.loaders.item.items;
 
 import com.gtnewhorizons.modularui.api.ModularUITextures;
+import com.gtnewhorizons.modularui.api.drawable.IDrawable;
 import com.gtnewhorizons.modularui.api.drawable.ItemDrawable;
 import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
@@ -37,6 +38,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
@@ -70,20 +72,23 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
         ModularWindow.Builder builder = ModularWindow.builder(200, 150);
         builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
         final PlayerData playerData = PlayerDataManager.getPlayer(player.getCommandSenderName());
+        IDrawable tab1 = new ItemDrawable(ItemList.LegendaryUltimateTea.get(1)).withFixedSize(18, 18, 4, 6);
+        IDrawable tab2 = new ItemDrawable(new ItemStack(Blocks.crafting_table)).withFixedSize(18, 18, 4, 6);
         builder.widget(new TabContainer()
                 .setButtonSize(28, 32)
                 .addTabButton(new TabButton(0)
-                        .setBackground(false, ModularUITextures.VANILLA_TAB_TOP_START.getSubArea(0, 0, 1f, 0.5f))
-                        .setBackground(true, ModularUITextures.VANILLA_TAB_TOP_START.getSubArea(0, 0.5f, 1f, 1f))
+                        .setBackground(false, ModularUITextures.VANILLA_TAB_TOP_START.getSubArea(0, 0, 1f, 0.5f), tab1)
+                        .setBackground(true, ModularUITextures.VANILLA_TAB_TOP_START.getSubArea(0, 0.5f, 1f, 1f), tab1)
                         .setPos(0, -28))
                 .addTabButton(new TabButton(1)
-                        .setBackground(false, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0, 1f, 0.5f))
-                        .setBackground(true, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0.5f, 1f, 1f))
+                        .setBackground(false, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0, 1f, 0.5f), tab2)
+                        .setBackground(true, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0.5f, 1f, 1f), tab2)
                         .setPos(28, -28))
                 .addPage(new MultiChildWidget()
                         .addChild(new TextWidget(new Text("STATUS")
                                         .format(EnumChatFormatting.BOLD)
-                                        .format(EnumChatFormatting.GOLD))
+                                        .format(EnumChatFormatting.GOLD)
+                                        .shadow())
                                 .setPos(10, 5))
                         .addChild(new DynamicTextWidget(() -> new Text("Tea: "
                                                 + (playerData == null
@@ -95,7 +100,8 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                 .addPage(new MultiChildWidget()
                         .addChild(new TextWidget(new Text("EXCHANGE")
                                         .format(EnumChatFormatting.BOLD)
-                                        .format(EnumChatFormatting.GOLD))
+                                        .format(EnumChatFormatting.GOLD)
+                                        .shadow())
                                 .setPos(10, 5))
                         .addChild(new ButtonWidget()
                                 .setOnClick((Widget.ClickData clickData, Widget widget) -> {
