@@ -46,7 +46,7 @@ import org.apache.logging.log4j.Logger;
                 + "required-after: modularui; " + "after: EnderIO; "
                 + "after: AWWayofTime; " + "after: ExtraUtilities; " + "after: InfernalMobs; " + "after: Thaumcraft; "
                 + "after: MineTweaker3; " + "after: miscutils; " + "after: harvestcraft; " + "after: Forestry; "
-                + "after: DraconicEvolution; " + "after: Avaritia; ")
+                + "after: DraconicEvolution; " + "after: Avaritia; " + " after: dreamcraft; ")
 public class kubatech {
 
     public static kubatech instance = null;

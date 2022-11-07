@@ -46,13 +46,14 @@ public class CommonProxy {
         MinecraftForge.EVENT_BUS.register(new PlayerDataManager());
         registerItems();
         registerBlocks();
-        RecipeLoader.addRecipes();
         if (LoaderReference.Thaumcraft) TCLoader.load();
     }
 
     public void init(FMLInitializationEvent event) {}
 
-    public void postInit(FMLPostInitializationEvent event) {}
+    public void postInit(FMLPostInitializationEvent event) {
+        RecipeLoader.addRecipes();
+    }
 
     public void serverAboutToStart(FMLServerAboutToStartEvent event) {}
 
