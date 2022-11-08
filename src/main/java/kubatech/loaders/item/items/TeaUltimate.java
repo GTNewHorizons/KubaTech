@@ -39,7 +39,10 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
@@ -74,6 +77,7 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
         final PlayerData playerData = PlayerDataManager.getPlayer(player.getCommandSenderName());
         IDrawable tab1 = new ItemDrawable(ItemList.LegendaryUltimateTea.get(1)).withFixedSize(18, 18, 4, 6);
         IDrawable tab2 = new ItemDrawable(new ItemStack(Blocks.crafting_table)).withFixedSize(18, 18, 4, 6);
+        IDrawable tab3 = new ItemDrawable(new ItemStack(Items.golden_apple)).withFixedSize(18, 18, 4, 6);
         builder.widget(new TabContainer()
                 .setButtonSize(28, 32)
                 .addTabButton(new TabButton(0)
@@ -84,6 +88,10 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                         .setBackground(false, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0, 1f, 0.5f), tab2)
                         .setBackground(true, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0.5f, 1f, 1f), tab2)
                         .setPos(28, -28))
+                .addTabButton(new TabButton(2)
+                        .setBackground(false, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0, 1f, 0.5f), tab3)
+                        .setBackground(true, ModularUITextures.VANILLA_TAB_TOP_MIDDLE.getSubArea(0, 0.5f, 1f, 1f), tab3)
+                        .setPos(56, -28))
                 .addPage(new MultiChildWidget()
                         .addChild(new TextWidget(new Text("STATUS")
                                         .format(EnumChatFormatting.BOLD)
@@ -118,6 +126,29 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                                 .addTooltip(new Text("Cost: "
                                                 + NumberFormat.getInstance().format(50_000) + " Tea")
                                         .color(Color.GREY.normal))
+                                .setPos(20, 20)))
+                .addPage(new MultiChildWidget()
+                        .addChild(new TextWidget(new Text("BENEFITS")
+                                        .format(EnumChatFormatting.BOLD)
+                                        .format(EnumChatFormatting.GOLD)
+                                        .shadow())
+                                .setPos(10, 5))
+                        .addChild(new ButtonWidget()
+                                .setOnClick((Widget.ClickData clickData, Widget widget) -> {
+                                    if (!(player instanceof EntityPlayerMP)) return;
+                                    if (playerData == null) return;
+                                    playerData.autoRegen = !playerData.autoRegen;
+                                    playerData.markDirty();
+                                })
+                                .setBackground(new ItemDrawable().setItem(new ItemStack(Items.potionitem, 1, 8193)))
+                                .addTooltip("Regeneration I")
+                                .addTooltip("For 1 minute")
+                                .addTooltip(new Text("Cost: "
+                                                + NumberFormat.getInstance().format(75_000) + " Tea")
+                                        .color(Color.GREY.normal))
+                                // .addTooltip( //Find a way to run that on server, or different approach
+                                //        new Text("Autobuy: " + (playerData == null ? "ERROR" : playerData.autoRegen))
+                                //                .color(Color.GREY.normal))
                                 .setPos(20, 20))));
         return builder.build();
     }
@@ -141,6 +172,13 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
             if (playerData == null) return;
             playerData.teaAmount++;
             playerData.markDirty();
+
+            if (playerData.autoRegen && playerData.teaAmount > 75_000) {
+                if (((EntityPlayerMP) entity).getActivePotionEffect(Potion.regeneration) == null) {
+                    ((EntityPlayerMP) entity).addPotionEffect(new PotionEffect(Potion.regeneration.id, 1200, 0, true));
+                    playerData.teaAmount -= 75_000;
+                }
+            }
         }
     }
 }
