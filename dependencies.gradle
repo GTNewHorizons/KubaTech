@@ -6,7 +6,7 @@ dependencies {
     compile("com.github.GTNewHorizons:EnderIO:2.3.1.29:dev")
     compile("com.github.GTNewHorizons:Infernal-Mobs:1.7.5-GTNH:dev")
     compile("com.github.GTNewHorizons:ForestryMC:4.5.0:dev")
-    compile("com.github.GTNewHorizons:ModularUI:0.0.13:dev")
+    compile("com.github.GTNewHorizons:ModularUI:1.0.2:dev")
     //compileOnly("curse.maven:extrautilities-225561:2264384") {
     //    transitive = false
     //}
