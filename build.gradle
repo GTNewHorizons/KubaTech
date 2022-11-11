@@ -1,4 +1,4 @@
-//version: 1666827308
+//version: 1667597057
 /*
  DO NOT CHANGE THIS FILE!
  Also, you may replace this file at any time if there is an update available.
@@ -45,7 +45,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2.9'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2.11'
     }
 }
 plugins {
