@@ -177,7 +177,7 @@ public class TeaAcceptorTile extends TileEntity
                         .shadow())),
                 posCenteredHorizontally(50, new DynamicTextWidget(() -> new Text("IN: " + averageInput + "/t")
                                 .color(Color.BLACK.normal)))
-                        .addTooltip(new Text("Average input from the last 5 seconds").color(Color.GREY.normal)));
+                        .addTooltip(new Text("Average input from the last 5 seconds").color(Color.GRAY.normal)));
         return builder.build();
     }
 }

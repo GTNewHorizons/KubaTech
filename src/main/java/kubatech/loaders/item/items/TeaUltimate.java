@@ -125,7 +125,7 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                                 .addTooltip("Tea Acceptor Research Note")
                                 .addTooltip(new Text("Cost: "
                                                 + NumberFormat.getInstance().format(50_000) + " Tea")
-                                        .color(Color.GREY.normal))
+                                        .color(Color.GRAY.normal))
                                 .setPos(20, 20)))
                 .addPage(new MultiChildWidget()
                         .addChild(new TextWidget(new Text("BENEFITS")
@@ -145,7 +145,7 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                                 .addTooltip("For 1 minute")
                                 .addTooltip(new Text("Cost: "
                                                 + NumberFormat.getInstance().format(75_000) + " Tea")
-                                        .color(Color.GREY.normal))
+                                        .color(Color.GRAY.normal))
                                 // .addTooltip( //Find a way to run that on server, or different approach
                                 //        new Text("Autobuy: " + (playerData == null ? "ERROR" : playerData.autoRegen))
                                 //                .color(Color.GREY.normal))
