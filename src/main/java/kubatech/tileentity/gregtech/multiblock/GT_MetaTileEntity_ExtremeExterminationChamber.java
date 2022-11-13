@@ -640,10 +640,10 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             .setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
             .setPos(7, 4)
             .setSize(143, 75)
-            .setEnabled(widget -> getRepairStatus() != getIdealStatus()));
+            .setEnabled(widget -> getRepairStatus() != getIdealStatus() || !mMachine));
         final SlotWidget inventorySlot = new SlotWidget(inventoryHandler, 1);
         builder.widget(inventorySlot.setPosProvider((screenSize, window, parent)->{
-            if(getRepairStatus() == getIdealStatus())
+            if(getRepairStatus() == getIdealStatus() && mMachine)
                 return new Pos2d(50, 50);
             else
                 return new Pos2d(151, 4);
@@ -659,13 +659,15 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         screenElements.setSynced(false).setSpace(0).setPos(10, 7);
 
         screenElements.widget(new DynamicPositionedRow().setSynced(false).widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get())).widget(new DynamicTextWidget(()->{
-            if(getBaseMetaTileEntity().isAllowedToWork())
-                return new Text("").color(Color.GREEN.normal);
+            if(getBaseMetaTileEntity().isActive())
+                return new Text("Working !").color(Color.GREEN.normal);
+            else if(getBaseMetaTileEntity().isAllowedToWork())
+                return new Text("Enabled").color(Color.GREEN.normal);
             else if(getBaseMetaTileEntity().wasShutdown())
                 return new Text("Shutdown (CRITICAL)").color(Color.RED.normal);
             else
                 return new Text("Disabled").color(Color.RED.normal);
-        })).setEnabled(widget -> getIdealStatus() == getRepairStatus()));
+        })).setEnabled(widget -> getIdealStatus() == getRepairStatus() && mMachine));
 
         screenElements
             .widget(new TextWidget(GT_Utility.trans("132", "Pipe is loose."))
