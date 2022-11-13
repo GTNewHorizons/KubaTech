@@ -85,6 +85,7 @@ import net.minecraft.entity.EnumCreatureAttribute;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -665,7 +666,21 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
          */
         builder.widget(inventorySlot.setPos(151, 4))
                 .widget(new CycleButtonWidget()
-                        .setToggle(() -> isInRitualMode, v -> isInRitualMode = v)
+                        .setToggle(() -> isInRitualMode, v -> {
+                            isInRitualMode = v;
+                            if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+                            if (!isInRitualMode) {
+                                GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Ritual mode disabled");
+                            } else {
+                                GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Ritual mode enabled");
+                                if (connectToRitual())
+                                    GT_Utility.sendChatToPlayer(
+                                            buildContext.getPlayer(), "Successfully connected to the ritual");
+                                else
+                                    GT_Utility.sendChatToPlayer(
+                                            buildContext.getPlayer(), "Can't connect to the ritual");
+                            }
+                        })
                         .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
                         .setPos(7, 62)
                         .setSize(18, 18)
