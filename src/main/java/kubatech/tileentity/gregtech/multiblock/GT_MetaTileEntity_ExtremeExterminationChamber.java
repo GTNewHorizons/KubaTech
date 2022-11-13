@@ -39,6 +39,7 @@ import com.gtnewhorizon.structurelib.alignment.IAlignmentLimits;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizons.modularui.api.drawable.Text;
+import com.gtnewhorizons.modularui.api.forge.ItemStackHandler;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.math.Pos2d;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
@@ -118,6 +119,12 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     public GT_MetaTileEntity_ExtremeExterminationChamber(String aName) {
         super(aName);
         if (LoaderReference.BloodMagic) MinecraftForge.EVENT_BUS.register(this);
+        ReflectionHelper.setField(this, "inventoryHandler", new ItemStackHandler(getRealInventory()){
+            @Override
+            public boolean isItemValid(int slot, ItemStack stack) {
+                return poweredSpawnerItem == stack.getItem();
+            }
+        });
     }
 
     @Override
@@ -633,6 +640,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     public boolean useModularUI() {
         return true;
     }
+
+
 
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
