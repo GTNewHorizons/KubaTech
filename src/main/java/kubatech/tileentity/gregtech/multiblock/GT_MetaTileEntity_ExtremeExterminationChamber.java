@@ -44,6 +44,7 @@ import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.math.Pos2d;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
+import com.gtnewhorizons.modularui.api.widget.Widget;
 import com.gtnewhorizons.modularui.common.widget.*;
 import com.mojang.authlib.GameProfile;
 import cpw.mods.fml.common.eventhandler.EventPriority;
@@ -645,11 +646,15 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             .setSize(143, 75)
             .setEnabled(widget -> getRepairStatus() != getIdealStatus() || !mMachine));
         final SlotWidget inventorySlot = new SlotWidget(inventoryHandler, 1).setFilter(stack -> stack.getItem() == poweredSpawnerItem);
-        builder.widget(inventorySlot.setPosProvider((screenSize, window, parent)->{
+        Widget.PosProvider provider = (screenSize, window, parent)->{
             if(getRepairStatus() == getIdealStatus() && mMachine)
                 return new Pos2d(50, 50);
             else
                 return new Pos2d(151, 4);
+        };
+        builder.widget(inventorySlot.setPosProvider(provider).setTicker(widget -> {
+            if(!widget.getPos().equals(provider.getPos(null, null, null)))
+                widget.checkNeedsRebuild();
         }));
 
         final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
