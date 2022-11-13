@@ -38,6 +38,12 @@ import com.google.common.collect.Multimap;
 import com.gtnewhorizon.structurelib.alignment.IAlignmentLimits;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
+import com.gtnewhorizons.modularui.api.drawable.Text;
+import com.gtnewhorizons.modularui.api.math.Color;
+import com.gtnewhorizons.modularui.api.math.Pos2d;
+import com.gtnewhorizons.modularui.api.screen.ModularWindow;
+import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
+import com.gtnewhorizons.modularui.common.widget.*;
 import com.mojang.authlib.GameProfile;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -47,6 +53,7 @@ import crazypants.enderio.EnderIO;
 import gregtech.api.GregTech_API;
 import gregtech.api.enums.Materials;
 import gregtech.api.enums.Textures;
+import gregtech.api.gui.modularui.GT_UITextures;
 import gregtech.api.interfaces.ITexture;
 import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
@@ -620,6 +627,81 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             } else info.add("Total attack damage: " + EnumChatFormatting.YELLOW + DIAMOND_SPIKES_DAMAGE);
         }
         return info.toArray(new String[0]);
+    }
+
+    @Override
+    public boolean useModularUI() {
+        return true;
+    }
+
+    @Override
+    public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
+        builder.widget(new DrawableWidget()
+            .setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
+            .setPos(7, 4)
+            .setSize(143, 75)
+            .setEnabled(widget -> getRepairStatus() != getIdealStatus()));
+        final SlotWidget inventorySlot = new SlotWidget(inventoryHandler, 1);
+        builder.widget(inventorySlot.setPosProvider((screenSize, window, parent)->{
+            if(getRepairStatus() == getIdealStatus())
+                return new Pos2d(50, 50);
+            else
+                return new Pos2d(151, 4);
+        }));
+
+        final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
+        drawTexts(screenElements, inventorySlot);
+        builder.widget(screenElements);
+    }
+
+    @Override
+    protected void drawTexts(DynamicPositionedColumn screenElements, SlotWidget inventorySlot) {
+        screenElements.setSynced(false).setSpace(0).setPos(10, 7);
+
+        screenElements.widget(new DynamicPositionedRow().setSynced(false).widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get())).widget(new DynamicTextWidget(()->{
+            if(getBaseMetaTileEntity().isAllowedToWork())
+                return new Text("").color(Color.GREEN.normal);
+            else if(getBaseMetaTileEntity().wasShutdown())
+                return new Text("Shutdown (CRITICAL)").color(Color.RED.normal);
+            else
+                return new Text("Disabled").color(Color.RED.normal);
+        })).setEnabled(widget -> getIdealStatus() == getRepairStatus()));
+
+        screenElements
+            .widget(new TextWidget(GT_Utility.trans("132", "Pipe is loose."))
+                .setDefaultColor(COLOR_TEXT_WHITE.get())
+                .setEnabled(widget -> !mWrench))
+            .widget(new FakeSyncWidget.BooleanSyncer(() -> mWrench, val -> mWrench = val));
+        screenElements
+            .widget(new TextWidget(GT_Utility.trans("133", "Screws are loose."))
+                .setDefaultColor(COLOR_TEXT_WHITE.get())
+                .setEnabled(widget -> !mScrewdriver))
+            .widget(new FakeSyncWidget.BooleanSyncer(() -> mScrewdriver, val -> mScrewdriver = val));
+        screenElements
+            .widget(new TextWidget(GT_Utility.trans("134", "Something is stuck."))
+                .setDefaultColor(COLOR_TEXT_WHITE.get())
+                .setEnabled(widget -> !mSoftHammer))
+            .widget(new FakeSyncWidget.BooleanSyncer(() -> mSoftHammer, val -> mSoftHammer = val));
+        screenElements
+            .widget(new TextWidget(GT_Utility.trans("135", "Platings are dented."))
+                .setDefaultColor(COLOR_TEXT_WHITE.get())
+                .setEnabled(widget -> !mHardHammer))
+            .widget(new FakeSyncWidget.BooleanSyncer(() -> mHardHammer, val -> mHardHammer = val));
+        screenElements
+            .widget(new TextWidget(GT_Utility.trans("136", "Circuitry burned out."))
+                .setDefaultColor(COLOR_TEXT_WHITE.get())
+                .setEnabled(widget -> !mSolderingTool))
+            .widget(new FakeSyncWidget.BooleanSyncer(() -> mSolderingTool, val -> mSolderingTool = val));
+        screenElements
+            .widget(new TextWidget(GT_Utility.trans("137", "That doesn't belong there."))
+                .setDefaultColor(COLOR_TEXT_WHITE.get())
+                .setEnabled(widget -> !mCrowbar))
+            .widget(new FakeSyncWidget.BooleanSyncer(() -> mCrowbar, val -> mCrowbar = val));
+        screenElements
+            .widget(new TextWidget(GT_Utility.trans("138", "Incomplete Structure."))
+                .setDefaultColor(COLOR_TEXT_WHITE.get())
+                .setEnabled(widget -> !mMachine))
+            .widget(new FakeSyncWidget.BooleanSyncer(() -> mMachine, val -> mMachine = val));
     }
 
     @Override
