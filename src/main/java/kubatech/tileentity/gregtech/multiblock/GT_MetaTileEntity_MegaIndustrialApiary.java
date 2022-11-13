@@ -65,7 +65,6 @@ import kubatech.api.helpers.GTHelper;
 import kubatech.api.network.CustomTileEntityPacket;
 import kubatech.api.tileentity.CustomTileEntityPacketHandler;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -532,7 +531,9 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                                     .setSize(18, 18))
                             .attachSyncer(
                                     new FakeSyncWidget.ItemStackSyncer(
-                                            () -> mStorage.size() > finalI + finalJ ? mStorage.get(finalI + finalJ).queenStack : null,
+                                            () -> mStorage.size() > finalI + finalJ
+                                                    ? mStorage.get(finalI + finalJ).queenStack
+                                                    : null,
                                             stack -> drawables[finalI + finalJ] = stack),
                                     builder);
                 }

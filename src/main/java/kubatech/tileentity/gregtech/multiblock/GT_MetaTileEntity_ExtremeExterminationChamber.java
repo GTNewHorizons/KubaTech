@@ -664,7 +664,20 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 widget.checkNeedsRebuild();
         }));
          */
-        builder.widget(inventorySlot.setPos(151, 4))
+        builder.widget(new DynamicPositionedColumn()
+                        .setSynced(false)
+                        .widget(inventorySlot)
+                        .widget(new CycleButtonWidget()
+                                .setToggle(() -> getBaseMetaTileEntity().isAllowedToWork(), works -> {
+                                    if (works) getBaseMetaTileEntity().enableWorking();
+                                    else getBaseMetaTileEntity().disableWorking();
+                                })
+                                .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
+                                .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
+                                .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+                                .setSize(18, 18)
+                                .addTooltip("Working status"))
+                        .setPos(151, 4))
                 .widget(new DynamicPositionedRow()
                         .setSynced(false)
                         .widget(new CycleButtonWidget()
