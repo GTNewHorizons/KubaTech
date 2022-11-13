@@ -664,91 +664,90 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 widget.checkNeedsRebuild();
         }));
          */
+
+        DynamicPositionedColumn configurationElements = new DynamicPositionedColumn();
+        addConfigurationWidgets(configurationElements, buildContext, inventorySlot);
+
         builder.widget(new DynamicPositionedColumn()
-                        .setSynced(false)
-                        .widget(inventorySlot)
-                        .widget(new CycleButtonWidget()
-                                .setToggle(() -> getBaseMetaTileEntity().isAllowedToWork(), works -> {
-                                    if (works) getBaseMetaTileEntity().enableWorking();
-                                    else getBaseMetaTileEntity().disableWorking();
+                .setSynced(false)
+                .widget(inventorySlot)
+                .widget(new CycleButtonWidget()
+                        .setToggle(() -> getBaseMetaTileEntity().isAllowedToWork(), works -> {
+                            if (works) getBaseMetaTileEntity().enableWorking();
+                            else getBaseMetaTileEntity().disableWorking();
 
-                                    if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
-                                    String tChat = GT_Utility.trans("090", "Machine Processing: ")
-                                            + (works
-                                                    ? GT_Utility.trans("088", "Enabled")
-                                                    : GT_Utility.trans("087", "Disabled"));
-                                    if (hasAlternativeModeText()) tChat = getAlternativeModeText();
-                                    GT_Utility.sendChatToPlayer(buildContext.getPlayer(), tChat);
-                                })
-                                .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
-                                .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
-                                .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
-                                .setSize(18, 18)
-                                .addTooltip("Working status"))
-                        .setPos(151, 4))
-                .widget(new DynamicPositionedRow()
-                        .setSynced(false)
-                        .widget(new CycleButtonWidget()
-                                .setToggle(() -> isInRitualMode, v -> {
-                                    if (this.mMaxProgresstime > 0) {
-                                        GT_Utility.sendChatToPlayer(
-                                                buildContext.getPlayer(), "Can't change mode when running !");
-                                        return;
-                                    }
-
-                                    isInRitualMode = v;
-
-                                    if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
-                                    if (!isInRitualMode) {
-                                        GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Ritual mode disabled");
-                                    } else {
-                                        GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Ritual mode enabled");
-                                        if (connectToRitual())
-                                            GT_Utility.sendChatToPlayer(
-                                                    buildContext.getPlayer(), "Successfully connected to the ritual");
-                                        else
-                                            GT_Utility.sendChatToPlayer(
-                                                    buildContext.getPlayer(), "Can't connect to the ritual");
-                                    }
-                                })
-                                .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
-                                .setSize(18, 18)
-                                .addTooltip("Ritual mode"))
-                        .widget(new CycleButtonWidget()
-                                .setToggle(() -> mIsProducingInfernalDrops, v -> {
-                                    if (this.mMaxProgresstime > 0) {
-                                        GT_Utility.sendChatToPlayer(
-                                                buildContext.getPlayer(), "Can't change mode when running !");
-                                        return;
-                                    }
-
-                                    mIsProducingInfernalDrops = v;
-
-                                    if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
-                                    if (!mIsProducingInfernalDrops)
-                                        GT_Utility.sendChatToPlayer(
-                                                buildContext.getPlayer(),
-                                                "Mobs will now be prevented from spawning infernal");
-                                    else
-                                        GT_Utility.sendChatToPlayer(
-                                                buildContext.getPlayer(), "Mobs can spawn infernal now");
-                                })
-                                .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
-                                .setSize(18, 18)
-                                .addTooltip("Is allowed to spawn infernal mobs")
-                                .addTooltip(new Text("Does not affect mobs that are always infernal !")
-                                        .color(Color.GRAY.normal)))
-                        .setPos(7, 62)
-                        .setEnabled(widget -> isFixed.apply(widget)
-                                && !getBaseMetaTileEntity().isActive()))
-                .widget(new TextWidget(new Text("Please stop the machine to configure it").color(Color.RED.dark(3)))
-                        .setPos(7, 62)
-                        .setEnabled(widget ->
-                                isFixed.apply(widget) && getBaseMetaTileEntity().isActive()));
+                            if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+                            String tChat = GT_Utility.trans("090", "Machine Processing: ")
+                                    + (works
+                                            ? GT_Utility.trans("088", "Enabled")
+                                            : GT_Utility.trans("087", "Disabled"));
+                            if (hasAlternativeModeText()) tChat = getAlternativeModeText();
+                            GT_Utility.sendChatToPlayer(buildContext.getPlayer(), tChat);
+                        })
+                        .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
+                        .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
+                        .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+                        .setSize(18, 18)
+                        .addTooltip("Working status"))
+                .widget(configurationElements.setEnabled(
+                        widget -> !getBaseMetaTileEntity().isActive()))
+                .widget(new DrawableWidget()
+                        .setDrawable(GT_UITextures.OVERLAY_BUTTON_CROSS)
+                        .setSize(18, 18)
+                        .addTooltip(new Text("Please stop the machine to configure it").color(Color.RED.dark(3)))
+                        .setEnabled(widget -> getBaseMetaTileEntity().isActive()))
+                .setPos(151, 4));
 
         final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
         drawTexts(screenElements, inventorySlot);
         builder.widget(screenElements);
+    }
+
+    private void addConfigurationWidgets(
+            DynamicPositionedColumn configurationElements, UIBuildContext buildContext, SlotWidget inventorySlot) {
+        configurationElements.setSynced(false);
+        configurationElements.widget(new CycleButtonWidget()
+                .setToggle(() -> isInRitualMode, v -> {
+                    if (this.mMaxProgresstime > 0) {
+                        GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Can't change mode when running !");
+                        return;
+                    }
+
+                    isInRitualMode = v;
+
+                    if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+                    if (!isInRitualMode) {
+                        GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Ritual mode disabled");
+                    } else {
+                        GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Ritual mode enabled");
+                        if (connectToRitual())
+                            GT_Utility.sendChatToPlayer(
+                                    buildContext.getPlayer(), "Successfully connected to the ritual");
+                        else GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Can't connect to the ritual");
+                    }
+                })
+                .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+                .setSize(18, 18)
+                .addTooltip("Ritual mode"));
+        configurationElements.widget(new CycleButtonWidget()
+                .setToggle(() -> mIsProducingInfernalDrops, v -> {
+                    if (this.mMaxProgresstime > 0) {
+                        GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Can't change mode when running !");
+                        return;
+                    }
+
+                    mIsProducingInfernalDrops = v;
+
+                    if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+                    if (!mIsProducingInfernalDrops)
+                        GT_Utility.sendChatToPlayer(
+                                buildContext.getPlayer(), "Mobs will now be prevented from spawning infernal");
+                    else GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Mobs can spawn infernal now");
+                })
+                .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+                .setSize(18, 18)
+                .addTooltip("Is allowed to spawn infernal mobs")
+                .addTooltip(new Text("Does not affect mobs that are always infernal !").color(Color.GRAY.normal)));
     }
 
     @Override
