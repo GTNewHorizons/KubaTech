@@ -39,12 +39,9 @@ import com.gtnewhorizon.structurelib.alignment.IAlignmentLimits;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizons.modularui.api.drawable.Text;
-import com.gtnewhorizons.modularui.api.forge.ItemStackHandler;
 import com.gtnewhorizons.modularui.api.math.Color;
-import com.gtnewhorizons.modularui.api.math.Pos2d;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
-import com.gtnewhorizons.modularui.api.widget.Widget;
 import com.gtnewhorizons.modularui.common.widget.*;
 import com.mojang.authlib.GameProfile;
 import cpw.mods.fml.common.eventhandler.EventPriority;
@@ -636,16 +633,16 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         return true;
     }
 
-
-
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
         builder.widget(new DrawableWidget()
-            .setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
-            .setPos(7, 4)
-            .setSize(143, 75)
-            .setEnabled(widget -> getRepairStatus() != getIdealStatus() || !mMachine));
-        final SlotWidget inventorySlot = new SlotWidget(inventoryHandler, 1).setFilter(stack -> stack.getItem() == poweredSpawnerItem);
+                .setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
+                .setPos(7, 4)
+                .setSize(143, 75)
+                .setEnabled(widget -> getRepairStatus() != getIdealStatus() || !mMachine));
+        final SlotWidget inventorySlot =
+                new SlotWidget(inventoryHandler, 1).setFilter(stack -> stack.getItem() == poweredSpawnerItem);
+        /*
         Widget.PosProvider provider = (screenSize, window, parent)->{
             if(getRepairStatus() == getIdealStatus() && mMachine)
                 return new Pos2d(50, 50);
@@ -656,6 +653,12 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             if(!widget.getPos().equals(provider.getPos(null, null, null)))
                 widget.checkNeedsRebuild();
         }));
+         */
+        builder.widget(inventorySlot.setPos(151, 4))
+                .widget(new CycleButtonWidget()
+                        .setToggle(() -> isInRitualMode, v -> isInRitualMode = v)
+                        .setVariableBackground(GT_UITextures.BUTTON_STANDARD_TOGGLE)
+                        .setPos(151, 22));
 
         final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
         drawTexts(screenElements, inventorySlot);
@@ -666,52 +669,54 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     protected void drawTexts(DynamicPositionedColumn screenElements, SlotWidget inventorySlot) {
         screenElements.setSynced(false).setSpace(0).setPos(10, 7);
 
-        screenElements.widget(new DynamicPositionedRow().setSynced(false).widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get())).widget(new DynamicTextWidget(()->{
-            if(getBaseMetaTileEntity().isActive())
-                return new Text("Working !").color(Color.GREEN.normal);
-            else if(getBaseMetaTileEntity().isAllowedToWork())
-                return new Text("Enabled").color(Color.GREEN.normal);
-            else if(getBaseMetaTileEntity().wasShutdown())
-                return new Text("Shutdown (CRITICAL)").color(Color.RED.normal);
-            else
-                return new Text("Disabled").color(Color.RED.normal);
-        })).setEnabled(widget -> getIdealStatus() == getRepairStatus() && mMachine));
+        screenElements.widget(new DynamicPositionedRow()
+                .setSynced(false)
+                .widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get()))
+                .widget(new DynamicTextWidget(() -> {
+                    if (getBaseMetaTileEntity().isActive()) return new Text("Working !").color(Color.GREEN.normal);
+                    else if (getBaseMetaTileEntity().isAllowedToWork())
+                        return new Text("Enabled").color(Color.GREEN.normal);
+                    else if (getBaseMetaTileEntity().wasShutdown())
+                        return new Text("Shutdown (CRITICAL)").color(Color.RED.normal);
+                    else return new Text("Disabled").color(Color.RED.normal);
+                }))
+                .setEnabled(widget -> getIdealStatus() == getRepairStatus() && mMachine));
 
         screenElements
-            .widget(new TextWidget(GT_Utility.trans("132", "Pipe is loose."))
-                .setDefaultColor(COLOR_TEXT_WHITE.get())
-                .setEnabled(widget -> !mWrench))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mWrench, val -> mWrench = val));
+                .widget(new TextWidget(GT_Utility.trans("132", "Pipe is loose."))
+                        .setDefaultColor(COLOR_TEXT_WHITE.get())
+                        .setEnabled(widget -> !mWrench))
+                .widget(new FakeSyncWidget.BooleanSyncer(() -> mWrench, val -> mWrench = val));
         screenElements
-            .widget(new TextWidget(GT_Utility.trans("133", "Screws are loose."))
-                .setDefaultColor(COLOR_TEXT_WHITE.get())
-                .setEnabled(widget -> !mScrewdriver))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mScrewdriver, val -> mScrewdriver = val));
+                .widget(new TextWidget(GT_Utility.trans("133", "Screws are loose."))
+                        .setDefaultColor(COLOR_TEXT_WHITE.get())
+                        .setEnabled(widget -> !mScrewdriver))
+                .widget(new FakeSyncWidget.BooleanSyncer(() -> mScrewdriver, val -> mScrewdriver = val));
         screenElements
-            .widget(new TextWidget(GT_Utility.trans("134", "Something is stuck."))
-                .setDefaultColor(COLOR_TEXT_WHITE.get())
-                .setEnabled(widget -> !mSoftHammer))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mSoftHammer, val -> mSoftHammer = val));
+                .widget(new TextWidget(GT_Utility.trans("134", "Something is stuck."))
+                        .setDefaultColor(COLOR_TEXT_WHITE.get())
+                        .setEnabled(widget -> !mSoftHammer))
+                .widget(new FakeSyncWidget.BooleanSyncer(() -> mSoftHammer, val -> mSoftHammer = val));
         screenElements
-            .widget(new TextWidget(GT_Utility.trans("135", "Platings are dented."))
-                .setDefaultColor(COLOR_TEXT_WHITE.get())
-                .setEnabled(widget -> !mHardHammer))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mHardHammer, val -> mHardHammer = val));
+                .widget(new TextWidget(GT_Utility.trans("135", "Platings are dented."))
+                        .setDefaultColor(COLOR_TEXT_WHITE.get())
+                        .setEnabled(widget -> !mHardHammer))
+                .widget(new FakeSyncWidget.BooleanSyncer(() -> mHardHammer, val -> mHardHammer = val));
         screenElements
-            .widget(new TextWidget(GT_Utility.trans("136", "Circuitry burned out."))
-                .setDefaultColor(COLOR_TEXT_WHITE.get())
-                .setEnabled(widget -> !mSolderingTool))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mSolderingTool, val -> mSolderingTool = val));
+                .widget(new TextWidget(GT_Utility.trans("136", "Circuitry burned out."))
+                        .setDefaultColor(COLOR_TEXT_WHITE.get())
+                        .setEnabled(widget -> !mSolderingTool))
+                .widget(new FakeSyncWidget.BooleanSyncer(() -> mSolderingTool, val -> mSolderingTool = val));
         screenElements
-            .widget(new TextWidget(GT_Utility.trans("137", "That doesn't belong there."))
-                .setDefaultColor(COLOR_TEXT_WHITE.get())
-                .setEnabled(widget -> !mCrowbar))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mCrowbar, val -> mCrowbar = val));
+                .widget(new TextWidget(GT_Utility.trans("137", "That doesn't belong there."))
+                        .setDefaultColor(COLOR_TEXT_WHITE.get())
+                        .setEnabled(widget -> !mCrowbar))
+                .widget(new FakeSyncWidget.BooleanSyncer(() -> mCrowbar, val -> mCrowbar = val));
         screenElements
-            .widget(new TextWidget(GT_Utility.trans("138", "Incomplete Structure."))
-                .setDefaultColor(COLOR_TEXT_WHITE.get())
-                .setEnabled(widget -> !mMachine))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mMachine, val -> mMachine = val));
+                .widget(new TextWidget(GT_Utility.trans("138", "Incomplete Structure."))
+                        .setDefaultColor(COLOR_TEXT_WHITE.get())
+                        .setEnabled(widget -> !mMachine))
+                .widget(new FakeSyncWidget.BooleanSyncer(() -> mMachine, val -> mMachine = val));
     }
 
     @Override
