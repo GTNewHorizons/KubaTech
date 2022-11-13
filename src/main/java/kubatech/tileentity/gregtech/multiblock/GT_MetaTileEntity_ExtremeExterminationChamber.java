@@ -42,6 +42,7 @@ import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
+import com.gtnewhorizons.modularui.api.widget.Widget;
 import com.gtnewhorizons.modularui.common.widget.*;
 import com.mojang.authlib.GameProfile;
 import cpw.mods.fml.common.eventhandler.EventPriority;
@@ -64,6 +65,7 @@ import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Function;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.helpers.GTHelper;
@@ -633,13 +635,15 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         return true;
     }
 
+    Function<Widget, Boolean> isFixed = widget -> getIdealStatus() == getRepairStatus() && mMachine;
+
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
         builder.widget(new DrawableWidget()
                 .setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
                 .setPos(7, 4)
                 .setSize(143, 75)
-                .setEnabled(widget -> getRepairStatus() != getIdealStatus() || !mMachine));
+                .setEnabled(widget -> !isFixed.apply(widget)));
         final SlotWidget inventorySlot =
                 new SlotWidget(inventoryHandler, 1).setFilter(stack -> stack.getItem() == poweredSpawnerItem);
         /*
@@ -673,14 +677,31 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 .setSynced(false)
                 .widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get()))
                 .widget(new DynamicTextWidget(() -> {
-                    if (getBaseMetaTileEntity().isActive()) return new Text("Working !").color(Color.GREEN.normal);
+                    if (getBaseMetaTileEntity().isActive()) return new Text("Working !").color(Color.GREEN.dark(3));
                     else if (getBaseMetaTileEntity().isAllowedToWork())
-                        return new Text("Enabled").color(Color.GREEN.normal);
+                        return new Text("Enabled").color(Color.GREEN.dark(3));
                     else if (getBaseMetaTileEntity().wasShutdown())
-                        return new Text("Shutdown (CRITICAL)").color(Color.RED.normal);
-                    else return new Text("Disabled").color(Color.RED.normal);
+                        return new Text("Shutdown (CRITICAL)").color(Color.RED.dark(3));
+                    else return new Text("Disabled").color(Color.RED.dark(3));
                 }))
-                .setEnabled(widget -> getIdealStatus() == getRepairStatus() && mMachine));
+                .setEnabled(isFixed));
+        screenElements.widget(new DynamicTextWidget(() -> {
+                    ItemStack aStack = mInventory[1];
+                    if (aStack == null) return new Text("Insert Powered Spawner").color(Color.RED.dark(3));
+                    else {
+                        Text invalid = new Text("Invalid Spawner").color(Color.RED.dark(3));
+                        if (aStack.getItem() != poweredSpawnerItem) return invalid;
+
+                        if (aStack.getTagCompound() == null) return invalid;
+                        String mobType = aStack.getTagCompound().getString("mobType");
+                        if (mobType.isEmpty()) return invalid;
+
+                        if (!MobNameToRecipeMap.containsKey(mobType)) return invalid;
+
+                        return new Text(mobType).color(Color.GREEN.dark(3));
+                    }
+                })
+                .setEnabled(isFixed));
 
         screenElements
                 .widget(new TextWidget(GT_Utility.trans("132", "Pipe is loose."))
