@@ -30,6 +30,7 @@ import com.github.bartimaeusnek.bartworks.API.BorosilicateGlass;
 import com.gtnewhorizon.structurelib.alignment.IAlignmentLimits;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
+import com.gtnewhorizons.modularui.api.drawable.ItemDrawable;
 import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
@@ -61,15 +62,20 @@ import java.util.function.Function;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.helpers.GTHelper;
+import kubatech.api.network.CustomTileEntityPacket;
+import kubatech.api.tileentity.CustomTileEntityPacketHandler;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class GT_MetaTileEntity_MegaIndustrialApiary
-        extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_MegaIndustrialApiary> {
+        extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_MegaIndustrialApiary>
+        implements CustomTileEntityPacketHandler {
 
     private byte mGlassTier = 0;
     private int mCasing = 0;
@@ -292,12 +298,18 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         else mMaxSlots = 1;
     }
 
+    private CustomTileEntityPacket packet = null;
+
     @Override
     public void onPostTick(IGregTechTileEntity aBaseMetaTileEntity, long aTick) {
         super.onPostTick(aBaseMetaTileEntity, aTick);
         if (aBaseMetaTileEntity.isServerSide()) {
             // TODO: Look for proper fix
             if (mUpdate < 0) mUpdate = 600;
+            if (packet == null) packet = new CustomTileEntityPacket((TileEntity) aBaseMetaTileEntity, null);
+            packet.resetHelperData();
+            packet.addData(mMaxSlots);
+            packet.sendToAllAround(20);
         }
         // Beeeee rendering inside ?
     }
@@ -488,6 +500,13 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     private final Function<Widget, Boolean> isFixed = widget -> getIdealStatus() == getRepairStatus() && mMachine;
 
     @Override
+    public void HandleCustomPacket(CustomTileEntityPacket customdata) {
+        mMaxSlots = customdata.getDataInt();
+    }
+
+    ItemStack[] drawables = null;
+
+    @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
         builder.widget(new DrawableWidget()
                 .setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
@@ -497,50 +516,37 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
         // Slot is not needed
 
+        drawables = new ItemStack[mMaxSlots];
+
+        DynamicPositionedColumn beeeees = new DynamicPositionedColumn().setSynced(false);
+        if (mMaxSlots > 0)
+            for (int i = 0, imax = ((mMaxSlots - 1) / 8); i <= imax; i++) {
+                DynamicPositionedRow row = new DynamicPositionedRow().setSynced(false);
+                for (int j = 0, jmax = (i == imax ? (mMaxSlots - 1) % 8 : 7); j <= jmax; j++) {
+                    if (buildContext.getPlayer() instanceof EntityPlayerMP) {
+                        if (mStorage.size() > i + j) drawables[i + j] = mStorage.get(i + j).queenStack;
+                    }
+                    final int finalI = i;
+                    final int finalJ = j;
+                    row.widget(new DrawableWidget()
+                                    .setDrawable(() ->
+                                            new ItemDrawable(drawables[finalI + finalJ]).withFixedSize(16, 16, 1, 1))
+                                    .setBackground(
+                                            getBaseMetaTileEntity().getSlotBackground(),
+                                            GT_UITextures.OVERLAY_SLOT_BEE_QUEEN)
+                                    .setSize(18, 18))
+                            .attachSyncer(
+                                    new FakeSyncWidget.ItemStackSyncer(
+                                            () -> drawables[finalI + finalJ],
+                                            stack -> drawables[finalI + finalJ] = stack),
+                                    builder);
+                }
+                beeeees.widget(row);
+            }
+
         builder.widget(new Scrollable()
                 .setVerticalScroll()
-                .widget(new DynamicPositionedColumn()
-                        .setSynced(false)
-                        .widget(new DynamicPositionedRow()
-                                .setSynced(false)
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1)))
-                        .widget(new DynamicPositionedRow()
-                                .setSynced(false)
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1)))
-                        .widget(new DynamicPositionedRow()
-                                .setSynced(false)
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1)))
-                        .widget(new DynamicPositionedRow()
-                                .setSynced(false)
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))
-                                .widget(new SlotWidget(inventoryHandler, 1))))
+                .widget(beeeees)
                 .setPos(10, 16)
                 .setSize(146, 60));
 
