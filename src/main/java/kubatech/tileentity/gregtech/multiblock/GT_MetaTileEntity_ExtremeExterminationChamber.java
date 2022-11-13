@@ -119,12 +119,6 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     public GT_MetaTileEntity_ExtremeExterminationChamber(String aName) {
         super(aName);
         if (LoaderReference.BloodMagic) MinecraftForge.EVENT_BUS.register(this);
-        ReflectionHelper.setField(this, "inventoryHandler", new ItemStackHandler(getRealInventory()){
-            @Override
-            public boolean isItemValid(int slot, ItemStack stack) {
-                return poweredSpawnerItem == stack.getItem();
-            }
-        });
     }
 
     @Override
@@ -650,7 +644,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             .setPos(7, 4)
             .setSize(143, 75)
             .setEnabled(widget -> getRepairStatus() != getIdealStatus() || !mMachine));
-        final SlotWidget inventorySlot = new SlotWidget(inventoryHandler, 1);
+        final SlotWidget inventorySlot = new SlotWidget(inventoryHandler, 1).setFilter(stack -> stack.getItem() == poweredSpawnerItem);
         builder.widget(inventorySlot.setPosProvider((screenSize, window, parent)->{
             if(getRepairStatus() == getIdealStatus() && mMachine)
                 return new Pos2d(50, 50);
