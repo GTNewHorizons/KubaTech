@@ -504,8 +504,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         mMaxSlots = customdata.getDataInt();
     }
 
-    ItemStack[] drawables = null;
-
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
         builder.widget(new DrawableWidget()
@@ -516,7 +514,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
         // Slot is not needed
 
-        drawables = new ItemStack[mMaxSlots];
+        final ItemStack[] drawables = new ItemStack[mMaxSlots];
 
         DynamicPositionedColumn beeeees = new DynamicPositionedColumn().setSynced(false);
         if (mMaxSlots > 0)
@@ -525,10 +523,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 for (int j = 0, jmax = (i == imax ? (mMaxSlots - 1) % 8 : 7); j <= jmax; j++) {
                     final int finalI = i * 8;
                     final int finalJ = j;
-                    if (buildContext.getPlayer() instanceof EntityPlayerMP) {
-                        if (mStorage.size() > finalI + finalJ)
-                            drawables[finalI + finalJ] = mStorage.get(finalI + finalJ).queenStack;
-                    }
                     row.widget(new DrawableWidget()
                                     .setDrawable(() ->
                                             new ItemDrawable(drawables[finalI + finalJ]).withFixedSize(16, 16, 1, 1))
@@ -538,7 +532,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                                     .setSize(18, 18))
                             .attachSyncer(
                                     new FakeSyncWidget.ItemStackSyncer(
-                                            () -> drawables[finalI + finalJ],
+                                            () -> mStorage.size() > finalI + finalJ ? mStorage.get(finalI + finalJ).queenStack : null,
                                             stack -> drawables[finalI + finalJ] = stack),
                                     builder);
                 }
