@@ -665,27 +665,51 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         }));
          */
         builder.widget(inventorySlot.setPos(151, 4))
-                .widget(new CycleButtonWidget()
-                        .setToggle(() -> isInRitualMode, v -> {
-                            isInRitualMode = v;
-                            if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
-                            if (!isInRitualMode) {
-                                GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Ritual mode disabled");
-                            } else {
-                                GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Ritual mode enabled");
-                                if (connectToRitual())
-                                    GT_Utility.sendChatToPlayer(
-                                            buildContext.getPlayer(), "Successfully connected to the ritual");
-                                else
-                                    GT_Utility.sendChatToPlayer(
-                                            buildContext.getPlayer(), "Can't connect to the ritual");
-                            }
-                        })
-                        .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+                .widget(new DynamicPositionedRow()
+                        .setSynced(false)
+                        .widget(new CycleButtonWidget()
+                                .setToggle(() -> isInRitualMode, v -> {
+                                    isInRitualMode = v;
+                                    if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+                                    if (!isInRitualMode) {
+                                        GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Ritual mode disabled");
+                                    } else {
+                                        GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Ritual mode enabled");
+                                        if (connectToRitual())
+                                            GT_Utility.sendChatToPlayer(
+                                                    buildContext.getPlayer(), "Successfully connected to the ritual");
+                                        else
+                                            GT_Utility.sendChatToPlayer(
+                                                    buildContext.getPlayer(), "Can't connect to the ritual");
+                                    }
+                                })
+                                .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+                                .setSize(18, 18)
+                                .addTooltip("Ritual mode"))
+                        .widget(new CycleButtonWidget()
+                                .setToggle(() -> mIsProducingInfernalDrops, v -> {
+                                    mIsProducingInfernalDrops = v;
+                                    if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+                                    if (!mIsProducingInfernalDrops)
+                                        GT_Utility.sendChatToPlayer(
+                                                buildContext.getPlayer(),
+                                                "Mobs will now be prevented from spawning infernal");
+                                    else
+                                        GT_Utility.sendChatToPlayer(
+                                                buildContext.getPlayer(), "Mobs can spawn infernal now");
+                                })
+                                .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+                                .setSize(18, 18)
+                                .addTooltip("Is allowed to spawn infernal mobs")
+                                .addTooltip(new Text("Does not affect mobs that are always infernal !")
+                                        .color(Color.GRAY.normal)))
                         .setPos(7, 62)
-                        .setSize(18, 18)
-                        .addTooltip("Ritual mode")
-                        .setEnabled(isFixed));
+                        .setEnabled(widget -> isFixed.apply(widget)
+                                && !getBaseMetaTileEntity().isActive()))
+                .widget(new TextWidget(new Text("Please stop the machine to configure it").color(Color.RED.dark(3)))
+                        .setPos(7, 62)
+                        .setEnabled(widget ->
+                                isFixed.apply(widget) && getBaseMetaTileEntity().isActive()));
 
         final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
         drawTexts(screenElements, inventorySlot);
