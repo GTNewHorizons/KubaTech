@@ -38,6 +38,7 @@ import com.google.common.collect.Multimap;
 import com.gtnewhorizon.structurelib.alignment.IAlignmentLimits;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
+import com.gtnewhorizons.modularui.api.drawable.IDrawable;
 import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
@@ -635,7 +636,11 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         return true;
     }
 
-    Function<Widget, Boolean> isFixed = widget -> getIdealStatus() == getRepairStatus() && mMachine;
+    private final Function<Widget, Boolean> isFixed = widget -> getIdealStatus() == getRepairStatus() && mMachine;
+    private static final Function<Integer, IDrawable[]> toggleButtonBackgroundGetter = val -> {
+        if (val == 0) return new IDrawable[] {GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CROSS};
+        else return new IDrawable[] {GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CHECKMARK};
+    };
 
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
@@ -661,8 +666,11 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         builder.widget(inventorySlot.setPos(151, 4))
                 .widget(new CycleButtonWidget()
                         .setToggle(() -> isInRitualMode, v -> isInRitualMode = v)
-                        .setVariableBackground(GT_UITextures.BUTTON_STANDARD_TOGGLE)
-                        .setPos(151, 22));
+                        .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+                        .setPos(7, 62)
+                        .setSize(18, 18)
+                        .addTooltip("Ritual mode")
+                        .setEnabled(isFixed));
 
         final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
         drawTexts(screenElements, inventorySlot);
