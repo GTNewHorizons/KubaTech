@@ -671,6 +671,14 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                                 .setToggle(() -> getBaseMetaTileEntity().isAllowedToWork(), works -> {
                                     if (works) getBaseMetaTileEntity().enableWorking();
                                     else getBaseMetaTileEntity().disableWorking();
+
+                                    if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+                                    String tChat = GT_Utility.trans("090", "Machine Processing: ")
+                                            + (works
+                                                    ? GT_Utility.trans("088", "Enabled")
+                                                    : GT_Utility.trans("087", "Disabled"));
+                                    if (hasAlternativeModeText()) tChat = getAlternativeModeText();
+                                    GT_Utility.sendChatToPlayer(buildContext.getPlayer(), tChat);
                                 })
                                 .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
                                 .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
@@ -682,7 +690,14 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                         .setSynced(false)
                         .widget(new CycleButtonWidget()
                                 .setToggle(() -> isInRitualMode, v -> {
+                                    if (this.mMaxProgresstime > 0) {
+                                        GT_Utility.sendChatToPlayer(
+                                                buildContext.getPlayer(), "Can't change mode when running !");
+                                        return;
+                                    }
+
                                     isInRitualMode = v;
+
                                     if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
                                     if (!isInRitualMode) {
                                         GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Ritual mode disabled");
@@ -701,7 +716,14 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                                 .addTooltip("Ritual mode"))
                         .widget(new CycleButtonWidget()
                                 .setToggle(() -> mIsProducingInfernalDrops, v -> {
+                                    if (this.mMaxProgresstime > 0) {
+                                        GT_Utility.sendChatToPlayer(
+                                                buildContext.getPlayer(), "Can't change mode when running !");
+                                        return;
+                                    }
+
                                     mIsProducingInfernalDrops = v;
+
                                     if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
                                     if (!mIsProducingInfernalDrops)
                                         GT_Utility.sendChatToPlayer(

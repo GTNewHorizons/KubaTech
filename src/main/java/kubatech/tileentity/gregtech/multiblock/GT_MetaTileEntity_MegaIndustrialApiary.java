@@ -30,6 +30,7 @@ import com.github.bartimaeusnek.bartworks.API.BorosilicateGlass;
 import com.gtnewhorizon.structurelib.alignment.IAlignmentLimits;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
+import com.gtnewhorizons.modularui.api.drawable.IDrawable;
 import com.gtnewhorizons.modularui.api.drawable.ItemDrawable;
 import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
@@ -65,6 +66,7 @@ import kubatech.api.helpers.GTHelper;
 import kubatech.api.network.CustomTileEntityPacket;
 import kubatech.api.tileentity.CustomTileEntityPacketHandler;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -503,6 +505,11 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         mMaxSlots = customdata.getDataInt();
     }
 
+    private static final Function<Integer, IDrawable[]> toggleButtonBackgroundGetter = val -> {
+        if (val == 0) return new IDrawable[] {GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CROSS};
+        else return new IDrawable[] {GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CHECKMARK};
+    };
+
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
         builder.widget(new DrawableWidget()
@@ -513,14 +520,106 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
         // Slot is not needed
 
+        builder.widget(new DynamicPositionedColumn()
+                .setSynced(false)
+                .widget(new CycleButtonWidget()
+                        .setToggle(() -> getBaseMetaTileEntity().isAllowedToWork(), works -> {
+                            if (works) getBaseMetaTileEntity().enableWorking();
+                            else getBaseMetaTileEntity().disableWorking();
+
+                            if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+                            String tChat = GT_Utility.trans("090", "Machine Processing: ")
+                                    + (works
+                                            ? GT_Utility.trans("088", "Enabled")
+                                            : GT_Utility.trans("087", "Disabled"));
+                            if (hasAlternativeModeText()) tChat = getAlternativeModeText();
+                            GT_Utility.sendChatToPlayer(buildContext.getPlayer(), tChat);
+                        })
+                        .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
+                        .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
+                        .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+                        .setSize(18, 18)
+                        .addTooltip("Working status"))
+                .widget(new CycleButtonWidget()
+                        .setLength(3)
+                        .setGetter(() -> mPrimaryMode)
+                        .setSetter(val -> {
+                            if (this.mMaxProgresstime > 0) {
+                                GT_Utility.sendChatToPlayer(
+                                        buildContext.getPlayer(), "Can't change mode when running !");
+                                return;
+                            }
+                            mPrimaryMode = val;
+
+                            if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+                            switch (mPrimaryMode) {
+                                case 0:
+                                    GT_Utility.sendChatToPlayer(
+                                            buildContext.getPlayer(), "Changed primary mode to: Input mode");
+                                    break;
+                                case 1:
+                                    GT_Utility.sendChatToPlayer(
+                                            buildContext.getPlayer(), "Changed primary mode to: Output mode");
+                                    break;
+                                case 2:
+                                    GT_Utility.sendChatToPlayer(
+                                            buildContext.getPlayer(), "Changed primary mode to: Operating mode");
+                                    break;
+                            }
+                        })
+                        .addTooltip(0, new Text("Input").color(Color.YELLOW.dark(3)))
+                        .addTooltip(1, new Text("Output").color(Color.YELLOW.dark(3)))
+                        .addTooltip(2, new Text("Operating").color(Color.GREEN.dark(3)))
+                        .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
+                        .setSize(18, 18)
+                        .addTooltip("Primary mode")
+                        .setEnabled(widget -> !getBaseMetaTileEntity().isActive()))
+                .widget(new CycleButtonWidget()
+                        .setLength(2)
+                        .setGetter(() -> mSecondaryMode)
+                        .setSetter(val -> {
+                            if (this.mMaxProgresstime > 0) {
+                                GT_Utility.sendChatToPlayer(
+                                        buildContext.getPlayer(), "Can't change mode when running !");
+                                return;
+                            }
+
+                            mSecondaryMode = val;
+
+                            if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+                            switch (mSecondaryMode) {
+                                case 0:
+                                    GT_Utility.sendChatToPlayer(
+                                            buildContext.getPlayer(), "Changed secondary mode to: Normal mode");
+                                    break;
+                                case 1:
+                                    GT_Utility.sendChatToPlayer(
+                                            buildContext.getPlayer(), "Changed secondary mode to: Swarmer mode");
+                                    break;
+                            }
+                        })
+                        .addTooltip(0, new Text("Normal").color(Color.GREEN.dark(3)))
+                        .addTooltip(1, new Text("Swarmer").color(Color.YELLOW.dark(3)))
+                        .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
+                        .setSize(18, 18)
+                        .addTooltip("Secondary mode")
+                        .setEnabled(widget -> !getBaseMetaTileEntity().isActive()))
+                .widget(new DrawableWidget()
+                        .setDrawable(GT_UITextures.OVERLAY_BUTTON_CROSS)
+                        .setSize(18, 18)
+                        .addTooltip(new Text("Can't change configuration when running !").color(Color.RED.dark(3)))
+                        .setEnabled(widget -> getBaseMetaTileEntity().isActive()))
+                .setPos(151, 4));
+
         final ItemStack[] drawables = new ItemStack[mMaxSlots];
+        final int perRow = 7;
 
         DynamicPositionedColumn beeeees = new DynamicPositionedColumn().setSynced(false);
         if (mMaxSlots > 0)
-            for (int i = 0, imax = ((mMaxSlots - 1) / 8); i <= imax; i++) {
+            for (int i = 0, imax = ((mMaxSlots - 1) / perRow); i <= imax; i++) {
                 DynamicPositionedRow row = new DynamicPositionedRow().setSynced(false);
-                for (int j = 0, jmax = (i == imax ? (mMaxSlots - 1) % 8 : 7); j <= jmax; j++) {
-                    final int finalI = i * 8;
+                for (int j = 0, jmax = (i == imax ? (mMaxSlots - 1) % perRow : (perRow - 1)); j <= jmax; j++) {
+                    final int finalI = i * perRow;
                     final int finalJ = j;
                     row.widget(new DrawableWidget()
                                     .setDrawable(() ->
@@ -544,7 +643,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .setVerticalScroll()
                 .widget(beeeees)
                 .setPos(10, 16)
-                .setSize(146, 60));
+                .setSize(128, 60));
 
         final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
         drawTexts(screenElements, null);
