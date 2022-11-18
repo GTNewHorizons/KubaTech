@@ -625,7 +625,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                                     .setDrawable(() ->
                                             new ItemDrawable(drawables[finalI + finalJ]).withFixedSize(16, 16, 1, 1))
                                     .setBackground(
-                                            getBaseMetaTileEntity().getSlotBackground(),
+                                            getBaseMetaTileEntity().getGUITextureSet().getItemSlot(),
                                             GT_UITextures.OVERLAY_SLOT_BEE_QUEEN)
                                     .setSize(18, 18))
                             .attachSyncer(
