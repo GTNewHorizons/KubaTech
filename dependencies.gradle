@@ -48,7 +48,7 @@ dependencies {
     //runtime("com.github.GTNewHorizons:harvestcraft:1.0.18-GTNH:dev")
     //runtime("com.github.GTNewHorizons:NewHorizonsCoreMod:1.9.103:dev")
     //runtime("com.github.GTNewHorizons:OpenBlocks:1.6.9-GTNH:dev")
-    //runtime("com.github.GTNewHorizons:bartworks:0.5.97:dev")
+    //runtime("com.github.GTNewHorizons:bartworks:0.5.114-pre:dev")
     //runtime("com.github.GTNewHorizons:CraftTweaker:3.2.9:dev")
     //compile("com.github.GTNewHorizons:SpecialMobs:3.3.13:dev")
     //compile("com.github.GTNewHorizons:twilightforest:2.3.8.17:dev")
