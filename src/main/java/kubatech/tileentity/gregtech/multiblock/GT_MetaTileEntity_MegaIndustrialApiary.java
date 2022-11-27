@@ -30,6 +30,7 @@ import com.github.bartimaeusnek.bartworks.API.BorosilicateGlass;
 import com.gtnewhorizon.structurelib.alignment.IAlignmentLimits;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
+import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.IDrawable;
 import com.gtnewhorizons.modularui.api.drawable.ItemDrawable;
 import com.gtnewhorizons.modularui.api.drawable.Text;
@@ -518,6 +519,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .setSize(143, 75)
                 .setEnabled(widget -> !isFixed.apply(widget)));
 
+        buildContext.addSyncedWindow(10, this::createConfigurationWindow);
+
         // Slot is not needed
 
         builder.widget(new DynamicPositionedColumn()
@@ -540,75 +543,12 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
                         .setSize(18, 18)
                         .addTooltip("Working status"))
-                .widget(new CycleButtonWidget()
-                        .setLength(3)
-                        .setGetter(() -> mPrimaryMode)
-                        .setSetter(val -> {
-                            if (this.mMaxProgresstime > 0) {
-                                GT_Utility.sendChatToPlayer(
-                                        buildContext.getPlayer(), "Can't change mode when running !");
-                                return;
-                            }
-                            mPrimaryMode = val;
-
-                            if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
-                            switch (mPrimaryMode) {
-                                case 0:
-                                    GT_Utility.sendChatToPlayer(
-                                            buildContext.getPlayer(), "Changed primary mode to: Input mode");
-                                    break;
-                                case 1:
-                                    GT_Utility.sendChatToPlayer(
-                                            buildContext.getPlayer(), "Changed primary mode to: Output mode");
-                                    break;
-                                case 2:
-                                    GT_Utility.sendChatToPlayer(
-                                            buildContext.getPlayer(), "Changed primary mode to: Operating mode");
-                                    break;
-                            }
+                .widget(new ButtonWidget()
+                        .setOnClick((clickData, widget) -> {
+                            if (!widget.isClient()) widget.getContext().openSyncedWindow(10);
                         })
-                        .addTooltip(0, new Text("Input").color(Color.YELLOW.dark(3)))
-                        .addTooltip(1, new Text("Output").color(Color.YELLOW.dark(3)))
-                        .addTooltip(2, new Text("Operating").color(Color.GREEN.dark(3)))
                         .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
-                        .setSize(18, 18)
-                        .addTooltip("Primary mode")
-                        .setEnabled(widget -> !getBaseMetaTileEntity().isActive()))
-                .widget(new CycleButtonWidget()
-                        .setLength(2)
-                        .setGetter(() -> mSecondaryMode)
-                        .setSetter(val -> {
-                            if (this.mMaxProgresstime > 0) {
-                                GT_Utility.sendChatToPlayer(
-                                        buildContext.getPlayer(), "Can't change mode when running !");
-                                return;
-                            }
-
-                            mSecondaryMode = val;
-
-                            if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
-                            switch (mSecondaryMode) {
-                                case 0:
-                                    GT_Utility.sendChatToPlayer(
-                                            buildContext.getPlayer(), "Changed secondary mode to: Normal mode");
-                                    break;
-                                case 1:
-                                    GT_Utility.sendChatToPlayer(
-                                            buildContext.getPlayer(), "Changed secondary mode to: Swarmer mode");
-                                    break;
-                            }
-                        })
-                        .addTooltip(0, new Text("Normal").color(Color.GREEN.dark(3)))
-                        .addTooltip(1, new Text("Swarmer").color(Color.YELLOW.dark(3)))
-                        .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
-                        .setSize(18, 18)
-                        .addTooltip("Secondary mode")
-                        .setEnabled(widget -> !getBaseMetaTileEntity().isActive()))
-                .widget(new DrawableWidget()
-                        .setDrawable(GT_UITextures.OVERLAY_BUTTON_CROSS)
-                        .setSize(18, 18)
-                        .addTooltip(new Text("Can't change configuration when running !").color(Color.RED.dark(3)))
-                        .setEnabled(widget -> getBaseMetaTileEntity().isActive()))
+                        .setSize(18, 18))
                 .setPos(151, 4));
 
         final ItemStack[] drawables = new ItemStack[mMaxSlots];
@@ -650,6 +590,90 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
         drawTexts(screenElements, null);
         builder.widget(screenElements);
+    }
+
+    protected ModularWindow createConfigurationWindow(final EntityPlayer player) {
+        ModularWindow.Builder builder = ModularWindow.builder(150, 100);
+        builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
+        builder.widget(new DrawableWidget()
+                        .setDrawable(GT_UITextures.OVERLAY_BUTTON_CYCLIC)
+                        .setPos(5, 5)
+                        .setSize(16, 16))
+                .widget(new TextWidget("Configuration").setPos(25, 9))
+                .widget(ButtonWidget.closeWindowButton(true).setPos(135, 3))
+                .widget(new DynamicPositionedColumn()
+                        .setSynced(false)
+                        .widget(new CycleButtonWidget()
+                                .setLength(3)
+                                .setGetter(() -> mPrimaryMode)
+                                .setSetter(val -> {
+                                    if (this.mMaxProgresstime > 0) {
+                                        GT_Utility.sendChatToPlayer(player, "Can't change mode when running !");
+                                        return;
+                                    }
+                                    mPrimaryMode = val;
+
+                                    if (!(player instanceof EntityPlayerMP)) return;
+                                    switch (mPrimaryMode) {
+                                        case 0:
+                                            GT_Utility.sendChatToPlayer(player, "Changed primary mode to: Input mode");
+                                            break;
+                                        case 1:
+                                            GT_Utility.sendChatToPlayer(player, "Changed primary mode to: Output mode");
+                                            break;
+                                        case 2:
+                                            GT_Utility.sendChatToPlayer(
+                                                    player, "Changed primary mode to: Operating mode");
+                                            break;
+                                    }
+                                })
+                                .addTooltip(0, new Text("Input").color(Color.YELLOW.dark(3)))
+                                .addTooltip(1, new Text("Output").color(Color.YELLOW.dark(3)))
+                                .addTooltip(2, new Text("Operating").color(Color.GREEN.dark(3)))
+                                .setBackground(
+                                        ModularUITextures.VANILLA_BACKGROUND,
+                                        GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18),
+                                        new Text("Primary mode").withOffset(10, 0))
+                                .setSize(80, 18)
+                                .addTooltip("Primary mode")
+                                .setEnabled(widget -> !getBaseMetaTileEntity().isActive()))
+                        .widget(new CycleButtonWidget()
+                                .setLength(2)
+                                .setGetter(() -> mSecondaryMode)
+                                .setSetter(val -> {
+                                    if (this.mMaxProgresstime > 0) {
+                                        GT_Utility.sendChatToPlayer(player, "Can't change mode when running !");
+                                        return;
+                                    }
+
+                                    mSecondaryMode = val;
+
+                                    if (!(player instanceof EntityPlayerMP)) return;
+                                    switch (mSecondaryMode) {
+                                        case 0:
+                                            GT_Utility.sendChatToPlayer(
+                                                    player, "Changed secondary mode to: Normal mode");
+                                            break;
+                                        case 1:
+                                            GT_Utility.sendChatToPlayer(
+                                                    player, "Changed secondary mode to: Swarmer mode");
+                                            break;
+                                    }
+                                })
+                                .addTooltip(0, new Text("Normal").color(Color.GREEN.dark(3)))
+                                .addTooltip(1, new Text("Swarmer").color(Color.YELLOW.dark(3)))
+                                .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
+                                .setSize(18, 18)
+                                .addTooltip("Secondary mode")
+                                .setEnabled(widget -> !getBaseMetaTileEntity().isActive()))
+                        .widget(new DrawableWidget()
+                                .setDrawable(GT_UITextures.OVERLAY_BUTTON_CROSS)
+                                .setSize(18, 18)
+                                .addTooltip(
+                                        new Text("Can't change configuration when running !").color(Color.RED.dark(3)))
+                                .setEnabled(widget -> getBaseMetaTileEntity().isActive()))
+                        .setPos(10, 30));
+        return builder.build();
     }
 
     @Override
