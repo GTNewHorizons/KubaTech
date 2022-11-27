@@ -56,11 +56,13 @@ import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energ
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.helpers.GTHelper;
@@ -551,10 +553,11 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         .setSize(18, 18))
                 .setPos(151, 4));
 
-        final ItemStack[] drawables = new ItemStack[mMaxSlots];
+        final List<ItemStack> drawables = new ArrayList<>(mMaxSlots);
         final int perRow = 7;
 
-        DynamicPositionedColumn beeeees = new DynamicPositionedColumn().setSynced(false);
+        Scrollable beesContainer = new Scrollable().setVerticalScroll();
+
         if (mMaxSlots > 0)
             for (int i = 0, imax = ((mMaxSlots - 1) / perRow); i <= imax; i++) {
                 DynamicPositionedRow row = new DynamicPositionedRow().setSynced(false);
@@ -562,30 +565,45 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     final int finalI = i * perRow;
                     final int finalJ = j;
                     row.widget(new DrawableWidget()
-                                    .setDrawable(() ->
-                                            new ItemDrawable(drawables[finalI + finalJ]).withFixedSize(16, 16, 1, 1))
-                                    .setBackground(
-                                            getBaseMetaTileEntity()
-                                                    .getGUITextureSet()
-                                                    .getItemSlot(),
-                                            GT_UITextures.OVERLAY_SLOT_BEE_QUEEN)
-                                    .setSize(18, 18))
-                            .attachSyncer(
-                                    new FakeSyncWidget.ItemStackSyncer(
-                                            () -> mStorage.size() > finalI + finalJ
-                                                    ? mStorage.get(finalI + finalJ).queenStack
-                                                    : null,
-                                            stack -> drawables[finalI + finalJ] = stack),
-                                    builder);
+                            .setDrawable(() -> new ItemDrawable(
+                                            drawables.size() > finalI + finalJ ? drawables.get(finalI + finalJ) : null)
+                                    .withFixedSize(16, 16, 1, 1))
+                            .setBackground(
+                                    getBaseMetaTileEntity().getGUITextureSet().getItemSlot(),
+                                    GT_UITextures.OVERLAY_SLOT_BEE_QUEEN)
+                            .setSize(18, 18));
                 }
-                beeeees.widget(row);
+                beesContainer.widget(row.setPos(0, i * 18).setEnabled(widget -> {
+                    int y = widget.getPos().y;
+                    int cy = beesContainer.getVerticalScrollOffset();
+                    int ch = beesContainer.getVisibleHeight();
+                    return y >= cy - ch && y <= cy + ch;
+                }));
             }
+        beesContainer.attachSyncer(
+                new FakeSyncWidget.ListSyncer<>(
+                        () -> mStorage.stream().map(s -> s.queenStack).collect(Collectors.toList()),
+                        l -> {
+                            drawables.clear();
+                            drawables.addAll(l);
+                        },
+                        (buffer, i) -> {
+                            try {
+                                buffer.writeItemStackToBuffer(i);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        },
+                        buffer -> {
+                            try {
+                                return buffer.readItemStackFromBuffer();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }),
+                builder);
 
-        builder.widget(new Scrollable()
-                .setVerticalScroll()
-                .widget(beeeees)
-                .setPos(10, 16)
-                .setSize(128, 60));
+        builder.widget(beesContainer.setPos(10, 16).setSize(128, 60));
 
         final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
         drawTexts(screenElements, null);
