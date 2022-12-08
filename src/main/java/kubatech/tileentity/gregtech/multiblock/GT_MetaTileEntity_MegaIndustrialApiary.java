@@ -57,10 +57,7 @@ import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import kubatech.Tags;
@@ -522,6 +519,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .setEnabled(widget -> !isFixed.apply(widget)));
 
         buildContext.addSyncedWindow(10, this::createConfigurationWindow);
+        EntityPlayer player = buildContext.getPlayer();
 
         // Slot is not needed
 
@@ -532,13 +530,13 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                             if (works) getBaseMetaTileEntity().enableWorking();
                             else getBaseMetaTileEntity().disableWorking();
 
-                            if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+                            if (!(player instanceof EntityPlayerMP)) return;
                             String tChat = GT_Utility.trans("090", "Machine Processing: ")
                                     + (works
                                             ? GT_Utility.trans("088", "Enabled")
                                             : GT_Utility.trans("087", "Disabled"));
                             if (hasAlternativeModeText()) tChat = getAlternativeModeText();
-                            GT_Utility.sendChatToPlayer(buildContext.getPlayer(), tChat);
+                            GT_Utility.sendChatToPlayer(player, tChat);
                         })
                         .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
                         .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
@@ -564,13 +562,32 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 for (int j = 0, jmax = (i == imax ? (mMaxSlots - 1) % perRow : (perRow - 1)); j <= jmax; j++) {
                     final int finalI = i * perRow;
                     final int finalJ = j;
-                    row.widget(new DrawableWidget()
-                            .setDrawable(() -> new ItemDrawable(
-                                            drawables.size() > finalI + finalJ ? drawables.get(finalI + finalJ) : null)
-                                    .withFixedSize(16, 16, 1, 1))
-                            .setBackground(
-                                    getBaseMetaTileEntity().getGUITextureSet().getItemSlot(),
-                                    GT_UITextures.OVERLAY_SLOT_BEE_QUEEN)
+                    final int ID = finalI + finalJ;
+                    row.widget(new ButtonWidget()
+                            .setOnClick((clickData, widget) -> {
+                                if (!(player instanceof EntityPlayerMP)) return;
+                                if (mStorage.size() <= ID) return;
+                                if (this.mMaxProgresstime > 0) {
+                                    GT_Utility.sendChatToPlayer(player, "Can't eject while running !");
+                                    return;
+                                }
+                                BeeSimulator removed = mStorage.remove(ID);
+                                addOutput(removed.queenStack);
+                                GT_Utility.sendChatToPlayer(player, "Queen ejected !");
+                            })
+                            .setBackground(() -> new IDrawable[] {
+                                getBaseMetaTileEntity().getGUITextureSet().getItemSlot(),
+                                GT_UITextures.OVERLAY_SLOT_BEE_QUEEN,
+                                new ItemDrawable(drawables.size() > ID ? drawables.get(ID) : null)
+                                        .withFixedSize(16, 16, 1, 1)
+                            })
+                            .dynamicTooltip(() -> {
+                                if (drawables.size() > ID)
+                                    return Arrays.asList(
+                                            drawables.get(ID).getDisplayName(),
+                                            EnumChatFormatting.GRAY + "Left click to eject");
+                                return Collections.emptyList();
+                            })
                             .setSize(18, 18));
                 }
                 beesContainer.widget(row.setPos(0, i * 18).setEnabled(widget -> {
