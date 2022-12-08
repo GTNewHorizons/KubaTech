@@ -548,6 +548,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                             if (!widget.isClient()) widget.getContext().openSyncedWindow(10);
                         })
                         .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
+                        .addTooltip("Configuration")
                         .setSize(18, 18))
                 .setPos(151, 4));
 
@@ -628,16 +629,15 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     }
 
     protected ModularWindow createConfigurationWindow(final EntityPlayer player) {
-        ModularWindow.Builder builder = ModularWindow.builder(150, 100);
+        ModularWindow.Builder builder = ModularWindow.builder(200, 100);
         builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
         builder.widget(new DrawableWidget()
                         .setDrawable(GT_UITextures.OVERLAY_BUTTON_CYCLIC)
                         .setPos(5, 5)
                         .setSize(16, 16))
                 .widget(new TextWidget("Configuration").setPos(25, 9))
-                .widget(ButtonWidget.closeWindowButton(true).setPos(135, 3))
-                .widget(new DynamicPositionedColumn()
-                        .setSynced(false)
+                .widget(ButtonWidget.closeWindowButton(true).setPos(185, 3))
+                .widget(new Column()
                         .widget(new CycleButtonWidget()
                                 .setLength(3)
                                 .setGetter(() -> mPrimaryMode)
@@ -665,13 +665,23 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                                 .addTooltip(0, new Text("Input").color(Color.YELLOW.dark(3)))
                                 .addTooltip(1, new Text("Output").color(Color.YELLOW.dark(3)))
                                 .addTooltip(2, new Text("Operating").color(Color.GREEN.dark(3)))
-                                .setBackground(
-                                        ModularUITextures.VANILLA_BACKGROUND,
-                                        GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18),
-                                        new Text("Primary mode").withOffset(10, 0))
-                                .setSize(80, 18)
-                                .addTooltip("Primary mode")
-                                .setEnabled(widget -> !getBaseMetaTileEntity().isActive()))
+                                .setVariableBackgroundGetter(i -> new IDrawable[] {
+                                    ModularUITextures.VANILLA_BACKGROUND,
+                                    GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18),
+                                    i == 0
+                                            ? new Text("Input")
+                                                    .color(Color.YELLOW.dark(3))
+                                                    .withFixedSize(70 - 18, 18, 15, 0)
+                                            : i == 1
+                                                    ? new Text("Output")
+                                                            .color(Color.YELLOW.dark(3))
+                                                            .withFixedSize(70 - 18, 18, 15, 0)
+                                                    : new Text("Operating")
+                                                            .color(Color.GREEN.dark(3))
+                                                            .withFixedSize(70 - 18, 18, 15, 0)
+                                })
+                                .setSize(70, 18)
+                                .addTooltip("Primary mode"))
                         .widget(new CycleButtonWidget()
                                 .setLength(2)
                                 .setGetter(() -> mSecondaryMode)
@@ -697,17 +707,32 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                                 })
                                 .addTooltip(0, new Text("Normal").color(Color.GREEN.dark(3)))
                                 .addTooltip(1, new Text("Swarmer").color(Color.YELLOW.dark(3)))
-                                .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
-                                .setSize(18, 18)
-                                .addTooltip("Secondary mode")
-                                .setEnabled(widget -> !getBaseMetaTileEntity().isActive()))
-                        .widget(new DrawableWidget()
-                                .setDrawable(GT_UITextures.OVERLAY_BUTTON_CROSS)
-                                .setSize(18, 18)
-                                .addTooltip(
-                                        new Text("Can't change configuration when running !").color(Color.RED.dark(3)))
-                                .setEnabled(widget -> getBaseMetaTileEntity().isActive()))
-                        .setPos(10, 30));
+                                .setVariableBackgroundGetter(i -> new IDrawable[] {
+                                    ModularUITextures.VANILLA_BACKGROUND,
+                                    GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18),
+                                    i == 0
+                                            ? new Text("Normal")
+                                                    .color(Color.GREEN.dark(3))
+                                                    .withFixedSize(70 - 18, 18, 15, 0)
+                                            : new Text("Swarmer")
+                                                    .color(Color.YELLOW.dark(3))
+                                                    .withFixedSize(70 - 18, 18, 15, 0)
+                                })
+                                .setSize(70, 18)
+                                .addTooltip("Secondary mode"))
+                        .setEnabled(widget -> !getBaseMetaTileEntity().isActive())
+                        .setPos(10, 30))
+                .widget(new Column()
+                        .widget(new TextWidget("Primary mode").setSize(100, 18))
+                        .widget(new TextWidget("Secondary mode").setSize(100, 18))
+                        .setEnabled(widget -> !getBaseMetaTileEntity().isActive())
+                        .setPos(80, 30))
+                .widget(new DrawableWidget()
+                        .setDrawable(GT_UITextures.OVERLAY_BUTTON_CROSS)
+                        .setSize(18, 18)
+                        .setPos(10, 30)
+                        .addTooltip(new Text("Can't change configuration when running !").color(Color.RED.dark(3)))
+                        .setEnabled(widget -> getBaseMetaTileEntity().isActive()));
         return builder.build();
     }
 
