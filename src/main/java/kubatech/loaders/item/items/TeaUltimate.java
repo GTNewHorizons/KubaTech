@@ -153,7 +153,8 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                                 // .addTooltip( //Find a way to run that on server, or different approach
                                 //        new Text("Autobuy: " + (playerData == null ? "ERROR" : playerData.autoRegen))
                                 //                .color(Color.GREY.normal))
-                                .setPos(20, 20))));
+                                .setPos(20, 20)
+                                .setEnabled(w -> false))));
         return builder.build();
     }
 
