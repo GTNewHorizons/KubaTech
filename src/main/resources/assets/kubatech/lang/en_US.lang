@@ -28,6 +28,14 @@ command.config.invalid_option=§cInvalid option ! Possible options: reload
 command.config.success=§aConfig reloaded successfully !
 command.config.usage=<option>
 
+command.tea.invalid_option=§cInvalid usage !
+command.tea.player_not_found=§cPlayer not found !
+command.tea.success_get=Player %s has %d Tea
+command.tea.success_set=Player %s now has %d Tea
+command.tea.success_add=Player %s now has %d Tea
+command.tea.usage=<username> get/set/add (<amount>)
+
+
 #Blocks
 kubablock.tea_acceptor.name=§4§lTea Acceptor
 
