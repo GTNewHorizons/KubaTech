@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import kubatech.api.LoaderReference;
 import kubatech.api.enums.ItemList;
 import kubatech.api.utils.ItemID;
+import kubatech.loaders.item.items.TeaUltimate;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
@@ -91,18 +92,29 @@ public class TCLoader {
                                         return hashedInputs.containsAll(componentsHashed);
                                     }
                                 });
-        ResearchItem research = new ResearchItem(
-                "KT_UltimateTea",
-                "NEWHORIZONS",
-                new AspectList()
-                        .add(Aspect.MAGIC, 1)
-                        .add(Aspect.HEAL, 1)
-                        .add(Aspect.PLANT, 1)
-                        .add(Aspect.EXCHANGE, 1),
-                -2,
-                4,
-                2,
-                ItemList.LegendaryUltimateTea.get(1));
+        ResearchItem research =
+                new ResearchItem(
+                        "KT_UltimateTea",
+                        "NEWHORIZONS",
+                        new AspectList()
+                                .add(Aspect.MAGIC, 1)
+                                .add(Aspect.HEAL, 1)
+                                .add(Aspect.PLANT, 1)
+                                .add(Aspect.EXCHANGE, 1),
+                        -2,
+                        4,
+                        2,
+                        ItemList.LegendaryUltimateTea.get(1)) {
+                    @Override
+                    public String getName() {
+                        return TeaUltimate.getUltimateTeaDisplayName(super.getName());
+                    }
+
+                    @Override
+                    public String getText() {
+                        return TeaUltimate.getUltimateTeaDisplayName(super.getName());
+                    }
+                };
         research.setPages(new ResearchPage("KT.research.ultimatetea"), new ResearchPage(ultimateTeaRecipe));
         research.setParents("INFUSION", "DEZILSMARSHMALLOW");
         ThaumcraftApi.addWarpToResearch("KT_UltimateTea", 20);

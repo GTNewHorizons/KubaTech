@@ -55,17 +55,21 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
     private static long timeCounter = 0;
     private static int colorCounter = 0;
 
+    public static String getUltimateTeaDisplayName(String displayName) {
+        long current = System.currentTimeMillis();
+        if (current - timeCounter > 100) {
+            timeCounter = current;
+            name = StringUtils.applyRainbow(
+                    "ULTIMATE", colorCounter++, EnumChatFormatting.BOLD.toString() + EnumChatFormatting.OBFUSCATED);
+        }
+        return String.format(displayName, name + EnumChatFormatting.RESET);
+    }
+
     @Override
     public String getDisplayName(ItemStack stack) {
         if (!ModUtils.isClientSided) return super.getDisplayName(stack);
         if (checkTeaOwner(stack, Minecraft.getMinecraft().thePlayer.getCommandSenderName())) {
-            long current = System.currentTimeMillis();
-            if (current - timeCounter > 100) {
-                timeCounter = current;
-                name = StringUtils.applyRainbow(
-                        "ULTIMATE", colorCounter++, EnumChatFormatting.BOLD.toString() + EnumChatFormatting.OBFUSCATED);
-            }
-            return String.format(super.getDisplayName(stack), name + EnumChatFormatting.RESET);
+            return getUltimateTeaDisplayName(super.getDisplayName(stack));
         }
         return EnumChatFormatting.GOLD + "" + EnumChatFormatting.BOLD + "" + EnumChatFormatting.ITALIC + "???????";
     }
