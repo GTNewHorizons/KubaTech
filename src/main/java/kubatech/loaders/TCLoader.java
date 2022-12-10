@@ -109,13 +109,15 @@ public class TCLoader {
                     public String getName() {
                         return TeaUltimate.getUltimateTeaDisplayName(super.getName());
                     }
-
-                    @Override
-                    public String getText() {
-                        return TeaUltimate.getUltimateTeaDisplayName(super.getName());
-                    }
                 };
-        research.setPages(new ResearchPage("KT.research.ultimatetea"), new ResearchPage(ultimateTeaRecipe));
+        research.setPages(
+                new ResearchPage("KT.research.ultimatetea") {
+                    @Override
+                    public String getTranslatedText() {
+                        return TeaUltimate.getUltimateTeaDisplayName(super.getTranslatedText());
+                    }
+                },
+                new ResearchPage(ultimateTeaRecipe));
         research.setParents("INFUSION", "DEZILSMARSHMALLOW");
         ThaumcraftApi.addWarpToResearch("KT_UltimateTea", 20);
         ResearchCategories.addResearch(research);
