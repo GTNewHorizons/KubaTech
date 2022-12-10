@@ -131,30 +131,30 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                                                 + NumberFormat.getInstance().format(50_000) + " Tea")
                                         .color(Color.GRAY.normal))
                                 .setPos(20, 20)))
-                .addPage(new MultiChildWidget()
-                        .addChild(new TextWidget(new Text("BENEFITS")
-                                        .format(EnumChatFormatting.BOLD)
-                                        .format(EnumChatFormatting.GOLD)
-                                        .shadow())
-                                .setPos(10, 5))
-                        .addChild(new ButtonWidget()
-                                .setOnClick((Widget.ClickData clickData, Widget widget) -> {
-                                    if (!(player instanceof EntityPlayerMP)) return;
-                                    if (playerData == null) return;
-                                    playerData.autoRegen = !playerData.autoRegen;
-                                    playerData.markDirty();
-                                })
-                                .setBackground(new ItemDrawable().setItem(new ItemStack(Items.potionitem, 1, 8193)))
-                                .addTooltip("Regeneration I")
-                                .addTooltip("For 1 minute")
-                                .addTooltip(new Text("Cost: "
-                                                + NumberFormat.getInstance().format(75_000) + " Tea")
-                                        .color(Color.GRAY.normal))
-                                // .addTooltip( //Find a way to run that on server, or different approach
-                                //        new Text("Autobuy: " + (playerData == null ? "ERROR" : playerData.autoRegen))
-                                //                .color(Color.GREY.normal))
-                                .setPos(20, 20)
-                                .setEnabled(w -> false))));
+                .addPage(
+                        new MultiChildWidget()
+                                .addChild(new TextWidget(new Text("BENEFITS")
+                                                .format(EnumChatFormatting.BOLD)
+                                                .format(EnumChatFormatting.GOLD)
+                                                .shadow())
+                                        .setPos(10, 5))
+                        /*.addChild(new ButtonWidget()
+                        .setOnClick((Widget.ClickData clickData, Widget widget) -> {
+                            if (!(player instanceof EntityPlayerMP)) return;
+                            if (playerData == null) return;
+                            playerData.autoRegen = !playerData.autoRegen;
+                            playerData.markDirty();
+                        })
+                        .setBackground(new ItemDrawable().setItem(new ItemStack(Items.potionitem, 1, 8193)))
+                        .addTooltip("Regeneration I")
+                        .addTooltip("For 1 minute")
+                        .addTooltip(new Text("Cost: "
+                                        + NumberFormat.getInstance().format(75_000) + " Tea")
+                                .color(Color.GRAY.normal))
+                        // .addTooltip( //Find a way to run that on server, or different approach
+                        //        new Text("Autobuy: " + (playerData == null ? "ERROR" : playerData.autoRegen))
+                        //                .color(Color.GREY.normal))
+                        .setPos(20, 20))*/ ));
         return builder.build();
     }
 
