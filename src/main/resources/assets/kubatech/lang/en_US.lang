@@ -119,4 +119,4 @@ achievement.teacollection.ultimate_tea.desc=§4§lOne Tea to drink them all
 #Thaumcraft
 tc.research_name.KT_UltimateTea=%s §6§lTea
 tc.research_text.KT_UltimateTea=§4§lPure power
-KT.research.ultimatetea=You have found a way to convert all this Tea to a pure power creating %s §6§lTea
+KT.research.ultimatetea=You have found a way to convert all this Tea into pure power creating the %s §6§lTea
