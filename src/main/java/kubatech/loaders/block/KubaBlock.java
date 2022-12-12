@@ -1,5 +1,7 @@
 package kubatech.loaders.block;
 
+import static kubatech.kubatech.KT;
+
 import com.gtnewhorizons.modularui.api.screen.ITileWithModularUI;
 import com.gtnewhorizons.modularui.api.screen.ModularUIContext;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
@@ -60,6 +62,7 @@ public class KubaBlock extends Block {
 
     public KubaBlock(Material p_i45394_1_) {
         super(p_i45394_1_);
+        setCreativeTab(KT);
     }
 
     public ItemStack registerProxyBlock(BlockProxy block) {

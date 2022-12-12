@@ -1,6 +1,7 @@
 package kubatech.loaders.block;
 
 import java.util.List;
+import kubatech.kubatech;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.player.EntityPlayer;
@@ -10,7 +11,7 @@ import net.minecraft.item.ItemStack;
 public class KubaItemBlock extends ItemBlock {
     public KubaItemBlock(Block p_i45328_1_) {
         super(p_i45328_1_);
-        hasSubtypes = true;
+        setHasSubtypes(true);
     }
 
     @Override
