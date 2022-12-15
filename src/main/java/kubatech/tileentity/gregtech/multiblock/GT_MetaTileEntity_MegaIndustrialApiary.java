@@ -88,6 +88,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     private static final ItemStack royalJelly = PluginApiculture.items.royalJelly.getItemStack(1);
     private static final int CASING_INDEX = 10;
     private static final String STRUCTURE_PIECE_MAIN = "main";
+    private static final int CONFIGURATION_WINDOW_ID = 999;
 
     private static final IStructureDefinition<GT_MetaTileEntity_MegaIndustrialApiary> STRUCTURE_DEFINITION =
             StructureDefinition.<GT_MetaTileEntity_MegaIndustrialApiary>builder()
@@ -518,7 +519,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .setSize(143, 75)
                 .setEnabled(widget -> !isFixed.apply(widget)));
 
-        buildContext.addSyncedWindow(10, this::createConfigurationWindow);
+        buildContext.addSyncedWindow(CONFIGURATION_WINDOW_ID, this::createConfigurationWindow);
         EntityPlayer player = buildContext.getPlayer();
 
         // Slot is not needed
@@ -545,7 +546,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         .addTooltip("Working status"))
                 .widget(new ButtonWidget()
                         .setOnClick((clickData, widget) -> {
-                            if (!widget.isClient()) widget.getContext().openSyncedWindow(10);
+                            if (!widget.isClient()) widget.getContext().openSyncedWindow(CONFIGURATION_WINDOW_ID);
                         })
                         .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
                         .addTooltip("Configuration")

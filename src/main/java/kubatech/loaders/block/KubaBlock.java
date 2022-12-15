@@ -49,7 +49,7 @@ public class KubaBlock extends Block {
                             UIBuildContext buildContext = new UIBuildContext(player);
                             ModularWindow window = ((ITileWithModularUI) te).createWindow(buildContext);
                             return new ModularGui(containerConstructor.createUIContainer(
-                                    new ModularUIContext(buildContext, te::markDirty), window));
+                                    new ModularUIContext(buildContext, null), window));
                         }
                         return null;
                     }))
