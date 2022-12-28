@@ -63,6 +63,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.helpers.GTHelper;
@@ -149,8 +150,22 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                                     .dot(1)
                                     .buildAndChain(
                                             onElementPass(t -> t.mCasing++, ofBlock(GregTech_API.sBlockCasings1, 10))))
-                    .addElement('H', ofBlockAnyMeta(Blocks.planks, 5))
-                    .addElement('I', ofBlockAnyMeta(Blocks.wooden_slab, 5))
+                    .addElement(
+                            'H',
+                            ofBlocksMap(
+                                    Collections.singletonMap(
+                                            Blocks.planks,
+                                            IntStream.rangeClosed(0, 5).boxed().collect(Collectors.toList())),
+                                    Blocks.planks,
+                                    5))
+                    .addElement(
+                            'I',
+                            ofBlocksMap(
+                                    Collections.singletonMap(
+                                            Blocks.wooden_slab,
+                                            IntStream.rangeClosed(0, 5).boxed().collect(Collectors.toList())),
+                                    Blocks.wooden_slab,
+                                    5))
                     .addElement('J', ofBlock(PluginApiculture.blocks.apiculture, BlockApicultureType.APIARY.getMeta()))
                     .addElement('K', ofBlock(PluginApiculture.blocks.alveary, BlockAlveary.Type.PLAIN.ordinal()))
                     .addElement('L', ofBlock(PluginApiculture.blocks.alveary, BlockAlveary.Type.HYGRO.ordinal()))
