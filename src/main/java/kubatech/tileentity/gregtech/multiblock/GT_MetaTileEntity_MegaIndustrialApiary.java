@@ -176,7 +176,13 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
     @Override
     public int survivalConstruct(ItemStack stackSize, int elementBudget, ISurvivalBuildEnvironment env) {
-        return survivialBuildPiece(STRUCTURE_PIECE_MAIN_SURVIVAL, stackSize, 7, 8, 0, elementBudget, env, true, true);
+        int built = survivialBuildPiece(STRUCTURE_PIECE_MAIN_SURVIVAL, stackSize, 7, 8, 0, elementBudget, env, true);
+        if (built == -1) {
+            GT_Utility.sendChatToPlayer(
+                    env.getActor(), EnumChatFormatting.GREEN + "Auto placing done ! Now go place the water yourself !");
+            return 0;
+        }
+        return built;
     }
 
     @Override
