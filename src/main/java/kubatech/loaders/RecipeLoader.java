@@ -163,8 +163,8 @@ public class RecipeLoader {
 
     private static void registerFlowerLine() {
         List<ItemStack> flowers = new ArrayList<>(Arrays.asList(
-                new ItemStack(Blocks.yellow_flower, 10),
-                new ItemStack(Blocks.red_flower, 10, OreDictionary.WILDCARD_VALUE)));
+                new ItemStack(Blocks.yellow_flower, 1),
+                new ItemStack(Blocks.red_flower, 1, OreDictionary.WILDCARD_VALUE)));
         flowers.forEach(f -> GT_Values.RA.addMixerRecipe(
                 new ItemStack[] {f},
                 new FluidStack[] {Materials.Water.getFluid(10L)},
