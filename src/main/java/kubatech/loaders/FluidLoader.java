@@ -13,10 +13,5 @@ public class FluidLoader {
         FluidRegistry.registerFluid(flowerExtract);
         FluidList.FlowerExtract.set(flowerExtract);
         FluidCell.registerFluidCell(flowerExtract);
-
-        Fluid flowerPulpMix = new KubaFluid("flowerpulpmix");
-        FluidRegistry.registerFluid(flowerPulpMix);
-        FluidList.FlowerPulpMix.set(flowerPulpMix);
-        FluidCell.registerFluidCell(flowerPulpMix);
     }
 }
