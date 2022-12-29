@@ -32,6 +32,7 @@ import gregtech.api.util.GT_Utility;
 import gtPlusPlus.core.lib.CORE;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
@@ -46,7 +47,6 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.oredict.OreDictionary;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import scala.actors.threadpool.Arrays;
 
 public class RecipeLoader {
 
@@ -162,9 +162,9 @@ public class RecipeLoader {
     }
 
     private static void registerFlowerLine() {
-        List<ItemStack> flowers = new ArrayList<>(Arrays.asList(new ItemStack[] {
-            new ItemStack(Blocks.yellow_flower, 1), new ItemStack(Blocks.red_flower, 1, OreDictionary.WILDCARD_VALUE)
-        }));
+        List<ItemStack> flowers = new ArrayList<>(Arrays.asList(
+                new ItemStack(Blocks.yellow_flower, 1),
+                new ItemStack(Blocks.red_flower, 1, OreDictionary.WILDCARD_VALUE)));
         flowers.forEach(f ->
                 GT_Values.RA.addPulveriserRecipe(f, new ItemStack[] {FlowerPulp.get(1)}, new int[] {10000}, 100, 100));
         GT_Values.RA.addMixerRecipe(
