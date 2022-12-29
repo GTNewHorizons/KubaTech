@@ -22,15 +22,19 @@ package kubatech.loaders;
 import static kubatech.api.enums.ItemList.*;
 
 import cpw.mods.fml.common.registry.GameRegistry;
+import kubatech.loaders.item.FluidCell;
 import kubatech.loaders.item.ItemProxy;
 import kubatech.loaders.item.KubaItems;
 import kubatech.loaders.item.items.*;
 
 public class ItemLoader {
     public static final KubaItems kubaitems = new KubaItems();
+    public static final FluidCell fluidcell = new FluidCell();
 
     public static void registerItems() {
         GameRegistry.registerItem(kubaitems, "kubaitems");
+        GameRegistry.registerItem(fluidcell, "fluidcell");
+        FluidCell.set(fluidcell);
 
         // DON'T EVER CHANGE ORDER IN HERE, ADD NEW ITEMS ON BOTTOM
 
@@ -76,6 +80,8 @@ public class ItemLoader {
 
         TeaAcceptorResearchNote.set(
                 kubaitems.registerProxyItem(new ItemProxy("tea_acceptor_research_note", "research_note")));
+
         Beeeeee.set(kubaitems.registerProxyItem(new ItemProxy("beeeeee", "beeeeee")));
+        FlowerPulp.set(kubaitems.registerProxyItem(new ItemProxy("flower_pulp", "flower_pulp")));
     }
 }

@@ -130,8 +130,14 @@ public class KubaItems extends Item {
 
     @SideOnly(Side.CLIENT)
     @Override
-    public IIcon getIconFromDamage(int damage) {
-        return getItem(damage).getIcon();
+    public IIcon getIconIndex(ItemStack p_77650_1_) {
+        return getItem(p_77650_1_).getIcon(p_77650_1_);
+    }
+
+    @SideOnly(Side.CLIENT)
+    @Override
+    public IIcon getIcon(ItemStack stack, int pass) {
+        return getIconIndex(stack);
     }
 
     @SuppressWarnings("unchecked")
@@ -144,5 +150,15 @@ public class KubaItems extends Item {
     public void onUpdate(
             ItemStack p_77663_1_, World p_77663_2_, Entity p_77663_3_, int p_77663_4_, boolean p_77663_5_) {
         getItem(p_77663_1_).onUpdate(p_77663_1_, p_77663_2_, p_77663_3_, p_77663_4_, p_77663_5_);
+    }
+
+    @Override
+    public boolean hasContainerItem(ItemStack stack) {
+        return getItem(stack).getContainerItem() != null;
+    }
+
+    @Override
+    public ItemStack getContainerItem(ItemStack itemStack) {
+        return getItem(itemStack).getContainerItem();
     }
 }

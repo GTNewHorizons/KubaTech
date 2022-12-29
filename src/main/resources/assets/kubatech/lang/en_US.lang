@@ -87,6 +87,12 @@ kubaitem.teacollection.yellow_tea.name=§6§lKuba's Yellow Tea
 kubaitem.teacollection.ultimate_tea.name=§6§lKuba's %s §6§lTea
 
 kubaitem.tea_acceptor_research_note.name=Tea Acceptor Research Note
+kubaitem.fluid_cell.name=%s Cell
+kubaitem.flower_pulp.name=Flower pulp
+
+#Fluids
+kubafluid.flowerextract=Flower Extract
+kubafluid.flowerpulpmix=Flower Pulp Mix
 
 #Achievements
 achievement.teacollection.black_tea=§6§lKuba's Black Tea
