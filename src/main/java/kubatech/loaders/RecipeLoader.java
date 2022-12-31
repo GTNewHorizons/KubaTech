@@ -163,15 +163,23 @@ public class RecipeLoader {
 
     private static void registerFlowerLine() {
         List<ItemStack> flowers = new ArrayList<>(Arrays.asList(
-                new ItemStack(Blocks.yellow_flower, 10),
-                new ItemStack(Blocks.red_flower, 10, OreDictionary.WILDCARD_VALUE)));
-        flowers.forEach(f -> GT_Values.RA.addMixerRecipe(
-                new ItemStack[] {f},
-                new FluidStack[] {Materials.Water.getFluid(10L)},
+                new ItemStack(Blocks.yellow_flower, 1),
+                new ItemStack(Blocks.red_flower, 1, OreDictionary.WILDCARD_VALUE)));
+        flowers.forEach(f ->
+                GT_Values.RA.addPulveriserRecipe(f, new ItemStack[] {FlowerPulp.get(1)}, new int[] {10000}, 100, 100));
+        GT_Values.RA.addMixerRecipe(
+                new ItemStack[] {FlowerPulp.get(10)},
+                new FluidStack[] {Materials.Water.getFluid(1000L)},
                 new ItemStack[] {},
-                new FluidStack[] {FluidList.FlowerExtract.get(10)},
+                new FluidStack[] {FluidList.FlowerPulpMix.get(1000)},
                 100,
-                100));
+                100);
+        GT_Values.RA.addUniversalDistillationRecipe(
+                FluidList.FlowerPulpMix.get(1000),
+                new FluidStack[] {FluidList.FlowerExtract.get(10), Materials.Water.getFluid(980L)},
+                GT_Values.NI,
+                100,
+                100);
     }
 
     private static void registerTeaLine() {

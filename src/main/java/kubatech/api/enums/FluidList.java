@@ -4,7 +4,8 @@ import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 
 public enum FluidList {
-    FlowerExtract;
+    FlowerExtract,
+    FlowerPulpMix;
     private FluidStack stack;
     private boolean mHasNotBeenSet = true;
 

@@ -55,7 +55,8 @@ public enum ItemList implements IItemContainer {
     TeaAcceptorResearchNote,
     TeaAcceptor,
     FluidCell,
-    Beeeeee;
+    Beeeeee,
+    FlowerPulp;
 
     private ItemStack mStack;
     private boolean mHasNotBeenSet = true;

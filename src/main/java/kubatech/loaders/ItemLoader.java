@@ -82,5 +82,6 @@ public class ItemLoader {
                 kubaitems.registerProxyItem(new ItemProxy("tea_acceptor_research_note", "research_note")));
 
         Beeeeee.set(kubaitems.registerProxyItem(new ItemProxy("beeeeee", "beeeeee")));
+        FlowerPulp.set(kubaitems.registerProxyItem(new ItemProxy("flower_pulp", "flower_pulp")));
     }
 }
