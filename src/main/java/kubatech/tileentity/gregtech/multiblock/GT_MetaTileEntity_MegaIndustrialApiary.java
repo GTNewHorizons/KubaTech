@@ -58,8 +58,6 @@ import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_EnhancedMultiBlockBase;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energy;
-import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Input;
-import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_MultiInput;
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
@@ -70,7 +68,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
-import kubatech.api.enums.FluidList;
 import kubatech.api.helpers.GTHelper;
 import kubatech.api.network.CustomTileEntityPacket;
 import kubatech.api.tileentity.CustomTileEntityPacketHandler;
@@ -84,7 +81,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
-import net.minecraftforge.fluids.FluidStack;
 
 public class GT_MetaTileEntity_MegaIndustrialApiary
         extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_MegaIndustrialApiary>
@@ -143,7 +139,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     .addElement(
                             'G',
                             buildHatchAdder(GT_MetaTileEntity_MegaIndustrialApiary.class)
-                                    .atLeast(InputBus, InputHatch, OutputBus, Energy, Maintenance)
+                                    .atLeast(InputBus, OutputBus, Energy, Maintenance)
                                     .casingIndex(CASING_INDEX)
                                     .dot(1)
                                     .buildAndChain(
@@ -233,7 +229,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .addInfo("  - For each " + voltageFormatted(6) + " amp you can insert 1 bee")
                 .addInfo("  - Processing time: 5 seconds")
                 .addInfo("  - Uses 1 " + voltageFormatted(6) + " amp per queen")
-                .addInfo("  - Uses 5L of Flower Extract per queen per operation")
                 .addInfo("  - All bees are accelerated 64 times")
                 .addInfo("  - 8 production upgrades are applied")
                 .addInfo("  - Genetic Stabilizer upgrade applied")
@@ -258,7 +253,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .addOtherStructurePart("Borosilicate Glass", "Look at the hologram")
                 .addStructureInfo("The glass tier limits the Energy Input tier")
                 .addInputBus("Any casing", 1)
-                .addInputHatch("Any casing", 1)
                 .addOutputBus("Any casing", 1)
                 .addEnergyHatch("Any casing", 1)
                 .addMaintenanceHatch("Any casing", 1)
@@ -396,38 +390,12 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         } else if (mPrimaryMode == 2) {
             if (mMaxSlots > 0 && !mStorage.isEmpty()) {
                 if (mSecondaryMode == 0) {
-                    final int queens = Math.min(mStorage.size(), mMaxSlots);
+                    this.mEUt = -((int) GT_Values.V[6] * mStorage.size());
+                    this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
+                    this.mEfficiencyIncrease = 10000;
+                    this.mMaxProgresstime = 100;
 
-                    List<GT_MetaTileEntity_Hatch_Input> fluids = mInputHatches;
-                    List<GT_MetaTileEntity_Hatch_Input> fluidsToUse = new ArrayList<>(fluids.size());
-
-                    final int flowerConsume = queens * 5;
-                    int flowerConsumeCheck = flowerConsume;
-                    FluidStack flowerFluid = FluidList.FlowerExtract.get(1);
-                    for (GT_MetaTileEntity_Hatch_Input i : fluids) {
-                        if (!isValidMetaTileEntity(i)) continue;
-                        if (i instanceof GT_MetaTileEntity_Hatch_MultiInput) {
-                            int amount = ((GT_MetaTileEntity_Hatch_MultiInput) i).getFluidAmount(flowerFluid);
-                            if (amount == 0) continue;
-                            flowerConsumeCheck -= amount;
-                        } else {
-                            FluidStack stack = i.getDrainableStack();
-                            if (stack == null) continue;
-                            if (!stack.isFluidEqual(flowerFluid)) continue;
-                            if (stack.amount <= 0) continue;
-                            flowerConsumeCheck -= stack.amount;
-                        }
-                        fluidsToUse.add(i);
-                        if (flowerConsumeCheck <= 0) break;
-                    }
-                    if (flowerConsumeCheck > 0) return false;
-                    flowerConsumeCheck = flowerConsume;
-                    for (GT_MetaTileEntity_Hatch_Input i : fluidsToUse) {
-                        int used = i.drain(flowerConsumeCheck, true).amount;
-                        flowerConsumeCheck -= used;
-                    }
-
-                    int maxConsume = queens * 40;
+                    int maxConsume = Math.min(mStorage.size(), mMaxSlots) * 40;
                     int toConsume = maxConsume;
                     ArrayList<ItemStack> inputs = getStoredInputs();
 
@@ -445,15 +413,10 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     }
 
                     List<ItemStack> stacks = new ArrayList<>();
-                    for (int i = 0; i < queens; i++) {
+                    for (int i = 0, mStorageSize = Math.min(mStorage.size(), mMaxSlots); i < mStorageSize; i++) {
                         BeeSimulator beeSimulator = mStorage.get(i);
                         stacks.addAll(beeSimulator.getDrops(64_00d * boosted));
                     }
-
-                    this.mEUt = -((int) GT_Values.V[6] * queens);
-                    this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
-                    this.mEfficiencyIncrease = 10000;
-                    this.mMaxProgresstime = 100;
                     this.mOutputItems = stacks.toArray(new ItemStack[0]);
                     return true;
                 } else {
