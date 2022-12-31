@@ -220,7 +220,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         int built = survivialBuildPiece(STRUCTURE_PIECE_MAIN_SURVIVAL, stackSize, 7, 8, 0, elementBudget, env, true);
         if (built == -1) {
             GT_Utility.sendChatToPlayer(
-                    env.getActor(), EnumChatFormatting.GREEN + "Auto placing done ! Now go place the water and flowers yourself !");
+                    env.getActor(),
+                    EnumChatFormatting.GREEN + "Auto placing done ! Now go place the water and flowers yourself !");
             return 0;
         }
         return built;
