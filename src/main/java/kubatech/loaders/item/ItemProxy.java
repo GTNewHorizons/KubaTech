@@ -83,7 +83,7 @@ public class ItemProxy {
         icon = iconRegister.registerIcon(texturepath);
     }
 
-    public IIcon getIcon(ItemStack stack) {
+    public IIcon getIcon() {
         return icon;
     }
 
@@ -105,10 +105,6 @@ public class ItemProxy {
 
     public int getMaxItemUseDuration() {
         return 0;
-    }
-
-    public ItemStack getContainerItem() {
-        return null;
     }
 
     public static void openHeldItemGUI(EntityPlayer player) {

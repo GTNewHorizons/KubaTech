@@ -20,7 +20,6 @@
 package kubatech;
 
 import static kubatech.loaders.BlockLoader.registerBlocks;
-import static kubatech.loaders.FluidLoader.registerFluids;
 import static kubatech.loaders.ItemLoader.registerItems;
 
 import cpw.mods.fml.common.FMLCommonHandler;
@@ -47,7 +46,6 @@ public class CommonProxy {
         MinecraftForge.EVENT_BUS.register(new PlayerDataManager());
         registerItems();
         registerBlocks();
-        registerFluids();
         if (LoaderReference.Thaumcraft) TCLoader.load();
     }
 

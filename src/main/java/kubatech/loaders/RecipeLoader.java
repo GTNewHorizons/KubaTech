@@ -31,12 +31,8 @@ import gregtech.api.util.GT_ModHandler;
 import gregtech.api.util.GT_Utility;
 import gtPlusPlus.core.lib.CORE;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
-import kubatech.api.enums.FluidList;
 import kubatech.api.enums.ItemList;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_MegaIndustrialApiary;
@@ -44,7 +40,6 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.oredict.OreDictionary;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -107,8 +102,7 @@ public class RecipeLoader {
                     6000,
                     2_048_000);
         }
-        registerTeaLine();
-        registerFlowerLine();
+        RegisterTeaLine();
         if (MTEID > MTEIDMax + 1) throw new RuntimeException("MTE ID's");
     }
 
@@ -161,28 +155,7 @@ public class RecipeLoader {
         MobRecipeLoader.processMobRecipeMap();
     }
 
-    private static void registerFlowerLine() {
-        List<ItemStack> flowers = new ArrayList<>(Arrays.asList(
-                new ItemStack(Blocks.yellow_flower, 1),
-                new ItemStack(Blocks.red_flower, 1, OreDictionary.WILDCARD_VALUE)));
-        flowers.forEach(f ->
-                GT_Values.RA.addPulveriserRecipe(f, new ItemStack[] {FlowerPulp.get(1)}, new int[] {10000}, 100, 100));
-        GT_Values.RA.addMixerRecipe(
-                new ItemStack[] {FlowerPulp.get(10)},
-                new FluidStack[] {Materials.Water.getFluid(1000L)},
-                new ItemStack[] {},
-                new FluidStack[] {FluidList.FlowerPulpMix.get(1000)},
-                100,
-                100);
-        GT_Values.RA.addUniversalDistillationRecipe(
-                FluidList.FlowerPulpMix.get(1000),
-                new FluidStack[] {FluidList.FlowerExtract.get(10), Materials.Water.getFluid(980L)},
-                GT_Values.NI,
-                100,
-                100);
-    }
-
-    private static void registerTeaLine() {
+    private static void RegisterTeaLine() {
         //    TEA LINE    //
         if (LoaderReference.GTPlusPlus && LoaderReference.HarvestCraft) {
             CORE.RA.addDehydratorRecipe(
