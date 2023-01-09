@@ -204,6 +204,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     private final HashSet<String> flowersCache = new HashSet<>();
     private final HashSet<String> flowersCheck = new HashSet<>();
     private boolean flowersError = false;
+    private boolean needsTVarUpdate = false;
 
     private void flowerCheck(final World world, final int x, final int y, final int z) {
         if (!flowersCheck.isEmpty() && !world.isAirBlock(x, y, z))
@@ -363,10 +364,14 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     }
 
     private void updateMaxSlots() {
+        int mOld = mMaxSlots;
         long v = GTHelper.getMaxInputEU(this);
         if (v < GT_Values.V[6]) mMaxSlots = 0;
         else if (mSecondaryMode == 0) mMaxSlots = (int) (v / GT_Values.V[6]);
         else mMaxSlots = 1;
+        if (mOld != 0 && mOld != mMaxSlots) {
+            needsTVarUpdate = true;
+        }
     }
 
     private CustomTileEntityPacket packet = null;
@@ -406,10 +411,11 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         if (mPrimaryMode < 2) {
             if (mPrimaryMode == 0 && mStorage.size() < mMaxSlots) {
                 World w = getBaseMetaTileEntity().getWorld();
+                float t = (float) GTHelper.getVoltageTierD(this);
                 ArrayList<ItemStack> inputs = getStoredInputs();
                 for (ItemStack input : inputs) {
                     if (beeRoot.getType(input) == EnumBeeType.QUEEN) {
-                        BeeSimulator bs = new BeeSimulator(input, w);
+                        BeeSimulator bs = new BeeSimulator(input, w, t);
                         if (bs.isValid) {
                             mStorage.add(bs);
                             isCacheDirty = true;
@@ -433,6 +439,12 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             if (mMaxSlots > 0 && !mStorage.isEmpty()) {
                 if (mSecondaryMode == 0) {
                     if (flowersError) return false;
+
+                    if (needsTVarUpdate) {
+                        float t = (float) GTHelper.getVoltageTierD(this);
+                        needsTVarUpdate = false;
+                        mStorage.forEach(s -> s.updateTVar(t));
+                    }
 
                     int maxConsume = Math.min(mStorage.size(), mMaxSlots) * 40;
                     int toConsume = maxConsume;
@@ -899,7 +911,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         float maxBeeCycles;
         String flowerType;
 
-        public BeeSimulator(ItemStack queenStack, World world) {
+        public BeeSimulator(ItemStack queenStack, World world, float t) {
             isValid = false;
             this.queenStack = queenStack.copy();
             if (beeRoot.getType(this.queenStack) != EnumBeeType.QUEEN) return;
@@ -919,11 +931,12 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             beeSpeed = genome.getSpeed() * beeModifier.getProductionModifier(null, 1.f);
             genome.getPrimary()
                     .getProductChances()
-                    .forEach((key, value) -> drops.add(new BeeDrop(key, value, beeSpeed)));
+                    .forEach((key, value) -> drops.add(new BeeDrop(key, value, beeSpeed, t)));
             genome.getSecondary()
                     .getProductChances()
-                    .forEach((key, value) -> drops.add(new BeeDrop(key, value / 2.f, beeSpeed)));
-            primary.getSpecialtyChances().forEach((key, value) -> specialDrops.add(new BeeDrop(key, value, beeSpeed)));
+                    .forEach((key, value) -> drops.add(new BeeDrop(key, value / 2.f, beeSpeed, t)));
+            primary.getSpecialtyChances()
+                    .forEach((key, value) -> specialDrops.add(new BeeDrop(key, value, beeSpeed, t)));
 
             isValid = true;
             queenStack.stackSize--;
@@ -992,15 +1005,38 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             return beeRoot.getMemberStack(princess, EnumBeeType.PRINCESS.ordinal());
         }
 
+        public void updateTVar(float t) {
+            drops.forEach(d -> d.updateTVar(t));
+            specialDrops.forEach(d -> d.updateTVar(t));
+        }
+
         private static class BeeDrop {
             ItemStack stack;
             double amount;
             GT_Utility.ItemId id;
 
-            public BeeDrop(ItemStack stack, float chance, float beeSpeed) {
+            float chance;
+            float beeSpeed;
+            float t;
+
+            public BeeDrop(ItemStack stack, float chance, float beeSpeed, float t) {
                 this.stack = stack;
-                this.amount = Bee.getFinalChance(chance, beeSpeed, 2.f, 8.f);
+                this.chance = chance;
+                this.beeSpeed = beeSpeed;
+                this.t = t;
                 id = GT_Utility.ItemId.createNoCopy(stack);
+                evaluate();
+            }
+
+            public void updateTVar(float t) {
+                if (this.t != t) {
+                    this.t = t;
+                    evaluate();
+                }
+            }
+
+            public void evaluate() {
+                this.amount = Bee.getFinalChance(chance, beeSpeed, 2.f, t);
             }
 
             public double getAmount(double speedModifier) {
@@ -1015,6 +1051,9 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
             public BeeDrop(NBTTagCompound tag) {
                 stack = ItemStack.loadItemStackFromNBT(tag.getCompoundTag("stack"));
+                chance = tag.getFloat("chance");
+                beeSpeed = tag.getFloat("beeSpeed");
+                t = tag.getFloat("t");
                 amount = tag.getDouble("amount");
                 id = GT_Utility.ItemId.createNoCopy(stack);
             }
@@ -1022,6 +1061,9 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             public NBTTagCompound toNBTTagCompound() {
                 NBTTagCompound tag = new NBTTagCompound();
                 tag.setTag("stack", stack.writeToNBT(new NBTTagCompound()));
+                tag.setFloat("chance", chance);
+                tag.setFloat("beeSpeed", beeSpeed);
+                tag.setFloat("t", t);
                 tag.setDouble("amount", amount);
                 return tag;
             }
