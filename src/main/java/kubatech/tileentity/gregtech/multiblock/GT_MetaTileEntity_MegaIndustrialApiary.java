@@ -100,6 +100,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     private static final String STRUCTURE_PIECE_MAIN = "main";
     private static final String STRUCTURE_PIECE_MAIN_SURVIVAL = "mainsurvival";
     private static final int CONFIGURATION_WINDOW_ID = 999;
+    private static final int MEGA_APIARY_STORAGE_VERSION = 1;
 
     private static final String[][] struct = transpose(new String[][] { // spotless:off
         {"               ","               ","               ","      HHH      ","    HHAAAHH    ","    HAPLPAH    ","   HAPAAAPAH   ","   HALAAALAH   ","   HAPAAAPAH   ","    HAPLPAH    ","    HHAAAHH    ","      HHH      ","               ","               ","               "},
@@ -205,6 +206,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     private final HashSet<String> flowersCheck = new HashSet<>();
     private boolean flowersError = false;
     private boolean needsTVarUpdate = false;
+    private int megaApiaryStorageVersion = 0;
 
     private void flowerCheck(final World world, final int x, final int y, final int z) {
         if (!flowersCheck.isEmpty() && !world.isAirBlock(x, y, z))
@@ -304,6 +306,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         aNBT.setInteger("mStorageSize", mStorage.size());
         for (int i = 0; i < mStorage.size(); i++)
             aNBT.setTag("mStorage." + i, mStorage.get(i).toNBTTagCompound());
+        aNBT.setInteger("MEGA_APIARY_STORAGE_VERSION", MEGA_APIARY_STORAGE_VERSION);
     }
 
     @Override
@@ -314,6 +317,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         mSecondaryMode = aNBT.getInteger("mSecondaryMode");
         for (int i = 0, isize = aNBT.getInteger("mStorageSize"); i < isize; i++)
             mStorage.add(new BeeSimulator(aNBT.getCompoundTag("mStorage." + i)));
+        megaApiaryStorageVersion = aNBT.getInteger("MEGA_APIARY_STORAGE_VERSION");
         flowersCache.clear();
         mStorage.forEach(s -> flowersCache.add(s.flowerType));
         flowersCache.remove("");
@@ -421,6 +425,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                             isCacheDirty = true;
                         }
                     }
+                    if (mStorage.size() >= mMaxSlots) break;
                 }
                 updateSlots();
             } else if (mPrimaryMode == 1 && mStorage.size() > 0) {
@@ -438,6 +443,15 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         } else if (mPrimaryMode == 2) {
             if (mMaxSlots > 0 && !mStorage.isEmpty()) {
                 if (mSecondaryMode == 0) {
+                    if (megaApiaryStorageVersion != MEGA_APIARY_STORAGE_VERSION) {
+                        megaApiaryStorageVersion = MEGA_APIARY_STORAGE_VERSION;
+                        World w = getBaseMetaTileEntity().getWorld();
+                        float t = (float) GTHelper.getVoltageTierD(this);
+                        mStorage.forEach(s -> s.generate(w, t));
+                    }
+
+                    if (mStorage.size() > mMaxSlots) return false;
+
                     if (flowersError) return false;
 
                     if (needsTVarUpdate) {
@@ -914,6 +928,14 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         public BeeSimulator(ItemStack queenStack, World world, float t) {
             isValid = false;
             this.queenStack = queenStack.copy();
+            generate(world, t);
+            isValid = true;
+            queenStack.stackSize--;
+        }
+
+        public void generate(World world, float t) {
+            drops.clear();
+            specialDrops.clear();
             if (beeRoot.getType(this.queenStack) != EnumBeeType.QUEEN) return;
             IBee queen = beeRoot.getMember(this.queenStack);
             IBeekeepingMode mode = beeRoot.getBeekeepingMode(world);
@@ -923,8 +945,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             maxBeeCycles = (float) h / (1.f / mod);
             IBeeGenome genome = queen.getGenome();
             this.flowerType = genome.getFlowerProvider().getFlowerType();
-            // isInfinite = queen.isNatural();
-            // if (!isInfinite && h < 4) return;
             IAlleleBeeSpecies primary = genome.getPrimary();
             drops = new ArrayList<>();
             specialDrops = new ArrayList<>();
@@ -937,16 +957,11 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     .forEach((key, value) -> drops.add(new BeeDrop(key, value / 2.f, beeSpeed, t)));
             primary.getSpecialtyChances()
                     .forEach((key, value) -> specialDrops.add(new BeeDrop(key, value, beeSpeed, t)));
-
-            isValid = true;
-            queenStack.stackSize--;
         }
 
         public BeeSimulator(NBTTagCompound tag) {
             queenStack = ItemStack.loadItemStackFromNBT(tag.getCompoundTag("queenStack"));
             isValid = tag.getBoolean("isValid");
-            // isBreadingMode = tag.getBoolean("isBreadingMode");
-            // isInfinite = tag.getBoolean("isInfinite");
             drops = new ArrayList<>();
             specialDrops = new ArrayList<>();
             for (int i = 0, isize = tag.getInteger("dropssize"); i < isize; i++)
@@ -967,8 +982,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             NBTTagCompound tag = new NBTTagCompound();
             tag.setTag("queenStack", queenStack.writeToNBT(new NBTTagCompound()));
             tag.setBoolean("isValid", isValid);
-            // tag.setBoolean("isBreadingMode", isBreadingMode);
-            // tag.setBoolean("isInfinite", isInfinite);
             tag.setInteger("dropssize", drops.size());
             for (int i = 0; i < drops.size(); i++)
                 tag.setTag("drops" + i, drops.get(i).toNBTTagCompound());
