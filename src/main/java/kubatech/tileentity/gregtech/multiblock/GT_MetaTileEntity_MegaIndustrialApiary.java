@@ -457,7 +457,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         stacks.addAll(beeSimulator.getDrops(64_00d * boosted));
                     }
 
-                    this.mEUt = -((int) GT_Values.V[6] * mStorage.size());
+                    this.mEUt = -(int) ((double) GT_Values.V[6] * (double) mMaxSlots * 0.99d);
                     this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
                     this.mEfficiencyIncrease = 10000;
                     this.mMaxProgresstime = 100;
