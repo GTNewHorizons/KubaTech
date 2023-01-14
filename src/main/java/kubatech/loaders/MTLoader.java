@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 public class MTLoader {
 
-    private static final Logger LOG = LogManager.getLogger(Tags.MODID + "[Mob Recipe Loader]");
+    private static final Logger LOG = LogManager.getLogger(Tags.MODID + "[MT Loader]");
     public static MTLoader instance = null;
 
     public static void init() {
