@@ -1,6 +1,6 @@
 /*
  * KubaTech - Gregtech Addon
- * Copyright (C) 2022  kuba6000
+ * Copyright (C) 2022 - 2023  kuba6000
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -142,9 +142,12 @@ public class TeaCollection extends ItemProxy {
 
     @Override
     public String getDisplayName(ItemStack stack) {
-        if (!ModUtils.isClientSided) return super.getDisplayName(stack);
-        if (checkTeaOwner(stack, Minecraft.getMinecraft().thePlayer.getCommandSenderName()))
+        if (!ModUtils.isClientSided || Minecraft.getMinecraft().thePlayer == null) {
             return super.getDisplayName(stack);
+        }
+        if (checkTeaOwner(stack, Minecraft.getMinecraft().thePlayer.getCommandSenderName())) {
+            return super.getDisplayName(stack);
+        }
         return EnumChatFormatting.GOLD + "" + EnumChatFormatting.BOLD + "" + EnumChatFormatting.ITALIC + "???????";
     }
 

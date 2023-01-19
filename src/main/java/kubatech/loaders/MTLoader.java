@@ -17,30 +17,28 @@
  *
  */
 
-package kubatech.api.utils;
+package kubatech.loaders;
 
-import java.util.Random;
-import java.util.SplittableRandom;
+import kubatech.Tags;
+import kubatech.api.LoaderReference;
+import minetweaker.MineTweakerImplementationAPI;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public class FastRandom extends Random {
+public class MTLoader {
 
-    private SplittableRandom realRandom;
+    private static final Logger LOG = LogManager.getLogger(Tags.MODID + "[MT Loader]");
+    public static MTLoader instance = null;
 
-    public FastRandom() {
-        realRandom = new SplittableRandom();
+    public static void init() {
+        if (instance == null) {
+            instance = new MTLoader();
+            MineTweakerImplementationAPI.onPostReload(instance::MTOnPostReload);
+        }
     }
 
-    public FastRandom(long seed) {
-        realRandom = new SplittableRandom(seed);
-    }
-
-    @Override
-    public synchronized void setSeed(long seed) {
-        realRandom = new SplittableRandom(seed);
-    }
-
-    @Override
-    protected int next(int bits) {
-        return (realRandom.nextInt() >>> (32 - bits));
+    public void MTOnPostReload(MineTweakerImplementationAPI.ReloadEvent reloadEvent) {
+        LOG.info("MT Recipes Loaded!");
+        if (LoaderReference.Thaumcraft) TCLoader.register();
     }
 }
