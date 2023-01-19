@@ -1,7 +1,6 @@
 package kubatech.loaders.block;
 
 import java.util.List;
-import kubatech.kubatech;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.player.EntityPlayer;

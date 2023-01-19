@@ -23,7 +23,6 @@ import static com.gtnewhorizon.structurelib.structure.StructureUtility.*;
 import static forestry.api.apiculture.BeeManager.beeRoot;
 import static gregtech.api.enums.GT_HatchElement.*;
 import static gregtech.api.enums.Textures.BlockIcons.*;
-import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_DISTILLATION_TOWER_GLOW;
 import static gregtech.api.util.GT_StructureUtility.buildHatchAdder;
 import static kubatech.api.Variables.*;
 
@@ -462,7 +461,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     this.mEfficiencyIncrease = 10000;
                     this.mMaxProgresstime = 100;
                     this.mOutputItems = stacks.toArray(new ItemStack[0]);
-                    return true;
                 } else {
                     if (!depleteInput(PluginApiculture.items.royalJelly.getItemStack(64))
                             || !depleteInput(PluginApiculture.items.royalJelly.getItemStack(36))) {
@@ -474,8 +472,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     this.mEfficiencyIncrease = 10000;
                     this.mOutputItems = new ItemStack[] {this.mStorage.get(0).createIgnobleCopy()};
                     this.updateSlots();
-                    return true;
                 }
+                return true;
             }
         }
 
@@ -894,8 +892,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     private static class BeeSimulator {
         ItemStack queenStack;
         boolean isValid;
-        // boolean isBreadingMode;
-        // boolean isInfinite;
         List<BeeDrop> drops;
         List<BeeDrop> specialDrops;
         float beeSpeed;

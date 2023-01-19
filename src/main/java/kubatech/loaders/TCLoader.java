@@ -22,7 +22,6 @@ import thaumcraft.api.research.ResearchItem;
 import thaumcraft.api.research.ResearchPage;
 
 public class TCLoader {
-    private static boolean lateLoaded = false;
 
     public static void load() {}
 

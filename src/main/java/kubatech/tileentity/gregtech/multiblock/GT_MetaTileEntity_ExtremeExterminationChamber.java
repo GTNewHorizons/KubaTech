@@ -652,18 +652,6 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 .setEnabled(widget -> !isFixed.apply(widget)));
         final SlotWidget inventorySlot =
                 new SlotWidget(inventoryHandler, 1).setFilter(stack -> stack.getItem() == poweredSpawnerItem);
-        /*
-        Widget.PosProvider provider = (screenSize, window, parent)->{
-            if(getRepairStatus() == getIdealStatus() && mMachine)
-                return new Pos2d(50, 50);
-            else
-                return new Pos2d(151, 4);
-        };
-        builder.widget(inventorySlot.setPosProvider(provider).setTicker(widget -> {
-            if(!widget.getPos().equals(provider.getPos(null, null, null)))
-                widget.checkNeedsRebuild();
-        }));
-         */
 
         DynamicPositionedColumn configurationElements = new DynamicPositionedColumn();
         addConfigurationWidgets(configurationElements, buildContext, inventorySlot);
@@ -838,7 +826,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     }
 
     private static class EECFakePlayer extends FakePlayer {
-        GT_MetaTileEntity_ExtremeExterminationChamber mte;
+        final GT_MetaTileEntity_ExtremeExterminationChamber mte;
         ItemStack currentWeapon;
 
         public EECFakePlayer(GT_MetaTileEntity_ExtremeExterminationChamber mte) {
