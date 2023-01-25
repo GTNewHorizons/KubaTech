@@ -61,8 +61,8 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
             this.mMaxProgresstime = aDuration;
             return 0;
         }
-        int durationTiers =
-                (int) (Math.log((double) aDuration / (double) getOverclockTimeLimit()) / (isPerfect ? ln4 : ln2));
+        int durationTiers = (int)
+                Math.ceil(Math.log((double) aDuration / (double) getOverclockTimeLimit()) / (isPerfect ? ln4 : ln2));
         if (durationTiers < 0) durationTiers = 0; // We do not support downclocks (yet)
         if (durationTiers > tiers) durationTiers = tiers;
         if (!isOverclockingInfinite()) {
