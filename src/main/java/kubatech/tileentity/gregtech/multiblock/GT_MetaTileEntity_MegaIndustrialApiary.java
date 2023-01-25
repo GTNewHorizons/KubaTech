@@ -488,7 +488,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         this.updateSlots();
                         return false;
                     }
-                    calculateOverclockedNessMulti(GT_Values.V[5], 1200, 2, getMaxInputVoltage());
+                    calculateOverclock(GT_Values.V[5], 1200);
                     this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
                     this.mEfficiencyIncrease = 10000;
                     this.mOutputItems = new ItemStack[] {this.mStorage.get(0).createIgnobleCopy()};

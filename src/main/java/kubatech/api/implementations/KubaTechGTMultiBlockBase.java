@@ -44,25 +44,26 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
     @Override
     protected void calculateOverclockedNessMultiInternal(
             long aEUt, int aDuration, int mAmperage, long maxInputVoltage, boolean perfectOC) {
-        calculateOverclock(aEUt, aDuration, maxInputVoltage, perfectOC);
+        calculateOverclock(aEUt, aDuration, getMaxInputEu(), perfectOC);
     }
 
     /**
      * @param aEUt Recipe EU/t
      * @param aDuration Recipe duration (in ticks)
-     * @param maxInputVoltage The amount of energy we want to overclock to
+     * @param maxInputEU The amount of energy we want to overclock to
      * @param isPerfect Is this overclock perfect ?
      * @return The amount of overclocks
      */
-    protected int calculateOverclock(long aEUt, int aDuration, final long maxInputVoltage, boolean isPerfect) {
-        int tiers = (int) (Math.log((double) maxInputVoltage / (double) aEUt) / ln4);
+    protected int calculateOverclock(long aEUt, int aDuration, final long maxInputEU, final boolean isPerfect) {
+        final int minDuration = getOverclockTimeLimit();
+        int tiers = (int) (Math.log((double) maxInputEU / (double) aEUt) / ln4);
         if (tiers <= 0) {
             this.lEUt = aEUt;
             this.mMaxProgresstime = aDuration;
             return 0;
         }
-        int durationTiers = (int)
-                Math.ceil(Math.log((double) aDuration / (double) getOverclockTimeLimit()) / (isPerfect ? ln4 : ln2));
+        int durationTiers =
+                (int) Math.ceil(Math.log((double) aDuration / (double) minDuration) / (isPerfect ? ln4 : ln2));
         if (durationTiers < 0) durationTiers = 0; // We do not support downclocks (yet)
         if (durationTiers > tiers) durationTiers = tiers;
         if (!isOverclockingInfinite()) {
@@ -74,7 +75,7 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
             }
             this.lEUt = aEUt << (tiers << 1);
             aDuration >>= isPerfect ? (tiers << 1) : tiers;
-            if (aDuration <= 0) aDuration = 1;
+            if (aDuration < minDuration) aDuration = minDuration;
             this.mMaxProgresstime = aDuration;
             return tiers;
         }
@@ -94,7 +95,7 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
             if (stacks.size() != this.mOutputItems.length) this.mOutputItems = stacks.toArray(new ItemStack[0]);
             for (FluidStack mOutputFluid : this.mOutputFluids) mOutputFluid.amount *= dMulti;
         }
-        if (aDuration <= 0) aDuration = 1;
+        if (aDuration < minDuration) aDuration = minDuration;
         this.mMaxProgresstime = aDuration;
         return tiers;
     }
