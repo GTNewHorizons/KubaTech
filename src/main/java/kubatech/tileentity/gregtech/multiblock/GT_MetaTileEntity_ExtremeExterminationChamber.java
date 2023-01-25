@@ -58,7 +58,6 @@ import gregtech.api.gui.modularui.GT_UITextures;
 import gregtech.api.interfaces.ITexture;
 import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
-import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_EnhancedMultiBlockBase;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energy;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_InputBus;
 import gregtech.api.render.TextureFactory;
@@ -69,8 +68,8 @@ import java.util.*;
 import java.util.function.Function;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
-import kubatech.api.helpers.GTHelper;
 import kubatech.api.helpers.ReflectionHelper;
+import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.api.network.CustomTileEntityPacket;
 import kubatech.api.tileentity.CustomTileEntityPacketHandler;
 import kubatech.api.utils.FastRandom;
@@ -104,7 +103,7 @@ import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 
 public class GT_MetaTileEntity_ExtremeExterminationChamber
-        extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_ExtremeExterminationChamber>
+        extends KubaTechGTMultiBlockBase<GT_MetaTileEntity_ExtremeExterminationChamber>
         implements CustomTileEntityPacketHandler {
 
     public static final HashMap<String, MobRecipeLoader.MobRecipe> MobNameToRecipeMap = new HashMap<>();
@@ -211,6 +210,11 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         mGlassTier = aNBT.getByte("mGlassTier");
         mIsProducingInfernalDrops =
                 !aNBT.hasKey("mIsProducingInfernalDrops") || aNBT.getBoolean("mIsProducingInfernalDrops");
+    }
+
+    @Override
+    public boolean isOverclockingInfinite() {
+        return true;
     }
 
     @Override
@@ -465,7 +469,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         boolean isValid = false;
         ItemID id = null;
         int looting = 0;
-        double attackdamage = 0;
+        double attackDamage = 0;
     }
 
     private final WeaponCache weaponCache = new WeaponCache();
@@ -495,7 +499,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             if (getMaxInputVoltage() < recipe.mEUt / 4) return false;
             this.mOutputFluids = new FluidStack[] {FluidRegistry.getFluidStack("xpjuice", 5000)};
             this.mOutputItems = recipe.generateOutputs(rand, this, 3, 0, mIsProducingInfernalDrops);
-            this.mEUt /= 4;
+            this.lEUt /= 4L;
             this.mMaxProgresstime = 400;
         } else {
             if (getMaxInputVoltage() < recipe.mEUt) return false;
@@ -514,7 +518,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 }
                 try {
                     //noinspection unchecked
-                    weaponCache.attackdamage = ((Multimap<String, AttributeModifier>)
+                    weaponCache.attackDamage = ((Multimap<String, AttributeModifier>)
                                     lootingHolder.getAttributeModifiers())
                             .get(SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName()).stream()
                                     .mapToDouble(attr -> attr.getAmount()
@@ -529,12 +533,14 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                         EnchantmentHelper.getEnchantmentLevel(Enchantment.looting.effectId, lootingHolder);
                 weaponCache.id = ItemID.create_NoCopy(lootingHolder, true, true);
             }
-            if (weaponCache.isValid) attackDamage += weaponCache.attackdamage;
+            if (weaponCache.isValid) attackDamage += weaponCache.attackDamage;
 
             this.mOutputItems = recipe.generateOutputs(
                     rand, this, attackDamage, weaponCache.isValid ? weaponCache.looting : 0, mIsProducingInfernalDrops);
             this.mOutputFluids = new FluidStack[] {FluidRegistry.getFluidStack("xpjuice", 120)};
-            int times = GTHelper.calculateOverclockedNessMulti(this, this.mEUt, this.mMaxProgresstime, true);
+            int times = this.calculatePerfectOverclock(
+                    this.lEUt, this.mMaxProgresstime); // GTHelper.calculateOverclockedNessMulti(this, this.lEUt,
+            // this.mMaxProgresstime, true);
             //noinspection ConstantConditions
             if (weaponCache.isValid && lootingHolder.isItemStackDamageable()) {
                 if (EECPlayer == null) EECPlayer = new EECFakePlayer(this);
@@ -551,7 +557,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 EECPlayer.currentWeapon = null;
             }
         }
-        if (this.mEUt > 0) this.mEUt = -this.mEUt;
+        if (this.lEUt > 0) this.lEUt = -this.lEUt;
         this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
         this.mEfficiencyIncrease = 10000;
 
@@ -623,10 +629,10 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         else {
             info.add("Inserted weapon: " + EnumChatFormatting.YELLOW + (weaponCache.isValid ? "Yes" : "No"));
             if (weaponCache.isValid) {
-                info.add("Weapon attack damage: " + EnumChatFormatting.YELLOW + weaponCache.attackdamage);
+                info.add("Weapon attack damage: " + EnumChatFormatting.YELLOW + weaponCache.attackDamage);
                 info.add("Weapon looting level: " + EnumChatFormatting.YELLOW + weaponCache.looting);
                 info.add("Total attack damage: " + EnumChatFormatting.YELLOW
-                        + (DIAMOND_SPIKES_DAMAGE + weaponCache.attackdamage));
+                        + (DIAMOND_SPIKES_DAMAGE + weaponCache.attackDamage));
             } else info.add("Total attack damage: " + EnumChatFormatting.YELLOW + DIAMOND_SPIKES_DAMAGE);
         }
         return info.toArray(new String[0]);

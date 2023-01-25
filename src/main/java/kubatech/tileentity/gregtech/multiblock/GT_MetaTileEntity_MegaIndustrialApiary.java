@@ -58,7 +58,6 @@ import gregtech.api.gui.modularui.GT_UITextures;
 import gregtech.api.interfaces.ITexture;
 import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
-import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_EnhancedMultiBlockBase;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energy;
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
@@ -71,6 +70,7 @@ import java.util.stream.IntStream;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.helpers.GTHelper;
+import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.api.network.CustomTileEntityPacket;
 import kubatech.api.tileentity.CustomTileEntityPacketHandler;
 import kubatech.client.effect.MegaApiaryBeesRenderer;
@@ -85,7 +85,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
 public class GT_MetaTileEntity_MegaIndustrialApiary
-        extends GT_MetaTileEntity_EnhancedMultiBlockBase<GT_MetaTileEntity_MegaIndustrialApiary>
+        extends KubaTechGTMultiBlockBase<GT_MetaTileEntity_MegaIndustrialApiary>
         implements CustomTileEntityPacketHandler, ISurvivalConstructable {
 
     private byte mGlassTier = 0;
@@ -369,7 +369,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
     private void updateMaxSlots() {
         int mOld = mMaxSlots;
-        long v = GTHelper.getMaxInputEU(this);
+        long v = this.getMaxInputEnergy();
         if (v < GT_Values.V[6]) mMaxSlots = 0;
         else if (mSecondaryMode == 0) mMaxSlots = (int) (v / GT_Values.V[6]);
         else mMaxSlots = 1;
@@ -438,7 +438,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             mMaxProgresstime = 10;
             mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
             mEfficiencyIncrease = 10000;
-            mEUt = 0;
+            lEUt = 0;
             return true;
         } else if (mPrimaryMode == 2) {
             if (mMaxSlots > 0 && !mStorage.isEmpty()) {
@@ -483,7 +483,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         stacks.addAll(beeSimulator.getDrops(64_00d * boosted));
                     }
 
-                    this.mEUt = -(int) ((double) GT_Values.V[6] * (double) mMaxSlots * 0.99d);
+                    this.lEUt = -(int) ((double) GT_Values.V[6] * (double) mMaxSlots * 0.99d);
                     this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
                     this.mEfficiencyIncrease = 10000;
                     this.mMaxProgresstime = 100;
