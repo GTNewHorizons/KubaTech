@@ -215,6 +215,11 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     }
 
     @Override
+    protected int getOverclockTimeLimit() {
+        return 20;
+    }
+
+    @Override
     public IStructureDefinition<GT_MetaTileEntity_ExtremeExterminationChamber> getStructureDefinition() {
         return STRUCTURE_DEFINITION;
     }
