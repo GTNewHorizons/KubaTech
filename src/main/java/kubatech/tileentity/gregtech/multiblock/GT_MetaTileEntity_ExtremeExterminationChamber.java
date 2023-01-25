@@ -538,9 +538,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             this.mOutputItems = recipe.generateOutputs(
                     rand, this, attackDamage, weaponCache.isValid ? weaponCache.looting : 0, mIsProducingInfernalDrops);
             this.mOutputFluids = new FluidStack[] {FluidRegistry.getFluidStack("xpjuice", 120)};
-            int times = this.calculatePerfectOverclock(
-                    this.lEUt, this.mMaxProgresstime); // GTHelper.calculateOverclockedNessMulti(this, this.lEUt,
-            // this.mMaxProgresstime, true);
+            int times = this.calculatePerfectOverclock(this.lEUt, this.mMaxProgresstime);
             //noinspection ConstantConditions
             if (weaponCache.isValid && lootingHolder.isItemStackDamageable()) {
                 if (EECPlayer == null) EECPlayer = new EECFakePlayer(this);

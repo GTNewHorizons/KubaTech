@@ -10,7 +10,7 @@ import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 public class GTHelper {
 
     public static long getMaxInputEU(GT_MetaTileEntity_MultiBlockBase mte) {
-        if (mte instanceof KubaTechGTMultiBlockBase) ((KubaTechGTMultiBlockBase<?>) mte).getMaxInputEnergy();
+        if (mte instanceof KubaTechGTMultiBlockBase) return ((KubaTechGTMultiBlockBase<?>) mte).getMaxInputEnergy();
         long rEU = 0;
         for (GT_MetaTileEntity_Hatch_Energy tHatch : mte.mEnergyHatches)
             if (isValidMetaTileEntity(tHatch)) rEU += tHatch.maxEUInput() * tHatch.maxAmperesIn();
