@@ -38,12 +38,10 @@ import com.google.common.collect.Multimap;
 import com.gtnewhorizon.structurelib.alignment.IAlignmentLimits;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
-import com.gtnewhorizons.modularui.api.drawable.IDrawable;
 import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
-import com.gtnewhorizons.modularui.api.widget.Widget;
 import com.gtnewhorizons.modularui.common.widget.*;
 import com.mojang.authlib.GameProfile;
 import cpw.mods.fml.common.eventhandler.EventPriority;
@@ -65,7 +63,6 @@ import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.Function;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.helpers.ReflectionHelper;
@@ -314,11 +311,6 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             };
         }
         return new ITexture[] {Textures.BlockIcons.getCasingTextureForId(CASING_INDEX)};
-    }
-
-    @Override
-    public boolean isCorrectMachinePart(ItemStack aStack) {
-        return true;
     }
 
     @SideOnly(Side.CLIENT)
@@ -641,12 +633,6 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         return true;
     }
 
-    private final Function<Widget, Boolean> isFixed = widget -> getIdealStatus() == getRepairStatus() && mMachine;
-    private static final Function<Integer, IDrawable[]> toggleButtonBackgroundGetter = val -> {
-        if (val == 0) return new IDrawable[] {GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CROSS};
-        else return new IDrawable[] {GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CHECKMARK};
-    };
-
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
         builder.widget(new DrawableWidget()
@@ -656,18 +642,6 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 .setEnabled(widget -> !isFixed.apply(widget)));
         final SlotWidget inventorySlot =
                 new SlotWidget(inventoryHandler, 1).setFilter(stack -> stack.getItem() == poweredSpawnerItem);
-        /*
-        Widget.PosProvider provider = (screenSize, window, parent)->{
-            if(getRepairStatus() == getIdealStatus() && mMachine)
-                return new Pos2d(50, 50);
-            else
-                return new Pos2d(151, 4);
-        };
-        builder.widget(inventorySlot.setPosProvider(provider).setTicker(widget -> {
-            if(!widget.getPos().equals(provider.getPos(null, null, null)))
-                widget.checkNeedsRebuild();
-        }));
-         */
 
         DynamicPositionedColumn configurationElements = new DynamicPositionedColumn();
         addConfigurationWidgets(configurationElements, buildContext, inventorySlot);
@@ -824,21 +798,6 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                         .setDefaultColor(COLOR_TEXT_WHITE.get())
                         .setEnabled(widget -> !mMachine))
                 .widget(new FakeSyncWidget.BooleanSyncer(() -> mMachine, val -> mMachine = val));
-    }
-
-    @Override
-    public int getMaxEfficiency(ItemStack aStack) {
-        return 10000;
-    }
-
-    @Override
-    public int getDamageToComponent(ItemStack aStack) {
-        return 0;
-    }
-
-    @Override
-    public boolean explodesOnComponentBreak(ItemStack aStack) {
-        return false;
     }
 
     private static class EECFakePlayer extends FakePlayer {
