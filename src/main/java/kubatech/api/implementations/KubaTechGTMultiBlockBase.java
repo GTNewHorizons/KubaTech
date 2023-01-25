@@ -83,7 +83,7 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
         aDuration >>= isPerfect ? (durationTiers << 1) : durationTiers;
         int dMulti = tiers - durationTiers;
         if (dMulti > 0) {
-            dMulti++;
+            dMulti = 1 << (isPerfect ? (dMulti << 1) : dMulti);
             // TODO: Use more inputs???
             final ArrayList<ItemStack> stacks = new ArrayList<>(Arrays.asList(this.mOutputItems));
             for (ItemStack mOutputItem : this.mOutputItems) {
