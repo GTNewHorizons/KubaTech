@@ -362,7 +362,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
     private void updateMaxSlots() {
         int mOld = mMaxSlots;
-        long v = this.getMaxInputEnergy();
+        long v = this.getMaxInputEu();
         if (v < GT_Values.V[6]) mMaxSlots = 0;
         else if (mSecondaryMode == 0) mMaxSlots = (int) (v / GT_Values.V[6]);
         else mMaxSlots = 1;

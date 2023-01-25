@@ -8,7 +8,6 @@ import com.gtnewhorizons.modularui.api.widget.Widget;
 import gregtech.api.gui.modularui.GT_UITextures;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_ExtendedPowerMultiBlockBase;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch;
-import gregtech.api.util.GT_ExoticEnergyInputHelper;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.Function;
@@ -101,7 +100,7 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
     }
 
     protected int calculateOverclock(long aEUt, int aDuration, boolean isPerfect) {
-        return calculateOverclock(aEUt, aDuration, getMaxInputEnergy(), isPerfect);
+        return calculateOverclock(aEUt, aDuration, getMaxInputEu(), isPerfect);
     }
 
     protected int calculateOverclock(long aEUt, int aDuration) {
@@ -113,20 +112,11 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
     }
 
     @Override
-    public long getMaxInputVoltage() {
-        return GT_ExoticEnergyInputHelper.getMaxInputVoltageMulti(getExoticAndNormalEnergyHatchList());
-    }
-
-    public long getMaxInputAmps() {
-        return GT_ExoticEnergyInputHelper.getMaxInputAmpsMulti(getExoticAndNormalEnergyHatchList());
-    }
-
-    public long getMaxInputEnergy() {
+    public long getMaxInputEu() {
         long energy = 0L;
         for (GT_MetaTileEntity_Hatch hatch : getExoticAndNormalEnergyHatchList())
             if (isValidMetaTileEntity(hatch))
-                energy += hatch.getBaseMetaTileEntity().getInputVoltage()
-                        * hatch.getBaseMetaTileEntity().getInputAmperage();
+                energy += hatch.getBaseMetaTileEntity().getInputVoltage() * hatch.maxWorkingAmperesIn();
         return energy;
     }
 
