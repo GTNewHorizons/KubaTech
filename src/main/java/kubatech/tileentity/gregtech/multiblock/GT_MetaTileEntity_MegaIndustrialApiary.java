@@ -889,8 +889,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         boolean isValid;
         // boolean isBreadingMode;
         // boolean isInfinite;
-        List<BeeDrop> drops;
-        List<BeeDrop> specialDrops;
+        List<BeeDrop> drops = new ArrayList<>();
+        List<BeeDrop> specialDrops = new ArrayList<>();
         float beeSpeed;
 
         float maxBeeCycles;
@@ -917,8 +917,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             IBeeGenome genome = queen.getGenome();
             this.flowerType = genome.getFlowerProvider().getFlowerType();
             IAlleleBeeSpecies primary = genome.getPrimary();
-            drops = new ArrayList<>();
-            specialDrops = new ArrayList<>();
             beeSpeed = genome.getSpeed() * beeModifier.getProductionModifier(null, 1.f);
             genome.getPrimary()
                     .getProductChances()
