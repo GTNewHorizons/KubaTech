@@ -488,7 +488,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         this.updateSlots();
                         return false;
                     }
-                    calculateOverclock(GT_Values.V[5], 1200);
+                    calculateOverclock(GT_Values.V[5] - 2L, 1200);
+                    if (this.lEUt > 0) this.lEUt = -this.lEUt;
                     this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
                     this.mEfficiencyIncrease = 10000;
                     this.mOutputItems = new ItemStack[] {this.mStorage.get(0).createIgnobleCopy()};
