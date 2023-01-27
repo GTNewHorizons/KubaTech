@@ -149,7 +149,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                     .addElement(
                             'C',
                             buildHatchAdder(GT_MetaTileEntity_ExtremeExterminationChamber.class)
-                                    .atLeast(InputBus, OutputBus, Energy, Maintenance)
+                                    .atLeast(InputBus, OutputBus, OutputHatch, Energy, Maintenance)
                                     .casingIndex(CASING_INDEX)
                                     .dot(1)
                                     .buildAndChain(
