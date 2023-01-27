@@ -7,7 +7,6 @@ import com.gtnewhorizons.modularui.api.drawable.IDrawable;
 import com.gtnewhorizons.modularui.api.widget.Widget;
 import gregtech.api.gui.modularui.GT_UITextures;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_ExtendedPowerMultiBlockBase;
-import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.Function;
@@ -110,15 +109,6 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
 
     protected int calculatePerfectOverclock(long aEUt, int aDuration) {
         return calculateOverclock(aEUt, aDuration, true);
-    }
-
-    @Override
-    public long getMaxInputEu() {
-        long energy = 0L;
-        for (GT_MetaTileEntity_Hatch hatch : getExoticAndNormalEnergyHatchList())
-            if (isValidMetaTileEntity(hatch))
-                energy += hatch.getBaseMetaTileEntity().getInputVoltage() * hatch.maxWorkingAmperesIn();
-        return energy;
     }
 
     @Override
