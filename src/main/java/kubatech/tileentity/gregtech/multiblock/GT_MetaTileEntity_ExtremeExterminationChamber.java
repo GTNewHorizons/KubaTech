@@ -479,8 +479,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                     ex.printStackTrace();
                 }
                 weaponCache.isValid = true;
-                weaponCache.looting = Math.min(4, EnchantmentHelper
-                        .getEnchantmentLevel(Enchantment.looting.effectId, lootingHolder));
+                weaponCache.looting = Math
+                        .min(4, EnchantmentHelper.getEnchantmentLevel(Enchantment.looting.effectId, lootingHolder));
                 weaponCache.id = ItemID.create_NoCopy(lootingHolder, true, true);
             }
             if (weaponCache.isValid) attackDamage += weaponCache.attackDamage;
