@@ -646,9 +646,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             }
             beesContainer.widget(row.setPos(0, i * 18).setEnabled(widget -> {
                 int y = widget.getPos().y;
-                int cy = beesContainer.getVerticalScrollOffset();
                 int ch = beesContainer.getVisibleHeight();
-                return y >= cy - ch && y <= cy + ch;
+                return y < ch;
             }));
         }
         beesContainer.attachSyncer(
