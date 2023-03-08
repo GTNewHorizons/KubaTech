@@ -244,8 +244,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                         "1x ULV " + StatCollector.translateToLocal("GT5U.MBTT.InputBus"),
                         "Any bottom casing",
                         1)
-                .addOutputHatch("Any bottom casing", 1).addEnergyHatch("Any bottom casing", 1).addMaintenanceHatch("Any bottom casing", 1)
-                .toolTipFinisher(Tags.MODNAME);
+                .addOutputHatch("Any bottom casing", 1).addEnergyHatch("Any bottom casing", 1)
+                .addMaintenanceHatch("Any bottom casing", 1).toolTipFinisher(Tags.MODNAME);
         return tt;
     }
 
