@@ -239,12 +239,12 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 .addOtherStructurePart("Borosilicate Glass", "All walls without corners")
                 .addStructureInfo("The glass tier limits the Energy Input tier")
                 .addOtherStructurePart("Steel Frame Box", "All vertical corners (except top and bottom)")
-                .addOtherStructurePart("Diamond spikes", "Inside second layer").addOutputBus("Any casing", 1)
+                .addOtherStructurePart("Diamond spikes", "Inside second layer").addOutputBus("Any bottom casing", 1)
                 .addOtherStructurePart(
                         "1x ULV " + StatCollector.translateToLocal("GT5U.MBTT.InputBus"),
-                        "Any casing",
+                        "Any bottom casing",
                         1)
-                .addOutputHatch("Any casing", 1).addEnergyHatch("Any casing", 1).addMaintenanceHatch("Any casing", 1)
+                .addOutputHatch("Any bottom casing", 1).addEnergyHatch("Any bottom casing", 1).addMaintenanceHatch("Any bottom casing", 1)
                 .toolTipFinisher(Tags.MODNAME);
         return tt;
     }
