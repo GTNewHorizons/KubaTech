@@ -47,8 +47,8 @@ public class KubaBlock extends Block {
             .of().container((player, world, x, y, z) -> {
                 TileEntity te = world.getTileEntity(x, y, z);
                 if (te instanceof ITileWithModularUI) {
-                    UIBuildContext buildContext = new UIBuildContext(player);
-                    ModularWindow window = ((ITileWithModularUI) te).createWindow(buildContext);
+                    final UIBuildContext buildContext = new UIBuildContext(player);
+                    final ModularWindow window = ((ITileWithModularUI) te).createWindow(buildContext);
                     return containerConstructor
                             .createUIContainer(new ModularUIContext(buildContext, te::markDirty), window);
                 }
@@ -57,8 +57,8 @@ public class KubaBlock extends Block {
                 if (!world.isRemote) return null;
                 TileEntity te = world.getTileEntity(x, y, z);
                 if (te instanceof ITileWithModularUI) {
-                    UIBuildContext buildContext = new UIBuildContext(player);
-                    ModularWindow window = ((ITileWithModularUI) te).createWindow(buildContext);
+                    final UIBuildContext buildContext = new UIBuildContext(player);
+                    final ModularWindow window = ((ITileWithModularUI) te).createWindow(buildContext);
                     return new ModularGui(
                             containerConstructor.createUIContainer(new ModularUIContext(buildContext, null), window));
                 }
