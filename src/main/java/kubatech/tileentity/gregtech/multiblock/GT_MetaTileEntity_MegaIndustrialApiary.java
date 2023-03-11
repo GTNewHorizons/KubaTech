@@ -788,9 +788,19 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         }).setSize(18, 18));
             }
             beesContainer.widget(
-                    row.setPos(0, i * 18).setEnabled(widget -> widget.getPos().y < beesContainer.getVisibleHeight()));
+                    row.setPos(
+                            0,
+                            i * 18)/* .setEnabled(widget -> widget.getPos().y < beesContainer.getVisibleHeight() */);
         }
         beesContainer.setPos(10, 16).setSize(128, 60);
+
+        for (Widget widget : beesContainer.getChildren()) {
+            widget.setEnabled(
+                    !(widget.getPos().x > beesContainer.getSize().width
+                            || widget.getPos().x + widget.getSize().width < 0
+                            || widget.getPos().y > beesContainer.getSize().height
+                            || widget.getPos().y + widget.getSize().height < 0));
+        }
         return beesContainer;
     }
 
