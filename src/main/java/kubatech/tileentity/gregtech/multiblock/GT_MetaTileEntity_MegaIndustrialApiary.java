@@ -599,6 +599,10 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             if (mte == null) return super.transferStackInSlot(aPlayer, aSlotIndex);
             if (mte.mStorage.size() >= mte.mMaxSlots) return super.transferStackInSlot(aPlayer, aSlotIndex);
             if (beeRoot.getType(aStack) == EnumBeeType.QUEEN) {
+                if (mte.mMaxProgresstime > 0) {
+                    GT_Utility.sendChatToPlayer(aPlayer, EnumChatFormatting.RED + "Can't insert while running !");
+                    return super.transferStackInSlot(aPlayer, aSlotIndex);
+                }
                 World w = mte.getBaseMetaTileEntity().getWorld();
                 float t = (float) GTHelper.getVoltageTierD(mte);
                 BeeSimulator bs = new BeeSimulator(aStack, w, t);
@@ -606,6 +610,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     mte.mStorage.add(bs);
                     s.putStack(null);
                     detectAndSendChanges();
+                    mte.isCacheDirty = true;
                     return null;
                 }
             }
