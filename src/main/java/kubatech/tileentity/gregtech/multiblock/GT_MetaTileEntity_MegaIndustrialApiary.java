@@ -667,17 +667,13 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         builder.widget(beesContainer.attachSyncer(new FakeSyncWidget.IntegerSyncer(() -> {
             if (lastMaxSlots.get() != mMaxSlots) {
                 lastMaxSlots.set(mMaxSlots);
-                // No way to trigger server rebuild without syncing
-                beesContainer.notifyChangeServer();
+                beesContainer.notifyChangeNoSync();
             }
             return mMaxSlots;
         }, i -> {
             if (mMaxSlots != i) {
                 mMaxSlots = i;
-                try { // We have to trigger rebuild because we will receive integer sync after server container rebuild
-                      // sync
-                    beesContainer.readOnClient(0, null);
-                } catch (IOException ignored) {}
+                beesContainer.notifyChangeNoSync();
             }
         }), builder).attachSyncer(
                 new FakeSyncWidget.ListSyncer<>(
@@ -795,8 +791,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     row.setPos(0, i * 18).setEnabled(widget -> widget.getPos().y < beesContainer.getVisibleHeight()));
         }
         beesContainer.setPos(10, 16).setSize(128, 60);
-        // TODO: Implement a fix in ModularUI !
-        beesContainer.initChildren();
         return beesContainer;
     }
 
