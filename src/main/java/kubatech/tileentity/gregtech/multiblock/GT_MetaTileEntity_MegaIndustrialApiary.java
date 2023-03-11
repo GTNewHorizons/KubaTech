@@ -795,11 +795,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         beesContainer.setPos(10, 16).setSize(128, 60);
 
         for (Widget widget : beesContainer.getChildren()) {
-            widget.setEnabled(
-                    !(widget.getPos().x > beesContainer.getSize().width
-                            || widget.getPos().x + widget.getSize().width < 0
-                            || widget.getPos().y > beesContainer.getSize().height
-                            || widget.getPos().y + widget.getSize().height < 0));
+            widget.setEnabled(widget.getPos().y < beesContainer.getSize().height);
         }
         return beesContainer;
     }
