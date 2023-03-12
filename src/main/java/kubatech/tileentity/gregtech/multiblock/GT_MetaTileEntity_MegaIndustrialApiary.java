@@ -14,7 +14,6 @@ import static com.gtnewhorizon.structurelib.structure.StructureUtility.*;
 import static forestry.api.apiculture.BeeManager.beeRoot;
 import static gregtech.api.enums.GT_HatchElement.*;
 import static gregtech.api.enums.Textures.BlockIcons.*;
-import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_DISTILLATION_TOWER_GLOW;
 import static gregtech.api.util.GT_StructureUtility.buildHatchAdder;
 import static kubatech.api.Variables.*;
 
@@ -259,7 +258,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .addInfo("  - Consumes 100 royal jelly per operation").addInfo("  - Base processing time: 1 minute")
                 .addInfo("  - Uses 1 amp " + voltageFormatted(5)).addInfo("  - Can overclock")
                 .addInfo(StructureHologram).addSeparator().beginStructureBlock(15, 17, 15, false)
-                .addController("Front Bottom Center").addCasingInfo("Bronze Plated Bricks", 190)
+                .addController("Front Bottom Center").addCasingInfoMin("Bronze Plated Bricks", 190, false)
                 .addOtherStructurePart("Borosilicate Glass", "Look at the hologram")
                 .addStructureInfo("The glass tier limits the Energy Input tier")
                 .addOtherStructurePart("Flowers", "On dirt/grass", 2).addInputBus("Any casing", 1)
@@ -447,7 +446,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     this.mEfficiencyIncrease = 10000;
                     this.mMaxProgresstime = 100;
                     this.mOutputItems = stacks.toArray(new ItemStack[0]);
-                    return true;
                 } else {
                     if (!depleteInput(PluginApiculture.items.royalJelly.getItemStack(64))
                             || !depleteInput(PluginApiculture.items.royalJelly.getItemStack(36))) {
@@ -460,8 +458,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     this.mEfficiencyIncrease = 10000;
                     this.mOutputItems = new ItemStack[] { this.mStorage.get(0).createIgnobleCopy() };
                     this.updateSlots();
-                    return true;
                 }
+                return true;
             }
         }
 
@@ -579,7 +577,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
     private static class KT_ModulaUIContainer_MegaIndustrialApiary extends ModularUIContainer {
 
-        WeakReference<GT_MetaTileEntity_MegaIndustrialApiary> parent;
+        final WeakReference<GT_MetaTileEntity_MegaIndustrialApiary> parent;
 
         public KT_ModulaUIContainer_MegaIndustrialApiary(ModularUIContext context, ModularWindow mainWindow,
                 GT_MetaTileEntity_MegaIndustrialApiary mte) {
@@ -953,10 +951,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
     private static class BeeSimulator {
 
-        ItemStack queenStack;
+        final ItemStack queenStack;
         boolean isValid;
-        // boolean isBreadingMode;
-        // boolean isInfinite;
         List<BeeDrop> drops = new ArrayList<>();
         List<BeeDrop> specialDrops = new ArrayList<>();
         float beeSpeed;
@@ -1028,7 +1024,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             return tag;
         }
 
-        HashMap<BeeDrop, Double> dropProgress = new HashMap<>();
+        final HashMap<BeeDrop, Double> dropProgress = new HashMap<>();
 
         public List<ItemStack> getDrops(final double timePassed) {
             drops.forEach(d -> dropProgress.merge(d, d.getAmount(timePassed / 550d), Double::sum));
@@ -1059,12 +1055,12 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
         private static class BeeDrop {
 
-            ItemStack stack;
+            final ItemStack stack;
             double amount;
-            GT_Utility.ItemId id;
+            final GT_Utility.ItemId id;
 
-            float chance;
-            float beeSpeed;
+            final float chance;
+            final float beeSpeed;
             float t;
 
             public BeeDrop(ItemStack stack, float chance, float beeSpeed, float t) {

@@ -100,7 +100,7 @@ public class KubaBlock extends Block {
         return getBlock(meta) instanceof IProxyTileEntityProvider;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void getSubBlocks(Item p_149666_1_, CreativeTabs p_149666_2_, List p_149666_3_) {
         for (int i = 0; i < blocks.size(); i++) p_149666_3_.add(new ItemStack(p_149666_1_, 1, i));
