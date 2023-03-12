@@ -785,16 +785,9 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                                     .singletonList(EnumChatFormatting.GRAY + "Click with queen in mouse to insert");
                         }).setSize(18, 18));
             }
-            beesContainer.widget(
-                    row.setPos(
-                            0,
-                            i * 18)/* .setEnabled(widget -> widget.getPos().y < beesContainer.getVisibleHeight() */);
+            beesContainer.widget(row.setPos(0, i * 18));
         }
         beesContainer.setPos(10, 16).setSize(128, 60);
-
-        for (Widget widget : beesContainer.getChildren()) {
-            widget.setEnabled(widget.getPos().y < beesContainer.getSize().height);
-        }
         return beesContainer;
     }
 
