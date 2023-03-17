@@ -14,7 +14,6 @@ import static kubatech.loaders.BlockLoader.registerBlocks;
 import static kubatech.loaders.ItemLoader.registerItems;
 
 import kubatech.api.LoaderReference;
-import kubatech.api.utils.ModUtils;
 import kubatech.commands.*;
 import kubatech.config.Config;
 import kubatech.loaders.MTLoader;
@@ -70,6 +69,5 @@ public class CommonProxy {
 
     public void loadComplete(FMLLoadCompleteEvent event) {
         MobRecipeLoader.generateMobRecipeMap();
-        if (!ModUtils.isClientSided) MobRecipeLoader.processMobRecipeMap();
     }
 }
