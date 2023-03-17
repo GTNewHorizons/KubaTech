@@ -28,6 +28,7 @@ import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.helpers.EnderIOHelper;
 import kubatech.api.helpers.InfernalHelper;
+import kubatech.api.helpers.ProgressBarWrapper;
 import kubatech.api.mobhandler.MobDrop;
 import kubatech.api.network.LoadConfigPacket;
 import kubatech.api.utils.GSONUtils;
@@ -72,7 +73,6 @@ import atomicstryker.infernalmobs.common.mods.api.ModifierLoader;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 
-import cpw.mods.fml.common.ProgressManager;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import gregtech.api.util.GT_Utility;
@@ -559,14 +559,6 @@ public class MobRecipeLoader {
         Map<String, ArrayList<MobDrop>> moblist;
     }
 
-    private static void showProgress(float progress) {
-        if (!isClientSided) return;
-        if (!LoaderReference.BetterLoadingScreen) return;
-        // try {
-        // ProgressDisplayer.displayProgress("KubaTech: Generating Mob Recipe Map", progress);
-        // } catch (Exception ignored) {}
-    }
-
     @SuppressWarnings({ "unchecked", "UnstableApiUsage" })
     public static void generateMobRecipeMap() {
 
@@ -617,13 +609,10 @@ public class MobRecipeLoader {
                 MobRecipeLoaderCacheStructure s = gson.fromJson(reader, MobRecipeLoaderCacheStructure.class);
                 if (Config.MobHandler.regenerationTrigger == Config.MobHandler._CacheRegenerationTrigger.Never
                         || s.version.equals(modlistversion)) {
-                    ProgressManager.ProgressBar bar = ProgressManager
-                            .push("KubaTech: Parsing Cached Mob Recipe Map", s.moblist.size());
-                    // float progress = 0, progressMax = (float) s.moblist.size();
+                    ProgressBarWrapper bar = new ProgressBarWrapper("Parsing cached mob recipe map", s.moblist.size());
                     for (Map.Entry<String, ArrayList<MobDrop>> entry : s.moblist.entrySet()) {
                         bar.step(entry.getKey());
                         try {
-                            Thread.sleep(1000);
                             EntityLiving e;
                             String mobName = entry.getKey();
                             if (mobName.equals("witherSkeleton")
@@ -639,7 +628,7 @@ public class MobRecipeLoader {
                                     new GeneralMappedMob(e, MobRecipe.generateMobRecipe(e, mobName, drops), drops));
                         } catch (Exception ignored) {}
                     }
-                    ProgressManager.pop(bar);
+                    bar.end();
                     LOG.info("Parsed cached map, skipping generation");
                     return;
                 } else {
@@ -694,16 +683,10 @@ public class MobRecipeLoader {
         Map<String, Class<? extends Entity>> stringToClassMapping = (Map<String, Class<? extends Entity>>) EntityList.stringToClassMapping;
         boolean registeringWitherSkeleton = !stringToClassMapping.containsKey("witherSkeleton");
         if (registeringWitherSkeleton) stringToClassMapping.put("witherSkeleton", EntitySkeleton.class);
-        ProgressManager.ProgressBar bar = ProgressManager
-                .push("KubaTech: Parsing Cached Mob Recipe Map", stringToClassMapping.size());
+        ProgressBarWrapper bar = new ProgressBarWrapper("Generating Mob Recipe Map", stringToClassMapping.size());
         stringToClassMapping.forEach((k, v) -> {
             bar.step(k);
             if (v == null) return;
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
 
             if (Modifier.isAbstract(v.getModifiers())) {
                 LOG.info("Entity " + k + " is abstract, skipping");
@@ -1111,7 +1094,7 @@ public class MobRecipeLoader {
 
         LOG.info("Recipe map generated ! It took " + time + "ms");
 
-        ProgressManager.pop(bar);
+        bar.end();
 
         isInGenerationProcess = false;
 
