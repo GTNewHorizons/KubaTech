@@ -59,14 +59,13 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
-import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.common.MinecraftForge;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import stanhebben.zenscript.value.IntRange;
 import thaumcraft.common.items.wands.ItemWandCasting;
+import alexiil.mods.load.ProgressDisplayer;
 import atomicstryker.infernalmobs.common.InfernalMobsCore;
 import atomicstryker.infernalmobs.common.MobModifier;
 import atomicstryker.infernalmobs.common.mods.api.ModifierLoader;
@@ -74,7 +73,6 @@ import atomicstryker.infernalmobs.common.mods.api.ModifierLoader;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import gregtech.api.util.GT_Utility;
@@ -83,15 +81,6 @@ import gregtech.common.GT_DummyWorld;
 public class MobRecipeLoader {
 
     private static final Logger LOG = LogManager.getLogger(Tags.MODID + "[Mob Recipe Loader]");
-
-    public static final MobRecipeLoader instance = new MobRecipeLoader();
-
-    @SuppressWarnings("unused")
-    @SubscribeEvent
-    public void onOpenGui(GuiOpenEvent event) {
-        MobRecipeLoader.generateMobRecipeMap();
-        MinecraftForge.EVENT_BUS.unregister(instance);
-    }
 
     private static final String dropFewItemsName = isDeobfuscatedEnvironment ? "dropFewItems" : "func_70628_a";
     private static final String dropRareDropName = isDeobfuscatedEnvironment ? "dropRareDrop" : "func_70600_l";
@@ -570,12 +559,22 @@ public class MobRecipeLoader {
         Map<String, ArrayList<MobDrop>> moblist;
     }
 
+    private static void showProgress(float progress) {
+        if (!isClientSided) return;
+        if (!LoaderReference.BetterLoadingScreen) return;
+        try {
+            ProgressDisplayer.displayProgress("KubaTech: Generating Mob Recipe Map", progress);
+        } catch (Exception ignored) {}
+    }
+
     @SuppressWarnings({ "unchecked", "UnstableApiUsage" })
     public static void generateMobRecipeMap() {
 
         if (alreadyGenerated) return;
         alreadyGenerated = true;
         if (!Config.MobHandler.mobHandlerEnabled) return;
+
+        showProgress(0.f);
 
         World f = new GT_DummyWorld() {
 
@@ -620,6 +619,7 @@ public class MobRecipeLoader {
                 MobRecipeLoaderCacheStructure s = gson.fromJson(reader, MobRecipeLoaderCacheStructure.class);
                 if (Config.MobHandler.regenerationTrigger == Config.MobHandler._CacheRegenerationTrigger.Never
                         || s.version.equals(modlistversion)) {
+                    float progress = 0, progressMax = (float) s.moblist.size();
                     for (Map.Entry<String, ArrayList<MobDrop>> entry : s.moblist.entrySet()) {
                         try {
                             EntityLiving e;
@@ -636,6 +636,8 @@ public class MobRecipeLoader {
                                     mobName,
                                     new GeneralMappedMob(e, MobRecipe.generateMobRecipe(e, mobName, drops), drops));
                         } catch (Exception ignored) {}
+                        progress++;
+                        showProgress(progress / progressMax);
                     }
                     LOG.info("Parsed cached map, skipping generation");
                     return;
@@ -691,7 +693,8 @@ public class MobRecipeLoader {
         Map<String, Class<? extends Entity>> stringToClassMapping = (Map<String, Class<? extends Entity>>) EntityList.stringToClassMapping;
         boolean registeringWitherSkeleton = !stringToClassMapping.containsKey("witherSkeleton");
         if (registeringWitherSkeleton) stringToClassMapping.put("witherSkeleton", EntitySkeleton.class);
-
+        final float[] progress = { 0.f };
+        float progressMax = (float) stringToClassMapping.size();
         stringToClassMapping.forEach((k, v) -> {
             if (v == null) return;
 
@@ -727,9 +730,12 @@ public class MobRecipeLoader {
                 return;
             }
 
-            e.captureDrops = true;
-
             // POWERFULL GENERATION
+
+            showProgress(progress[0] / progressMax);
+            progress[0]++;
+
+            e.captureDrops = true;
 
             if (e instanceof EntitySlime) try {
                 setSlimeSize.invoke(e, 1);
