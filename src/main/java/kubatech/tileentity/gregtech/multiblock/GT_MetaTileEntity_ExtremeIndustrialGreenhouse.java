@@ -57,6 +57,7 @@ import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.IDrawable;
 import com.gtnewhorizons.modularui.api.drawable.ItemDrawable;
 import com.gtnewhorizons.modularui.api.drawable.Text;
+import com.gtnewhorizons.modularui.api.math.Alignment;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.math.Pos2d;
 import com.gtnewhorizons.modularui.api.screen.ModularUIContext;
@@ -670,10 +671,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 final int finalJ = j;
                 final int ID = finalI + finalJ;
                 row.widget(new ButtonWidget().setOnClick((clickData, widget) -> {
-                    if (!(player instanceof EntityPlayerMP)) {
-
-                        return;
-                    }
+                    if (!(player instanceof EntityPlayerMP)) return;
                     if (!clickData.shift) {
                         ItemStack input = player.inventory.getItemStack();
                         if (input != null) {
@@ -726,11 +724,12 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 }).setBackground(
                         () -> new IDrawable[] { getBaseMetaTileEntity().getGUITextureSet().getItemSlot(),
                                 new ItemDrawable(drawables.size() > ID ? drawables.get(ID) : null)
-                                        .withFixedSize(16, 16, 1, 1) })
+                                        .withFixedSize(16, 16, 1, 1),
+                                new Text(drawables.size() > ID ? String.valueOf(drawables.get(ID).stackSize) : "")
+                                        .color(Color.WHITE.normal).shadow().alignment(Alignment.BottomRight) })
                         .dynamicTooltip(() -> {
                             if (drawables.size() > ID) return Arrays.asList(
                                     drawables.get(ID).getDisplayName(),
-                                    "Amount: " + drawables.get(ID).stackSize,
                                     EnumChatFormatting.GRAY + "Left click to eject into input bus",
                                     EnumChatFormatting.GRAY + "Right click to get into mouse",
                                     EnumChatFormatting.GRAY + "Shift click to get into inventory",
