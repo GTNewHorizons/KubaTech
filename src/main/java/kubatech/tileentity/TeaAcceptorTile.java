@@ -10,15 +10,16 @@
 
 package kubatech.tileentity;
 
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.UUID;
 import java.util.function.BiFunction;
 
 import kubatech.api.enums.ItemList;
+import kubatech.api.tea.TeaNetwork;
 import kubatech.api.utils.StringUtils;
 import kubatech.loaders.ItemLoader;
 import kubatech.loaders.block.KubaBlock;
-import kubatech.savedata.PlayerData;
-import kubatech.savedata.PlayerDataManager;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
@@ -26,6 +27,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
+
+import codechicken.nei.NEIClientUtils;
 
 import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.Text;
@@ -45,16 +48,16 @@ public class TeaAcceptorTile extends TileEntity
         super();
     }
 
-    private String tileOwner = null;
-    private PlayerData playerData = null;
+    private UUID tileOwner = null;
+    private TeaNetwork teaNetwork = null;
     private long averageInput = 0L;
     private long inAmount = 0L;
     private int ticker = 0;
 
-    public void setTeaOwner(String teaOwner) {
-        if (tileOwner == null || tileOwner.isEmpty()) {
+    public void setTeaOwner(UUID teaOwner) {
+        if (tileOwner == null) {
             tileOwner = teaOwner;
-            playerData = PlayerDataManager.getPlayer(tileOwner);
+            teaNetwork = TeaNetwork.getNetwork(tileOwner);
             markDirty();
         }
     }
@@ -62,20 +65,21 @@ public class TeaAcceptorTile extends TileEntity
     @Override
     public void readFromNBT(NBTTagCompound NBTData) {
         super.readFromNBT(NBTData);
-        tileOwner = NBTData.getString("tileOwner");
-        if (!tileOwner.isEmpty()) {
-            playerData = PlayerDataManager.getPlayer(tileOwner);
-        }
+        try {
+            tileOwner = UUID.fromString(NBTData.getString("tileOwner"));
+            teaNetwork = TeaNetwork.getNetwork(tileOwner);
+        } catch (Exception ignored) {}
     }
 
     @Override
     public void writeToNBT(NBTTagCompound NBTData) {
         super.writeToNBT(NBTData);
-        NBTData.setString("tileOwner", tileOwner);
+        NBTData.setString("tileOwner", tileOwner.toString());
     }
 
     @Override
     public void updateEntity() {
+        if (this.worldObj.isRemote) return;
         if (++ticker % 100 == 0) {
             averageInput = inAmount / 100;
             inAmount = 0;
@@ -104,10 +108,9 @@ public class TeaAcceptorTile extends TileEntity
 
     @Override
     public void setInventorySlotContents(int p_70299_1_, ItemStack p_70299_2_) {
-        if (playerData != null) {
-            playerData.teaAmount += p_70299_2_.stackSize;
-            playerData.markDirty();
+        if (teaNetwork != null) {
             inAmount += p_70299_2_.stackSize;
+            teaNetwork.addTea(p_70299_2_.stackSize);
         }
     }
 
@@ -128,7 +131,7 @@ public class TeaAcceptorTile extends TileEntity
 
     @Override
     public boolean isUseableByPlayer(EntityPlayer p_70300_1_) {
-        return p_70300_1_.getCommandSenderName().equals(tileOwner);
+        return p_70300_1_.getPersistentID().equals(tileOwner);
     }
 
     @Override
@@ -161,12 +164,14 @@ public class TeaAcceptorTile extends TileEntity
             TextWidget widget, Integer y) -> (Widget.PosProvider) (screenSize, window,
                     parent) -> new Pos2d((window.getSize().width / 2) - (widget.getSize().width / 2), y);
 
+    private static final NumberFormat numberFormatScientific = new DecimalFormat("0.00E0");
+    private static final NumberFormat numberFormat = NumberFormat.getInstance();
+
     @Override
     public ModularWindow createWindow(UIBuildContext buildContext) {
         ModularWindow.Builder builder = ModularWindow.builder(170, 70);
         builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
         EntityPlayer player = buildContext.getPlayer();
-
         builder.widgets(
                 posCenteredHorizontally(
                         10,
@@ -174,19 +179,20 @@ public class TeaAcceptorTile extends TileEntity
                                 new Text("Tea Acceptor").format(EnumChatFormatting.BOLD)
                                         .format(EnumChatFormatting.DARK_RED))),
                 posCenteredHorizontally(30, new DynamicTextWidget(() -> {
-                    if (player.getCommandSenderName().equals(tileOwner))
-                        return new Text("[Tea]").color(Color.GREEN.normal);
+                    if (player.getPersistentID().equals(tileOwner)) return new Text("[Tea]").color(Color.GREEN.normal);
                     else return new Text("This is not your block").color(Color.RED.normal);
                 })),
                 posCenteredHorizontally(
                         40,
                         new DynamicTextWidget(
                                 () -> new Text(
-                                        (playerData == null ? "ERROR"
+                                        (teaNetwork == null ? "ERROR"
                                                 : StringUtils.applyRainbow(
-                                                        NumberFormat.getInstance().format(playerData.teaAmount),
-                                                        (int) ((playerData.teaAmount / Math.max(1, averageInput * 10))
-                                                                % Integer.MAX_VALUE),
+                                                        NEIClientUtils.shiftKey()
+                                                                ? numberFormat.format(teaNetwork.teaAmount)
+                                                                : numberFormatScientific.format(teaNetwork.teaAmount),
+                                                        (int) ((teaNetwork.teaAmount.longValue()
+                                                                / Math.max(1, averageInput * 10)) % Integer.MAX_VALUE),
                                                         EnumChatFormatting.BOLD.toString()))).shadow())),
                 posCenteredHorizontally(
                         50,

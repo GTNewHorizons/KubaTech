@@ -10,24 +10,23 @@
 
 package kubatech.savedata;
 
+import kubatech.api.tea.TeaNetwork;
+
 import net.minecraft.nbt.NBTTagCompound;
 
 public class PlayerData {
 
-    public long teaAmount = 0L;
-    public boolean autoRegen = false;
+    public TeaNetwork teaNetwork;
 
     PlayerData(NBTTagCompound NBTData) {
-        teaAmount = NBTData.getLong("teaAmount");
-        autoRegen = NBTData.getBoolean("autoRegen");
+        if (NBTData.hasKey("teaNetwork")) teaNetwork = TeaNetwork.fromNBT(NBTData.getCompoundTag("teaNetwork"));
     }
 
     PlayerData() {}
 
     public NBTTagCompound toNBTData() {
         NBTTagCompound NBTData = new NBTTagCompound();
-        NBTData.setLong("teaAmount", teaAmount);
-        NBTData.setBoolean("autoRegen", autoRegen);
+        if (teaNetwork != null) NBTData.setTag("teaNetwork", teaNetwork.toNBT());
         return NBTData;
     }
 

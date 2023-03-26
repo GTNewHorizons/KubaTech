@@ -12,6 +12,7 @@ package kubatech.savedata;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
@@ -24,7 +25,7 @@ public class PlayerDataManager extends WorldSavedData {
 
     private static final String playerDataName = "KubaTech_PlayerData";
     static PlayerDataManager Instance = null;
-    private final HashMap<String, PlayerData> players = new HashMap<>();
+    private final HashMap<UUID, PlayerData> players = new HashMap<>();
 
     public static void Initialize(World world) {
         if (Instance != null) {
@@ -53,7 +54,10 @@ public class PlayerDataManager extends WorldSavedData {
         players.clear();
         for (int i = 0, imax = NBTData.getInteger("size"); i < imax; i++) {
             NBTTagCompound playerNBTData = NBTData.getCompoundTag("Player." + i);
-            players.put(playerNBTData.getString("username"), new PlayerData(playerNBTData.getCompoundTag("data")));
+            if (!playerNBTData.hasKey("uuid")) continue;
+            players.put(
+                    UUID.fromString(playerNBTData.getString("uuid")),
+                    new PlayerData(playerNBTData.getCompoundTag("data")));
         }
     }
 
@@ -61,17 +65,17 @@ public class PlayerDataManager extends WorldSavedData {
     public void writeToNBT(NBTTagCompound NBTData) {
         NBTData.setInteger("size", players.size());
         int i = 0;
-        for (Map.Entry<String, PlayerData> playerDataEntry : players.entrySet()) {
+        for (Map.Entry<UUID, PlayerData> playerDataEntry : players.entrySet()) {
             NBTTagCompound playerNBTData = new NBTTagCompound();
-            playerNBTData.setString("username", playerDataEntry.getKey());
+            playerNBTData.setString("uuid", playerDataEntry.getKey().toString());
             playerNBTData.setTag("data", playerDataEntry.getValue().toNBTData());
             NBTData.setTag("Player." + (i++), playerNBTData);
         }
     }
 
-    public static PlayerData getPlayer(String username) {
-        if (Instance == null) return null;
-        return Instance.players.computeIfAbsent(username, s -> new PlayerData());
+    public static PlayerData getPlayer(UUID player) {
+        if (Instance == null) return null; // probably client side
+        return Instance.players.computeIfAbsent(player, s -> new PlayerData());
     }
 
     @SuppressWarnings("unused")
