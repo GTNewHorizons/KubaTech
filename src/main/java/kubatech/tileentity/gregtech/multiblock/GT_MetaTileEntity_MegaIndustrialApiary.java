@@ -193,7 +193,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     private final HashSet<String> flowersCheck = new HashSet<>();
     private boolean flowersError = false;
     private boolean needsTVarUpdate = false;
-    private int megaApiaryStorageVersion = 0;
+    private int megaApiaryStorageVersion = 1;
 
     private void flowerCheck(final World world, final int x, final int y, final int z) {
         if (!flowersCheck.isEmpty() && !world.isAirBlock(x, y, z))
@@ -1077,7 +1077,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             }
 
             public void evaluate() {
-                this.amount = Bee.getFinalChance(chance, beeSpeed, 2.f, t);
+                this.amount = Bee.getFinalChance(chance, beeSpeed, 17.19926784f, t);
             }
 
             public double getAmount(double speedModifier) {
