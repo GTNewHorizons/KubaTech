@@ -97,7 +97,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     private static final String STRUCTURE_PIECE_MAIN = "main";
     private static final String STRUCTURE_PIECE_MAIN_SURVIVAL = "mainsurvival";
     private static final int CONFIGURATION_WINDOW_ID = 999;
-    private static final int MEGA_APIARY_STORAGE_VERSION = 1;
+    private static final int MEGA_APIARY_STORAGE_VERSION = 2;
 
     private static final String[][] struct = transpose(
             new String[][] { // spotless:off
@@ -193,7 +193,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     private final HashSet<String> flowersCheck = new HashSet<>();
     private boolean flowersError = false;
     private boolean needsTVarUpdate = false;
-    private int megaApiaryStorageVersion = 1;
+    private int megaApiaryStorageVersion = 0;
 
     private void flowerCheck(final World world, final int x, final int y, final int z) {
         if (!flowersCheck.isEmpty() && !world.isAirBlock(x, y, z))
