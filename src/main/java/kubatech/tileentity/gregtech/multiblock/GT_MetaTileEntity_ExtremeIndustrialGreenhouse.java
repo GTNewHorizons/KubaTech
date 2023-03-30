@@ -385,7 +385,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
             this.updateSlots();
             this.mMaxProgresstime = 5;
-            this.mEUt = 0;
+            this.lEUt = 0;
             this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
             this.mEfficiencyIncrease = 10000;
             return true;
@@ -478,7 +478,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             }
             this.mOutputItems = outputs.toArray(new ItemStack[0]);
         }
-        this.mEUt = -(int) ((double) GT_Values.V[tier] * 0.99d);
+        this.lEUt = -(int) ((double) GT_Values.V[tier] * 0.99d);
         this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
         this.mEfficiencyIncrease = 10000;
         this.updateSlots();
