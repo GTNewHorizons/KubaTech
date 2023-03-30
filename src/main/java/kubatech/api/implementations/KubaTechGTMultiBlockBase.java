@@ -170,7 +170,7 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
     }
 
     public double getVoltageTierExact() {
-        return Math.log((double) getMaxInputEu() / 8L) / ln4;
+        return Math.log((double) getMaxInputEu() / 8d) / ln4 + 1e-8d;
     }
 
     @Override
