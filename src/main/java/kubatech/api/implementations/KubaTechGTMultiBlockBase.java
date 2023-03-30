@@ -30,6 +30,9 @@ import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_ExtendedPow
 public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_ExtendedPowerMultiBlockBase<T>>
         extends GT_MetaTileEntity_ExtendedPowerMultiBlockBase<T> {
 
+    @Deprecated
+    public final int mEUt = 0;
+
     @SuppressWarnings("unchecked")
     protected static <K extends KubaTechGTMultiBlockBase<?>> UIInfo<?, ?> createKTMetaTileEntityUI(
             KTContainerConstructor<K> containerConstructor) {
