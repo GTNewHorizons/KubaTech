@@ -10,8 +10,9 @@
 
 package kubatech.tileentity;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
+import static kubatech.api.Variables.numberFormat;
+import static kubatech.api.Variables.numberFormatScientific;
+
 import java.util.UUID;
 import java.util.function.BiFunction;
 
@@ -145,6 +146,8 @@ public class TeaAcceptorTile extends TileEntity
 
     @Override
     public boolean isItemValidForSlot(int p_94041_1_, ItemStack p_94041_2_) {
+        if (teaNetwork == null) return false;
+        if (!teaNetwork.canAdd(p_94041_2_.stackSize)) return false;
         return p_94041_2_.getItem() == ItemLoader.kubaitems && p_94041_2_.getItemDamage() >= minDamage
                 && p_94041_2_.getItemDamage() <= maxDamage;
     }
@@ -163,9 +166,6 @@ public class TeaAcceptorTile extends TileEntity
     private static final BiFunction<TextWidget, Integer, Widget.PosProvider> posCenteredHorizontallyProvider = (
             TextWidget widget, Integer y) -> (Widget.PosProvider) (screenSize, window,
                     parent) -> new Pos2d((window.getSize().width / 2) - (widget.getSize().width / 2), y);
-
-    private static final NumberFormat numberFormatScientific = new DecimalFormat("0.00E0");
-    private static final NumberFormat numberFormat = NumberFormat.getInstance();
 
     @Override
     public ModularWindow createWindow(UIBuildContext buildContext) {

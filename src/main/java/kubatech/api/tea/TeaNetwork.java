@@ -1,10 +1,12 @@
 package kubatech.api.tea;
 
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.UUID;
 
 import kubatech.savedata.PlayerData;
 import kubatech.savedata.PlayerDataManager;
+import kubatech.tileentity.TeaStorageTile;
 
 import net.minecraft.nbt.NBTTagCompound;
 
@@ -12,7 +14,9 @@ public class TeaNetwork {
 
     // TODO: Optimize later :P
     public BigInteger teaAmount = BigInteger.ZERO;
+    public BigInteger teaLimit = BigInteger.valueOf(Long.MAX_VALUE);
     PlayerData owner;
+    private HashSet<TeaStorageTile> teaStorageExtenders = new HashSet<>();
 
     public static TeaNetwork getNetwork(UUID player) {
         PlayerData p = PlayerDataManager.getPlayer(player);
@@ -42,13 +46,32 @@ public class TeaNetwork {
         return false;
     }
 
-    public void addTea(long toAdd) {
-        addTea(BigInteger.valueOf(toAdd));
+    public boolean addTea(long toAdd) {
+        return addTea(BigInteger.valueOf(toAdd));
     }
 
-    public void addTea(BigInteger toAdd) {
+    public boolean addTea(BigInteger toAdd) {
+        BigInteger newValue = teaAmount.add(toAdd);
+        if (newValue.compareTo(teaLimit) > 0) return false;
         teaAmount = teaAmount.add(toAdd);
         markDirty();
+        return true;
+    }
+
+    public boolean canAdd(long toAdd) {
+        return canAdd(BigInteger.valueOf(toAdd));
+    }
+
+    public boolean canAdd(BigInteger toAdd) {
+        return teaAmount.add(toAdd).compareTo(teaLimit) <= 0;
+    }
+
+    public void registerTeaStorageExtender(TeaStorageTile storageTile) {
+        if (teaStorageExtenders.add(storageTile)) teaLimit = teaLimit.add(storageTile.teaExtendAmount());
+    }
+
+    public void unregisterTeaStorageExtender(TeaStorageTile storageTile) {
+        if (teaStorageExtenders.remove(storageTile)) teaLimit = teaLimit.subtract(storageTile.teaExtendAmount());
     }
 
     public void markDirty() {

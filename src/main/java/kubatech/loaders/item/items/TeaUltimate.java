@@ -10,6 +10,9 @@
 
 package kubatech.loaders.item.items;
 
+import static kubatech.api.Variables.numberFormat;
+import static kubatech.api.Variables.numberFormatScientific;
+
 import java.text.NumberFormat;
 
 import kubatech.api.enums.ItemList;
@@ -27,6 +30,8 @@ import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
+
+import codechicken.nei.NEIClientUtils;
 
 import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.IDrawable;
@@ -125,10 +130,26 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                                                 new DynamicTextWidget(
                                                         () -> new Text(
                                                                 "Tea: " + (teaNetwork == null ? "ERROR"
-                                                                        : NumberFormat.getInstance()
-                                                                                .format(teaNetwork.teaAmount)))
-                                                                                        .color(Color.GREEN.normal))
-                                                                                                .setPos(20, 20)))
+                                                                        : (NEIClientUtils.shiftKey()
+                                                                                ? numberFormat
+                                                                                        .format(teaNetwork.teaAmount)
+                                                                                : numberFormatScientific.format(
+                                                                                        teaNetwork.teaAmount)))).color(
+                                                                                                Color.GREEN.dark(3)))
+                                                                                                        .setPos(20, 20))
+                                        .addChild(
+                                                new DynamicTextWidget(
+                                                        () -> new Text(
+                                                                "Tea limit: " + (teaNetwork == null ? "ERROR"
+                                                                        : (NEIClientUtils.shiftKey()
+                                                                                ? numberFormat
+                                                                                        .format(teaNetwork.teaLimit)
+                                                                                : numberFormatScientific.format(
+                                                                                        teaNetwork.teaLimit)))).color(
+                                                                                                Color.GREEN.dark(3)))
+                                                                                                        .setPos(
+                                                                                                                20,
+                                                                                                                30)))
                         .addPage(
                                 new MultiChildWidget()
                                         .addChild(
