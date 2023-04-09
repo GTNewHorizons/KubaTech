@@ -13,7 +13,9 @@ package kubatech.tileentity;
 import static kubatech.api.Variables.numberFormat;
 import static kubatech.api.Variables.numberFormatScientific;
 
+import java.math.BigInteger;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
 import kubatech.api.enums.ItemList;
@@ -40,6 +42,7 @@ import com.gtnewhorizons.modularui.api.widget.Widget;
 import com.gtnewhorizons.modularui.common.builder.UIInfo;
 import com.gtnewhorizons.modularui.common.internal.wrapper.ModularUIContainer;
 import com.gtnewhorizons.modularui.common.widget.DynamicTextWidget;
+import com.gtnewhorizons.modularui.common.widget.FakeSyncWidget;
 import com.gtnewhorizons.modularui.common.widget.TextWidget;
 
 public class TeaAcceptorTile extends TileEntity
@@ -172,6 +175,7 @@ public class TeaAcceptorTile extends TileEntity
         ModularWindow.Builder builder = ModularWindow.builder(170, 70);
         builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
         EntityPlayer player = buildContext.getPlayer();
+        AtomicReference<BigInteger> teaAmount = new AtomicReference<>(BigInteger.ZERO);
         builder.widgets(
                 posCenteredHorizontally(
                         10,
@@ -184,16 +188,19 @@ public class TeaAcceptorTile extends TileEntity
                 })),
                 posCenteredHorizontally(
                         40,
-                        new DynamicTextWidget(
+                        (TextWidget) new DynamicTextWidget(
                                 () -> new Text(
-                                        (teaNetwork == null ? "ERROR"
-                                                : StringUtils.applyRainbow(
-                                                        NEIClientUtils.shiftKey()
-                                                                ? numberFormat.format(teaNetwork.teaAmount)
-                                                                : numberFormatScientific.format(teaNetwork.teaAmount),
-                                                        (int) ((teaNetwork.teaAmount.longValue()
-                                                                / Math.max(1, averageInput * 10)) % Integer.MAX_VALUE),
-                                                        EnumChatFormatting.BOLD.toString()))).shadow())),
+                                        StringUtils.applyRainbow(
+                                                NEIClientUtils.shiftKey() ? numberFormat.format(teaAmount.get())
+                                                        : numberFormatScientific.format(teaAmount.get()),
+                                                (int) ((teaAmount.get().longValue() / Math.max(1, averageInput * 10))
+                                                        % Integer.MAX_VALUE),
+                                                EnumChatFormatting.BOLD.toString())).shadow()).setSynced(false)
+                                                        .attachSyncer(
+                                                                new FakeSyncWidget.BigIntegerSyncer(
+                                                                        () -> teaNetwork.teaAmount,
+                                                                        teaAmount::set),
+                                                                builder)),
                 posCenteredHorizontally(
                         50,
                         new DynamicTextWidget(() -> new Text("IN: " + averageInput + "/t").color(Color.BLACK.normal)))

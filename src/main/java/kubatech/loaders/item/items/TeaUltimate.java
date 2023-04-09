@@ -13,7 +13,9 @@ package kubatech.loaders.item.items;
 import static kubatech.api.Variables.numberFormat;
 import static kubatech.api.Variables.numberFormatScientific;
 
+import java.math.BigInteger;
 import java.text.NumberFormat;
+import java.util.concurrent.atomic.AtomicReference;
 
 import kubatech.api.enums.ItemList;
 import kubatech.api.tea.TeaNetwork;
@@ -81,6 +83,8 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
         IDrawable tab1 = new ItemDrawable(ItemList.LegendaryUltimateTea.get(1)).withFixedSize(18, 18, 4, 6);
         IDrawable tab2 = new ItemDrawable(new ItemStack(Blocks.crafting_table)).withFixedSize(18, 18, 4, 6);
         IDrawable tab3 = new ItemDrawable(new ItemStack(Items.golden_apple)).withFixedSize(18, 18, 4, 6);
+        AtomicReference<BigInteger> teaAmount = new AtomicReference<>(BigInteger.ZERO);
+        AtomicReference<BigInteger> teaLimit = new AtomicReference<>(BigInteger.ZERO);
         builder.widget(
                 new TabContainer()
                         .setButtonSize(
@@ -129,27 +133,33 @@ public class TeaUltimate extends TeaCollection implements IItemProxyGUI {
                                         .addChild(
                                                 new DynamicTextWidget(
                                                         () -> new Text(
-                                                                "Tea: " + (teaNetwork == null ? "ERROR"
-                                                                        : (NEIClientUtils.shiftKey()
-                                                                                ? numberFormat
-                                                                                        .format(teaNetwork.teaAmount)
-                                                                                : numberFormatScientific.format(
-                                                                                        teaNetwork.teaAmount)))).color(
-                                                                                                Color.GREEN.dark(3)))
-                                                                                                        .setPos(20, 20))
+                                                                "Tea: " + (NEIClientUtils.shiftKey()
+                                                                        ? numberFormat.format(teaAmount.get())
+                                                                        : numberFormatScientific
+                                                                                .format(teaAmount.get())))
+                                                                                        .color(Color.GREEN.dark(3)))
+                                                                                                .setSynced(false)
+                                                                                                .setPos(20, 20)
+                                                                                                .attachSyncer(
+                                                                                                        new FakeSyncWidget.BigIntegerSyncer(
+                                                                                                                () -> teaNetwork.teaAmount,
+                                                                                                                teaAmount::set),
+                                                                                                        builder))
                                         .addChild(
                                                 new DynamicTextWidget(
                                                         () -> new Text(
-                                                                "Tea limit: " + (teaNetwork == null ? "ERROR"
-                                                                        : (NEIClientUtils.shiftKey()
-                                                                                ? numberFormat
-                                                                                        .format(teaNetwork.teaLimit)
-                                                                                : numberFormatScientific.format(
-                                                                                        teaNetwork.teaLimit)))).color(
-                                                                                                Color.GREEN.dark(3)))
-                                                                                                        .setPos(
-                                                                                                                20,
-                                                                                                                30)))
+                                                                "Tea limit: " + (NEIClientUtils.shiftKey()
+                                                                        ? numberFormat.format(teaLimit.get())
+                                                                        : numberFormatScientific
+                                                                                .format(teaLimit.get())))
+                                                                                        .color(Color.GREEN.dark(3)))
+                                                                                                .setSynced(false)
+                                                                                                .setPos(20, 30)
+                                                                                                .attachSyncer(
+                                                                                                        new FakeSyncWidget.BigIntegerSyncer(
+                                                                                                                () -> teaNetwork.teaLimit,
+                                                                                                                teaLimit::set),
+                                                                                                        builder)))
                         .addPage(
                                 new MultiChildWidget()
                                         .addChild(
