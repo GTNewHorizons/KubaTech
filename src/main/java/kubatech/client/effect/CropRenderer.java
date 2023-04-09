@@ -49,12 +49,15 @@ public class CropRenderer extends EntityFX {
         Minecraft.getMinecraft().getTextureManager().bindTexture(TextureMap.locationBlocksTexture);
         tessellator.startDrawingQuads();
         tessellator.disableColor();
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.5F);
+        GL11.glColor4f(1.f, 1.f, 1.f, 1.f);
         GL11.glEnable(GL11.GL_ALPHA_TEST);
         GL11.glDepthMask(true);
         tessellator.setBrightness(
-                Blocks.wheat
-                        .getMixedBrightnessForBlock(this.worldObj, (int) this.posX, (int) this.posY, (int) this.posZ));
+                Blocks.wheat.getMixedBrightnessForBlock(
+                        this.worldObj,
+                        (int) this.posX + 1,
+                        (int) this.posY,
+                        (int) this.posZ));
         tessellator.setColorRGBA(255, 255, 255, 255);
         double f12 = this.posY - interpPosY;
         int i = 0;
