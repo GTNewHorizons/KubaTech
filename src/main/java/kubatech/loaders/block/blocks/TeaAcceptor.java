@@ -26,7 +26,7 @@ import net.minecraft.world.World;
 public class TeaAcceptor extends BlockProxy implements IProxyTileEntityProvider {
 
     public TeaAcceptor() {
-        super("tea_acceptor", "tea_acceptor");
+        super("tea_acceptor", "tea_acceptor", "blank");
     }
 
     @Override
