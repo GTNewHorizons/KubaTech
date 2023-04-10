@@ -88,6 +88,7 @@ public class PlayerDataManager extends WorldSavedData {
             PlayerData pData = new PlayerData();
             pData.username = player.getCommandSenderName();
             Instance.players.put(player.getPersistentID(), pData);
+            Instance.markDirty();
         }
     }
 
