@@ -14,6 +14,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import kubatech.api.helpers.UUIDFinder;
+
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldSavedData;
@@ -55,9 +58,10 @@ public class PlayerDataManager extends WorldSavedData {
         for (int i = 0, imax = NBTData.getInteger("size"); i < imax; i++) {
             NBTTagCompound playerNBTData = NBTData.getCompoundTag("Player." + i);
             if (!playerNBTData.hasKey("uuid")) continue;
-            players.put(
-                    UUID.fromString(playerNBTData.getString("uuid")),
-                    new PlayerData(playerNBTData.getCompoundTag("data")));
+            UUID uuid = UUID.fromString(playerNBTData.getString("uuid"));
+            PlayerData pData = new PlayerData(playerNBTData.getCompoundTag("data"));
+            players.put(uuid, pData);
+            if (!pData.username.isEmpty()) UUIDFinder.updateMapping(pData.username, uuid);
         }
     }
 
@@ -76,6 +80,15 @@ public class PlayerDataManager extends WorldSavedData {
     public static PlayerData getPlayer(UUID player) {
         if (Instance == null) return null; // probably client side
         return Instance.players.computeIfAbsent(player, s -> new PlayerData());
+    }
+
+    public static void initializePlayer(EntityPlayerMP player) {
+        if (Instance == null) return;
+        if (!Instance.players.containsKey(player.getPersistentID())) {
+            PlayerData pData = new PlayerData();
+            pData.username = player.getCommandSenderName();
+            Instance.players.put(player.getPersistentID(), pData);
+        }
     }
 
     @SuppressWarnings("unused")

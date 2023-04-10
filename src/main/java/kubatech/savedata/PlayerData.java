@@ -16,9 +16,11 @@ import net.minecraft.nbt.NBTTagCompound;
 
 public class PlayerData {
 
+    public String username = "";
     public TeaNetwork teaNetwork;
 
     PlayerData(NBTTagCompound NBTData) {
+        username = NBTData.getString("username");
         if (NBTData.hasKey("teaNetwork")) teaNetwork = TeaNetwork.fromNBT(NBTData.getCompoundTag("teaNetwork"));
     }
 
@@ -26,6 +28,7 @@ public class PlayerData {
 
     public NBTTagCompound toNBTData() {
         NBTTagCompound NBTData = new NBTTagCompound();
+        NBTData.setString("username", username);
         if (teaNetwork != null) NBTData.setTag("teaNetwork", teaNetwork.toNBT());
         return NBTData;
     }
