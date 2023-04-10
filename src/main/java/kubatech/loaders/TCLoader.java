@@ -43,9 +43,9 @@ public class TCLoader {
     public static void init() {
         ResearchCategories.registerCategory(
                 TCCategoryKey,
-                new ResourceLocation(Tags.MODID, "textures/items/tea/green_tea.png"),
+                new ResourceLocation(Tags.MODID, "textures/gui/green_tea.png"),
                 new ResourceLocation("thaumcraft", "textures/gui/gui_researchback.png"));
-        if (!LoaderReference.DraconicEvolution) return;
+        if (!LoaderReference.GTNHCoreMod || !LoaderReference.DraconicEvolution) return;
         registerRecipe();
         registerResearch();
     }
