@@ -740,25 +740,29 @@ public class MobRecipeLoader {
                 frand.newRound();
                 collector.newRound();
 
-                if (v.getName()
-                    .startsWith("com.emoniph.witchery")) {
-                    ((EntityLivingBaseAccessor) e).callDropFewItems(true, 0);
-                    frand.newRound();
-                    frand.exceptionOnEnchantTry = true;
-                    boolean enchantmentDetected = false;
-                    try {
+                Runnable checkForWitchery = () -> {
+                    if (v.getName()
+                        .startsWith("com.emoniph.witchery")) {
                         ((EntityLivingBaseAccessor) e).callDropFewItems(true, 0);
-                    } catch (Exception ex) {
-                        enchantmentDetected = true;
+                        frand.newRound();
+                        frand.exceptionOnEnchantTry = true;
+                        boolean enchantmentDetected = false;
+                        try {
+                            ((EntityLivingBaseAccessor) e).callDropFewItems(true, 0);
+                        } catch (Exception ex) {
+                            enchantmentDetected = true;
+                        }
+                        int w = frand.walkCounter;
+                        frand.newRound();
+                        if (enchantmentDetected) {
+                            frand.maxWalkCount = w;
+                            collector.booksAlwaysRandomlyEnchanted = true;
+                        }
+                        e.capturedDrops.clear();
                     }
-                    int w = frand.walkCounter;
-                    frand.newRound();
-                    if (enchantmentDetected) {
-                        frand.maxWalkCount = w;
-                        collector.booksAlwaysRandomlyEnchanted = true;
-                    }
-                    e.capturedDrops.clear();
-                }
+                };
+
+                checkForWitchery.run();
 
                 boolean second = false;
                 do {
@@ -776,25 +780,7 @@ public class MobRecipeLoader {
                 frand.newRound();
                 collector.newRound();
 
-                if (v.getName()
-                    .startsWith("com.emoniph.witchery")) {
-                    ((EntityLivingBaseAccessor) e).callDropFewItems(true, 0);
-                    frand.newRound();
-                    frand.exceptionOnEnchantTry = true;
-                    boolean enchantmentDetected = false;
-                    try {
-                        ((EntityLivingBaseAccessor) e).callDropFewItems(true, 0);
-                    } catch (Exception ex) {
-                        enchantmentDetected = true;
-                    }
-                    int w = frand.walkCounter;
-                    frand.newRound();
-                    if (enchantmentDetected) {
-                        frand.maxWalkCount = w;
-                        collector.booksAlwaysRandomlyEnchanted = true;
-                    }
-                    e.capturedDrops.clear();
-                }
+                checkForWitchery.run();
 
                 second = false;
                 do {
