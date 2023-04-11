@@ -12,7 +12,13 @@ public enum Mixin {
 
     // Minecraft
     EnchantmentHelperMixin("minecraft.EnchantmentHelperMixin", VANILLA),
-    WorldMixin("minecraft.WorldMixin", VANILLA);
+    WorldMixin("minecraft.WorldMixin", VANILLA),
+    EntityAccessor("minecraft.EntityAccessor", VANILLA),
+    EntityLivingAccessor("minecraft.EntityLivingAccessor", VANILLA),
+    EntityLivingBaseAccessor("minecraft.EntityLivingBaseAccessor", VANILLA),
+    EntitySlimeAccessor("minecraft.EntitySlimeAccessor", VANILLA),
+
+    ;
 
     public final String mixinClass;
     public final List<TargetedMod> targetedMods;
