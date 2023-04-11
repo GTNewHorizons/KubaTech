@@ -30,6 +30,7 @@ import java.io.Writer;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import kubatech.Tags;
@@ -41,6 +42,7 @@ import kubatech.api.mobhandler.MobDrop;
 import kubatech.api.network.LoadConfigPacket;
 import kubatech.api.utils.GSONUtils;
 import kubatech.api.utils.ModUtils;
+import kubatech.api.utils.ModUtils.TriConsumer;
 import kubatech.config.Config;
 import kubatech.config.OverridesConfig;
 import kubatech.mixin.mixins.minecraft.EntityAccessor;
@@ -726,8 +728,7 @@ public class MobRecipeLoader {
 
                 e.captureDrops = true;
 
-                if (e instanceof EntitySlime)
-                    ((EntitySlimeAccessor) e).callSetSlimeSize(1);
+                if (e instanceof EntitySlime) ((EntitySlimeAccessor) e).callSetSlimeSize(1);
 
                 ((EntityAccessor) e).setRand(frand);
 
@@ -762,73 +763,48 @@ public class MobRecipeLoader {
                     }
                 };
 
+                TriConsumer<Supplier<Boolean>, droplist, String> doTheDrop = (callerCanceller, dList, dListName) -> {
+                    boolean second = false;
+                    do {
+                        if (!callerCanceller.get()) break;
+
+                        collector.addDrop(dList, e.capturedDrops, frand.chance);
+
+                        if (second && frand.chance < 0.0000001d) {
+                            LOG.warn("Skipping " + k + " " + dListName + " dropmap because it's too randomized");
+                            break;
+                        }
+                        second = true;
+
+                    } while (frand.nextRound());
+
+                    frand.newRound();
+                    collector.newRound();
+                };
+
                 checkForWitchery.run();
 
-                boolean second = false;
-                do {
+                doTheDrop.accept(() -> {
                     ((EntityLivingBaseAccessor) e).callDropFewItems(true, 0);
-                    collector.addDrop(drops, e.capturedDrops, frand.chance);
-
-                    if (second && frand.chance < 0.0000001d) {
-                        LOG.warn("Skipping " + k + " normal dropmap because it's too randomized");
-                        break;
-                    }
-                    second = true;
-
-                } while (frand.nextRound());
-
-                frand.newRound();
-                collector.newRound();
+                    return true;
+                }, drops, "normal");
 
                 checkForWitchery.run();
 
-                second = false;
-                do {
+                doTheDrop.accept(() -> {
                     ((EntityLivingBaseAccessor) e).callDropFewItems(true, 1);
-                    collector.addDrop(dropslooting, e.capturedDrops, frand.chance);
+                    return true;
+                }, dropslooting, "normal");
 
-                    if (second && frand.chance < 0.0000001d) {
-                        LOG.warn("Skipping " + k + " normal dropmap because it's too randomized");
-                        break;
-                    }
-                    second = true;
-
-                } while (frand.nextRound());
-
-                frand.newRound();
-                collector.newRound();
-
-                second = false;
-                do {
+                doTheDrop.accept(() -> {
                     ((EntityLivingBaseAccessor) e).callDropRareDrop(0);
-                    collector.addDrop(raredrops, e.capturedDrops, frand.chance);
+                    return true;
+                }, raredrops, "rare");
 
-                    if (second && frand.chance < 0.0000001d) {
-                        LOG.warn("Skipping " + k + " rare dropmap because it's too randomized");
-                        break;
-                    }
-                    second = true;
-
-                } while (frand.nextRound());
-
-                frand.newRound();
-                collector.newRound();
-
-                second = false;
-                do {
+                doTheDrop.accept(() -> {
                     ((EntityLivingBaseAccessor) e).callDropRareDrop(1);
-                    collector.addDrop(superraredrops, e.capturedDrops, frand.chance);
-
-                    if (second && frand.chance < 0.0000001d) {
-                        LOG.warn("Skipping " + k + " rare dropmap because it's too randomized");
-                        break;
-                    }
-                    second = true;
-
-                } while (frand.nextRound());
-
-                frand.newRound();
-                collector.newRound();
+                    return true;
+                }, superraredrops, "rare");
 
                 if (registeringWitherSkeleton && e instanceof EntitySkeleton && k.equals("witherSkeleton")) {
                     dropinstance i = new dropinstance(new ItemStack(Items.stone_sword), additionaldrops);
@@ -867,7 +843,7 @@ public class MobRecipeLoader {
                         frand.forceFloatValue = 0f;
                         chanceModifierLocal = 0.25f;
                     }
-                    second = false;
+                    boolean second = false;
                     do {
                         ((EntityLivingAccessor) e).callAddRandomArmor();
                         if (!usingVanillaEnchantingMethod) ((EntityLivingAccessor) e).callEnchantEquipment();

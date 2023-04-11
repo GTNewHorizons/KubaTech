@@ -38,6 +38,13 @@ public class ModUtils {
     public static final boolean isDeobfuscatedEnvironment = (boolean) Launch.blackboard
         .get("fml.deobfuscatedEnvironment");
     public static boolean isClientSided = false;
+
+    @FunctionalInterface
+    public interface TriConsumer<T, U, V> {
+
+        void accept(T t, U u, V v);
+    }
+
     private static final HashMap<String, String> classNamesToModIDs = new HashMap<>();
     private static final Map.Entry<String, String> emptyEntry = new AbstractMap.SimpleEntry<>("", "");
 
