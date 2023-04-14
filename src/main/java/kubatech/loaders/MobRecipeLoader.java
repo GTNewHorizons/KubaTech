@@ -40,6 +40,7 @@ import kubatech.api.helpers.InfernalHelper;
 import kubatech.api.helpers.ProgressBarWrapper;
 import kubatech.api.mobhandler.MobDrop;
 import kubatech.api.network.LoadConfigPacket;
+import kubatech.api.utils.FastRandom;
 import kubatech.api.utils.GSONUtils;
 import kubatech.api.utils.ModUtils;
 import kubatech.api.utils.ModUtils.TriConsumer;
@@ -71,8 +72,11 @@ import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
+import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.common.util.FakePlayer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -85,7 +89,9 @@ import atomicstryker.infernalmobs.common.mods.api.ModifierLoader;
 
 import com.google.common.io.Files;
 import com.google.gson.Gson;
+import com.mojang.authlib.GameProfile;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import gregtech.api.util.GT_Utility;
@@ -737,6 +743,7 @@ public class MobRecipeLoader {
                 droplist superraredrops = new droplist();
                 droplist additionaldrops = new droplist();
                 droplist dropslooting = new droplist();
+                droplist dropscustom = new droplist();
 
                 frand.newRound();
                 collector.newRound();
@@ -1047,6 +1054,96 @@ public class MobRecipeLoader {
                 writer.close();
             } catch (Exception ignored) {}
         }
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    public static File makeCustomDrops() {
+
+        dropCollector collector = new dropCollector();
+        Map<String, OverridesConfig.MobOverride> customDropsMap = new HashMap<>();
+        isInGenerationProcess = true;
+
+        for (Map.Entry<String, GeneralMappedMob> mob : GeneralMobList.entrySet()) {
+            EntityLiving e = mob.getValue().mob;
+            String k = mob.getKey();
+
+            // There is high probability that the hooks are using custom random class
+            // so we are just going to do approximation by calling it 10k times :LoL:
+            ((EntityAccessor) e).setRand(new FastRandom());
+            e.worldObj.isRemote = false;
+
+            FakePlayer fp = new FakePlayer(
+                FMLCommonHandler.instance()
+                    .getMinecraftServerInstance().worldServers[0],
+                new GameProfile(
+                    UUID.nameUUIDFromBytes("[MobRecipeLoader]".getBytes(StandardCharsets.UTF_8)),
+                    "[MobRecipeLoader]"));
+
+            droplist dropscustom = new droplist();
+
+            try {
+
+                for (int i = 0; i < 10000; i++) {
+                    if (ForgeHooks
+                        .onLivingDrops(e, DamageSource.causePlayerDamage(fp), e.capturedDrops, 0, true, 100)) {
+                        LOG.warn("Event onLivingDrops for " + k + " has been cancelled, I am gonna ignore that!");
+                        break;
+                    }
+                    collector.addDrop(dropscustom, e.capturedDrops, 1.d / 10000.d);
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            e.worldObj.isRemote = true;
+
+            collector.newRound();
+
+            if (!dropscustom.isEmpty()) {
+                OverridesConfig.MobOverride override = new OverridesConfig.MobOverride();
+                for (dropinstance drop : dropscustom.drops) {
+                    ItemStack stack = drop.stack;
+                    if (stack.hasTagCompound()) stack.stackTagCompound.removeTag(randomEnchantmentDetectedString);
+                    int chance = drop.getchance(10000);
+                    if (chance > 10000) {
+                        int div = (int) Math.ceil(chance / 10000d);
+                        stack.stackSize *= div;
+                        chance /= div;
+                    }
+                    override.additions.add(
+                        new MobDrop(
+                            drop.stack,
+                            MobDrop.DropType.Normal,
+                            chance,
+                            drop.isEnchatmentRandomized ? drop.enchantmentLevel : null,
+                            drop.isDamageRandomized ? drop.damagesPossible : null,
+                            false,
+                            false));
+                    customDropsMap.put(k, override);
+                }
+            }
+
+        }
+
+        Writer writer = null;
+        Gson gson = GSONUtils.GSON_BUILDER_PRETTY.create();
+        File f = new File("CustomDropsMap.json");
+        try {
+            writer = Files.newWriter(f, StandardCharsets.UTF_8);
+            gson.toJson(customDropsMap, writer);
+            writer.flush();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            f = null;
+        } finally {
+            if (writer != null) try {
+                writer.close();
+            } catch (Exception ignored) {}
+        }
+
+        isInGenerationProcess = false;
+
+        return f;
     }
 
     public static void processMobRecipeMap() {
