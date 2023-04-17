@@ -22,9 +22,13 @@ package kubatech;
 
 import static kubatech.api.enums.ItemList.LegendaryRedTea;
 
+import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import kubatech.api.enums.ItemList;
+import kubatech.api.helpers.ReflectionHelper;
 import kubatech.api.network.CustomTileEntityPacket;
 import kubatech.api.network.LoadConfigPacket;
 
@@ -109,6 +113,17 @@ public class kubatech {
     public void preInit(FMLPreInitializationEvent event) {
         instance = this;
         proxy.preInit(event);
+        String mypackage = this.getClass()
+            .getPackage()
+            .getName();
+        Set<Class<?>> classes;
+        try {
+            classes = new HashSet<>(ReflectionHelper.getClasses(mypackage));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        classes.forEach(c -> LOG.info(c.getName()));
     }
 
     @Mod.EventHandler
