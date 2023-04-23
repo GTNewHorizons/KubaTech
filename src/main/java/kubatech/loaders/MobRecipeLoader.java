@@ -1205,7 +1205,7 @@ public class MobRecipeLoader {
     @SideOnly(Side.CLIENT)
     public static void processMobRecipeMap(HashSet<String> mobs,
         HashMap<String, OverridesConfig.MobOverride> overrides) {
-        if (isClientSided) Mob_Handler.clearRecipes();
+        Mob_Handler.clearRecipes();
         MobNameToRecipeMap.clear();
         mobs.forEach(k -> {
             GeneralMappedMob v = GeneralMobList.get(k);

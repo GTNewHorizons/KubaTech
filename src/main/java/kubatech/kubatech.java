@@ -23,10 +23,12 @@ package kubatech;
 import static kubatech.api.enums.ItemList.LegendaryRedTea;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import kubatech.api.enums.ItemList;
 import kubatech.api.helpers.ReflectionHelper;
 import kubatech.api.network.CustomTileEntityPacket;
@@ -116,14 +118,14 @@ public class kubatech {
         String mypackage = this.getClass()
             .getPackage()
             .getName();
-        Set<Class<?>> classes;
+        Collection<Class<?>> classes;
         try {
-            classes = new HashSet<>(ReflectionHelper.getClasses(mypackage));
+            classes = ReflectionHelper.getClasses(mypackage);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        classes.forEach(c -> LOG.info(c.getName()));
+
     }
 
     @Mod.EventHandler
