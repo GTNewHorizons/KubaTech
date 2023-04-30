@@ -90,6 +90,7 @@ import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energ
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
+import net.minecraftforge.common.util.ForgeDirection;
 
 public class GT_MetaTileEntity_MegaIndustrialApiary
     extends KubaTechGTMultiBlockBase<GT_MetaTileEntity_MegaIndustrialApiary> implements ISurvivalConstructable {
@@ -330,7 +331,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     }
 
     @Override
-    public void onScrewdriverRightClick(byte aSide, EntityPlayer aPlayer, float aX, float aY, float aZ) {
+    public void onScrewdriverRightClick(ForgeDirection side, EntityPlayer aPlayer, float aX, float aY, float aZ) {
         if (this.mMaxProgresstime > 0) {
             GT_Utility.sendChatToPlayer(aPlayer, "Can't change mode when running !");
             return;
@@ -562,9 +563,9 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     }
 
     @Override
-    public ITexture[] getTexture(IGregTechTileEntity aBaseMetaTileEntity, byte aSide, byte aFacing, byte aColorIndex,
+    public ITexture[] getTexture(IGregTechTileEntity aBaseMetaTileEntity, ForgeDirection side, ForgeDirection facing, int colorIndex,
         boolean aActive, boolean aRedstone) {
-        if (aSide == aFacing) {
+        if (side == facing) {
             if (aActive) return new ITexture[] { Textures.BlockIcons.getCasingTextureForId(CASING_INDEX),
                 TextureFactory.builder()
                     .addIcon(OVERLAY_FRONT_DISTILLATION_TOWER_ACTIVE)

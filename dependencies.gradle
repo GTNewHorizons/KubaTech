@@ -1,7 +1,7 @@
 // Add your dependencies here
 
 dependencies {
-    api('com.github.GTNewHorizons:GT5-Unofficial:5.09.42.81:dev')
+    api('com.github.GTNewHorizons:GT5-Unofficial:5.09.43.02-pre:dev')
     api("com.github.GTNewHorizons:EnderCore:0.2.13:dev")
     api("com.github.GTNewHorizons:EnderIO:2.4.11:dev")
     api("com.github.GTNewHorizons:Infernal-Mobs:1.7.5-GTNH:dev")
@@ -26,7 +26,7 @@ dependencies {
     {
         transitive = false
     }
-    compileOnly("com.github.GTNewHorizons:bartworks:0.6.15:dev")
+    compileOnly("com.github.GTNewHorizons:bartworks:0.7.0-pre:dev")
     {
         transitive = false
     }

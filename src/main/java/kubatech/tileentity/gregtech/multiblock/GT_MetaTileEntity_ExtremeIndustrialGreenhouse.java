@@ -55,6 +55,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.IPlantable;
+import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
@@ -183,7 +184,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     }
 
     @Override
-    public void onScrewdriverRightClick(byte aSide, EntityPlayer aPlayer, float aX, float aY, float aZ) {
+    public void onScrewdriverRightClick(ForgeDirection side, EntityPlayer aPlayer, float aX, float aY, float aZ) {
         if (aPlayer.isSneaking()) {
             if (this.mMaxProgresstime > 0) {
                 GT_Utility.sendChatToPlayer(aPlayer, "You can't change IC2 mode if the machine is working!");
@@ -210,7 +211,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     }
 
     @Override
-    public boolean onWireCutterRightClick(byte aSide, byte aWrenchingSide, EntityPlayer aPlayer, float aX, float aY,
+    public boolean onWireCutterRightClick(ForgeDirection side, ForgeDirection wrenchingSide, EntityPlayer aPlayer, float aX, float aY,
         float aZ) {
         isNoHumidity = !isNoHumidity;
         GT_Utility.sendChatToPlayer(aPlayer, "Give incoming crops no humidity " + isNoHumidity);
@@ -988,9 +989,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     }
 
     @Override
-    public ITexture[] getTexture(IGregTechTileEntity aBaseMetaTileEntity, byte aSide, byte aFacing, byte aColorIndex,
+    public ITexture[] getTexture(IGregTechTileEntity aBaseMetaTileEntity, ForgeDirection side, ForgeDirection facing, int colorIndex,
         boolean aActive, boolean aRedstone) {
-        if (aSide == aFacing) {
+        if (side == facing) {
             if (aActive) return new ITexture[] { Textures.BlockIcons.getCasingTextureForId(CASING_INDEX),
                 TextureFactory.builder()
                     .addIcon(OVERLAY_FRONT_DISTILLATION_TOWER_ACTIVE)
