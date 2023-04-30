@@ -32,11 +32,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import kubatech.Tags;
-import kubatech.api.LoaderReference;
-import kubatech.api.implementations.KubaTechGTMultiBlockBase;
-import kubatech.client.effect.CropRenderer;
-
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFlower;
 import net.minecraft.block.BlockStem;
@@ -105,6 +100,10 @@ import ic2.api.crops.CropCard;
 import ic2.api.crops.Crops;
 import ic2.core.Ic2Items;
 import ic2.core.crop.TileEntityCrop;
+import kubatech.Tags;
+import kubatech.api.LoaderReference;
+import kubatech.api.implementations.KubaTechGTMultiBlockBase;
+import kubatech.client.effect.CropRenderer;
 
 @SuppressWarnings("unused")
 public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
@@ -211,8 +210,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     }
 
     @Override
-    public boolean onWireCutterRightClick(ForgeDirection side, ForgeDirection wrenchingSide, EntityPlayer aPlayer, float aX, float aY,
-        float aZ) {
+    public boolean onWireCutterRightClick(ForgeDirection side, ForgeDirection wrenchingSide, EntityPlayer aPlayer,
+        float aX, float aY, float aZ) {
         isNoHumidity = !isNoHumidity;
         GT_Utility.sendChatToPlayer(aPlayer, "Give incoming crops no humidity " + isNoHumidity);
         return true;
@@ -989,8 +988,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     }
 
     @Override
-    public ITexture[] getTexture(IGregTechTileEntity aBaseMetaTileEntity, ForgeDirection side, ForgeDirection facing, int colorIndex,
-        boolean aActive, boolean aRedstone) {
+    public ITexture[] getTexture(IGregTechTileEntity aBaseMetaTileEntity, ForgeDirection side, ForgeDirection facing,
+        int colorIndex, boolean aActive, boolean aRedstone) {
         if (side == facing) {
             if (aActive) return new ITexture[] { Textures.BlockIcons.getCasingTextureForId(CASING_INDEX),
                 TextureFactory.builder()
