@@ -82,7 +82,6 @@ import gregtech.common.GT_DummyWorld;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.helpers.EnderIOHelper;
-import kubatech.api.helpers.InfernalHelper;
 import kubatech.api.helpers.ProgressBarWrapper;
 import kubatech.api.mobhandler.MobDrop;
 import kubatech.api.network.LoadConfigPacket;
@@ -92,6 +91,7 @@ import kubatech.api.utils.ModUtils;
 import kubatech.api.utils.ModUtils.TriConsumer;
 import kubatech.config.Config;
 import kubatech.config.OverridesConfig;
+import kubatech.mixin.mixins.InfernalMobs.InfernalMobsCoreAccessor;
 import kubatech.mixin.mixins.minecraft.EntityAccessor;
 import kubatech.mixin.mixins.minecraft.EntityLivingAccessor;
 import kubatech.mixin.mixins.minecraft.EntityLivingBaseAccessor;
@@ -164,57 +164,65 @@ public class MobRecipeLoader {
 
         @SuppressWarnings("unchecked")
         private MobRecipe(EntityLiving e, String entityID, ArrayList<MobDrop> outputs) {
-            if (infernaldrops == null && LoaderReference.InfernalMobs) {
-                infernaldrops = new droplist();
-                LOG.info("Generating Infernal drops");
-                ArrayList<ModifierLoader<?>> modifierLoaders = (ArrayList<ModifierLoader<?>>) InfernalHelper
-                    .getModifierLoaders()
-                    .clone();
-                int i = 0;
-                for (ModifierLoader<?> modifierLoader : modifierLoaders) {
-                    MobModifier nextMod = modifierLoader.make(null);
-                    if (nextMod.getBlackListMobClasses() != null)
-                        for (Class<?> cl : nextMod.getBlackListMobClasses()) if (e.getClass()
-                            .isAssignableFrom(cl)) break;
-                    i++;
+            if (LoaderReference.InfernalMobs) {
+                InfernalMobsCoreAccessor infernalMobsCore = (InfernalMobsCoreAccessor) InfernalMobsCore.instance();
+                if (infernaldrops == null) {
+                    infernaldrops = new droplist();
+                    LOG.info("Generating Infernal drops");
+                    ArrayList<ModifierLoader<?>> modifierLoaders = (ArrayList<ModifierLoader<?>>) infernalMobsCore
+                        .getModifierLoaders()
+                        .clone();
+                    int i = 0;
+                    for (ModifierLoader<?> modifierLoader : modifierLoaders) {
+                        MobModifier nextMod = modifierLoader.make(null);
+                        if (nextMod.getBlackListMobClasses() != null)
+                            for (Class<?> cl : nextMod.getBlackListMobClasses()) if (e.getClass()
+                                .isAssignableFrom(cl)) break;
+                        i++;
+                    }
+                    if (i > 0) {
+                        double chance = infernalMobsCore.callCheckEntityClassForced(e) ? 1d
+                            : (1d / infernalMobsCore.getEliteRarity());
+                        ArrayList<ItemStack> elitelist = infernalMobsCore.getDropIdListElite();
+                        for (ItemStack stack : elitelist) {
+                            dropinstance instance = infernaldrops
+                                .add(new dropinstance(stack.copy(), infernaldrops), chance / elitelist.size());
+                            instance.isEnchatmentRandomized = true;
+                            // noinspection ConstantConditions
+                            instance.enchantmentLevel = stack.getItem()
+                                .getItemEnchantability();
+                        }
+                        ArrayList<ItemStack> ultralist = infernalMobsCore.getDropIdListUltra();
+                        chance *= 1d / infernalMobsCore.getUltraRarity();
+                        for (ItemStack stack : ultralist) {
+                            dropinstance instance = infernaldrops
+                                .add(new dropinstance(stack.copy(), infernaldrops), chance / ultralist.size());
+                            instance.isEnchatmentRandomized = true;
+                            // noinspection ConstantConditions
+                            instance.enchantmentLevel = stack.getItem()
+                                .getItemEnchantability();
+                        }
+                        ArrayList<ItemStack> infernallist = infernalMobsCore.getDropIdListInfernal();
+                        chance *= 1d / infernalMobsCore.getInfernoRarity();
+                        for (ItemStack stack : infernallist) {
+                            dropinstance instance = infernaldrops
+                                .add(new dropinstance(stack.copy(), infernaldrops), chance / infernallist.size());
+                            instance.isEnchatmentRandomized = true;
+                            // noinspection ConstantConditions
+                            instance.enchantmentLevel = stack.getItem()
+                                .getItemEnchantability();
+                        }
+                    }
                 }
-                if (i > 0) {
-                    double chance = InfernalHelper.checkEntityClassForced(e) ? 1d
-                        : (1d / InfernalHelper.getEliteRarity());
-                    ArrayList<ItemStack> elitelist = InfernalHelper.getDropIdListElite();
-                    for (ItemStack stack : elitelist) {
-                        dropinstance instance = infernaldrops
-                            .add(new dropinstance(stack.copy(), infernaldrops), chance / elitelist.size());
-                        instance.isEnchatmentRandomized = true;
-                        // noinspection ConstantConditions
-                        instance.enchantmentLevel = stack.getItem()
-                            .getItemEnchantability();
-                    }
-                    ArrayList<ItemStack> ultralist = InfernalHelper.getDropIdListUltra();
-                    chance *= 1d / InfernalHelper.getUltraRarity();
-                    for (ItemStack stack : ultralist) {
-                        dropinstance instance = infernaldrops
-                            .add(new dropinstance(stack.copy(), infernaldrops), chance / ultralist.size());
-                        instance.isEnchatmentRandomized = true;
-                        // noinspection ConstantConditions
-                        instance.enchantmentLevel = stack.getItem()
-                            .getItemEnchantability();
-                    }
-                    ArrayList<ItemStack> infernallist = InfernalHelper.getDropIdListInfernal();
-                    chance *= 1d / InfernalHelper.getInfernoRarity();
-                    for (ItemStack stack : infernallist) {
-                        dropinstance instance = infernaldrops
-                            .add(new dropinstance(stack.copy(), infernaldrops), chance / infernallist.size());
-                        instance.isEnchatmentRandomized = true;
-                        // noinspection ConstantConditions
-                        instance.enchantmentLevel = stack.getItem()
-                            .getItemEnchantability();
-                    }
-                }
-            } else if (infernaldrops == null) infernaldrops = new droplist();
+                infernalityAllowed = infernalMobsCore.callIsClassAllowed(e);
+                alwaysinfernal = infernalMobsCore.callCheckEntityClassForced(e);
+            } else {
+                infernalityAllowed = false;
+                alwaysinfernal = false;
+            }
 
-            infernalityAllowed = InfernalHelper.isClassAllowed(e);
-            alwaysinfernal = InfernalHelper.checkEntityClassForced(e);
+            if (infernaldrops == null) infernaldrops = new droplist();
+
             isPeacefulAllowed = !(e instanceof IMob);
 
             mOutputs = (ArrayList<MobDrop>) outputs.clone();
@@ -272,44 +280,48 @@ public class MobRecipeLoader {
                 }
             }
 
-            if (infernalityAllowed && mEUt * 8 < MTE.getMaxInputVoltage()
-                && !InfernalHelper.getDimensionBlackList()
-                    .contains(
-                        MTE.getBaseMetaTileEntity()
-                            .getWorld().provider.dimensionId)) {
-                int p = 0;
-                int mods = 0;
-                if (alwaysinfernal || (preferInfernalDrops && rnd.nextInt(InfernalHelper.getEliteRarity()) == 0)) {
-                    p = 1;
-                    if (rnd.nextInt(InfernalHelper.getUltraRarity()) == 0) {
-                        p = 2;
-                        if (rnd.nextInt(InfernalHelper.getInfernoRarity()) == 0) p = 3;
+            if (LoaderReference.InfernalMobs) {
+                InfernalMobsCoreAccessor infernalMobsCore = (InfernalMobsCoreAccessor) InfernalMobsCore.instance();
+                if (infernalityAllowed && mEUt * 8 < MTE.getMaxInputVoltage()
+                    && !infernalMobsCore.getDimensionBlackList()
+                        .contains(
+                            MTE.getBaseMetaTileEntity()
+                                .getWorld().provider.dimensionId)) {
+                    int p = 0;
+                    int mods = 0;
+                    if (alwaysinfernal
+                        || (preferInfernalDrops && rnd.nextInt(infernalMobsCore.getEliteRarity()) == 0)) {
+                        p = 1;
+                        if (rnd.nextInt(infernalMobsCore.getUltraRarity()) == 0) {
+                            p = 2;
+                            if (rnd.nextInt(infernalMobsCore.getInfernoRarity()) == 0) p = 3;
+                        }
                     }
-                }
-                ArrayList<ItemStack> infernalstacks = null;
-                if (p > 0) if (p == 1) {
-                    infernalstacks = InfernalHelper.getDropIdListElite();
-                    mods = InfernalHelper.getMinEliteModifiers();
-                } else if (p == 2) {
-                    infernalstacks = InfernalHelper.getDropIdListUltra();
-                    mods = InfernalHelper.getMinUltraModifiers();
-                } else {
-                    infernalstacks = InfernalHelper.getDropIdListInfernal();
-                    mods = InfernalHelper.getMinInfernoModifiers();
-                }
-                if (infernalstacks != null) {
-                    ItemStack infernalstack = infernalstacks.get(rnd.nextInt(infernalstacks.size()))
-                        .copy();
-                    // noinspection ConstantConditions
-                    EnchantmentHelper.addRandomEnchantment(
-                        rnd,
-                        infernalstack,
-                        infernalstack.getItem()
-                            .getItemEnchantability());
-                    stacks.add(infernalstack);
-                    MTE.lEUt *= 8L;
-                    MTE.mMaxProgresstime *= mods * InfernalMobsCore.instance()
-                        .getMobModHealthFactor();
+                    ArrayList<ItemStack> infernalstacks = null;
+                    if (p > 0) if (p == 1) {
+                        infernalstacks = infernalMobsCore.getDropIdListElite();
+                        mods = infernalMobsCore.getMinEliteModifiers();
+                    } else if (p == 2) {
+                        infernalstacks = infernalMobsCore.getDropIdListUltra();
+                        mods = infernalMobsCore.getMinUltraModifiers();
+                    } else {
+                        infernalstacks = infernalMobsCore.getDropIdListInfernal();
+                        mods = infernalMobsCore.getMinInfernoModifiers();
+                    }
+                    if (infernalstacks != null) {
+                        ItemStack infernalstack = infernalstacks.get(rnd.nextInt(infernalstacks.size()))
+                            .copy();
+                        // noinspection ConstantConditions
+                        EnchantmentHelper.addRandomEnchantment(
+                            rnd,
+                            infernalstack,
+                            infernalstack.getItem()
+                                .getItemEnchantability());
+                        stacks.add(infernalstack);
+                        MTE.lEUt *= 8L;
+                        MTE.mMaxProgresstime *= mods * InfernalMobsCore.instance()
+                            .getMobModHealthFactor();
+                    }
                 }
             }
 

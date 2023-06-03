@@ -1,5 +1,6 @@
 package kubatech.mixin;
 
+import static kubatech.mixin.TargetedMod.INFERNAL_MOBS;
 import static kubatech.mixin.TargetedMod.VANILLA;
 
 import java.util.Arrays;
@@ -17,6 +18,9 @@ public enum Mixin {
     EntityLivingAccessor("minecraft.EntityLivingAccessor", VANILLA),
     EntityLivingBaseAccessor("minecraft.EntityLivingBaseAccessor", VANILLA),
     EntitySlimeAccessor("minecraft.EntitySlimeAccessor", VANILLA),
+
+    // Infernal Mobs
+    InfernalMobsCoreAccessor("InfernalMobs.InfernalMobsCoreAccessor", INFERNAL_MOBS),
 
     ;
 

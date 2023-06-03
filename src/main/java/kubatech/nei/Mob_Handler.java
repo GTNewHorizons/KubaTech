@@ -70,6 +70,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
+import atomicstryker.infernalmobs.common.InfernalMobsCore;
 import codechicken.lib.gui.GuiDraw;
 import codechicken.nei.NEIClientUtils;
 import codechicken.nei.PositionedStack;
@@ -85,7 +86,6 @@ import crazypants.enderio.machine.spawner.BlockPoweredSpawner;
 import gregtech.api.util.GT_Utility;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
-import kubatech.api.helpers.InfernalHelper;
 import kubatech.api.mobhandler.MobDrop;
 import kubatech.api.utils.FastRandom;
 import kubatech.api.utils.MobUtils;
@@ -93,6 +93,7 @@ import kubatech.api.utils.ModUtils;
 import kubatech.config.Config;
 import kubatech.kubatech;
 import kubatech.loaders.MobRecipeLoader;
+import kubatech.mixin.mixins.InfernalMobs.InfernalMobsCoreAccessor;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 
 public class Mob_Handler extends TemplateRecipeHandler {
@@ -603,8 +604,9 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
             if (!LoaderReference.InfernalMobs) infernaltype = -1; // not supported
             else {
-                if (!InfernalHelper.isClassAllowed(mob)) infernaltype = 0; // not allowed
-                else if (InfernalHelper.checkEntityClassForced(mob)) infernaltype = 2; // forced
+                InfernalMobsCoreAccessor infernalMobsCore = (InfernalMobsCoreAccessor) InfernalMobsCore.instance();
+                if (!infernalMobsCore.callIsClassAllowed(mob)) infernaltype = 0; // not allowed
+                else if (infernalMobsCore.callCheckEntityClassForced(mob)) infernaltype = 2; // forced
                 else infernaltype = 1; // normal
             }
         }
