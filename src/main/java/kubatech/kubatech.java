@@ -32,6 +32,7 @@ import net.minecraft.item.ItemStack;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.objectweb.asm.tree.ClassNode;
 
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
@@ -70,7 +71,7 @@ import kubatech.api.network.LoadConfigPacket;
         + "after: Forestry; "
         + "after: DraconicEvolution; "
         + "after: Avaritia; "
-        + " after: dreamcraft; ")
+        + "after: dreamcraft; ")
 public class kubatech {
 
     public static kubatech instance = null;
@@ -115,7 +116,7 @@ public class kubatech {
     @SidedProxy(clientSide = Tags.MODID + ".ClientProxy", serverSide = Tags.MODID + ".CommonProxy")
     public static CommonProxy proxy;
 
-    private static Collection<Class<?>> myClasses;
+    private static Collection<ClassNode> myClasses;
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {

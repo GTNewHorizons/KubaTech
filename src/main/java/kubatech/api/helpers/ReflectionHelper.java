@@ -22,6 +22,7 @@ package kubatech.api.helpers;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -31,6 +32,11 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+
+import net.minecraft.launchwrapper.Launch;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
 
 public class ReflectionHelper {
 
@@ -151,12 +157,11 @@ public class ReflectionHelper {
 
     /**
      * Gets all classes in a specific package path, works only for jar files.
-     * Doesn't initialize classes
      *
      * @param packageName The package name
-     * @return The classes
+     * @return The class nodes
      */
-    public static Collection<Class<?>> getClasses(String packageName) throws IOException, SecurityException {
+    public static Collection<ClassNode> getClasses(String packageName) throws IOException, SecurityException {
         ClassLoader classLoader = Thread.currentThread()
             .getContextClassLoader();
         assert classLoader != null;
@@ -166,6 +171,7 @@ public class ReflectionHelper {
         if (!resource.getProtocol()
             .equals("jar")) return Collections.emptySet();
         String jarPath = resource.getPath();
+
         try (JarFile jar = new JarFile(jarPath.substring(5, jarPath.indexOf('!')))) {
             return jar.stream()
                 .filter(
@@ -176,12 +182,21 @@ public class ReflectionHelper {
                 .map(j -> {
                     try {
                         String name = j.getName();
-                        return Class.forName(
-                            name.replace('/', '.')
-                                .substring(0, name.lastIndexOf(".class")),
-                            false,
-                            classLoader);
-                    } catch (ClassNotFoundException ignored) {}
+                        URL jarResource = Launch.classLoader.getResource(name);
+                        if (jarResource == null) return null;
+                        byte[] bytes;
+                        try (InputStream is = jarResource.openStream()) {
+                            bytes = new byte[(int) j.getSize()];
+                            if (is.read(bytes) != bytes.length) return null;
+                            if (is.available() > 0) return null;
+                        }
+
+                        ClassNode cn = new ClassNode();
+                        ClassReader cr = new ClassReader(bytes);
+                        cr.accept(cn, 0);
+
+                        return cn;
+                    } catch (IOException ignored) {}
                     return null;
                 })
                 .filter(Objects::nonNull)
