@@ -107,20 +107,20 @@ public class kubatech {
     @SidedProxy(clientSide = Tags.MODID + ".ClientProxy", serverSide = Tags.MODID + ".CommonProxy")
     public static CommonProxy proxy;
 
+    private static Collection<Class<?>> myClasses;
+
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         instance = this;
-        proxy.preInit(event);
-        String mypackage = this.getClass()
-            .getPackage()
-            .getName();
-        Collection<Class<?>> classes;
         try {
-            classes = ReflectionHelper.getClasses(mypackage);
+            myClasses = ReflectionHelper.getClasses(
+                this.getClass()
+                    .getPackage()
+                    .getName());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
+        proxy.preInit(event);
     }
 
     @Mod.EventHandler
