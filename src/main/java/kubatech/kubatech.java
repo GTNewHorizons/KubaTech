@@ -24,15 +24,7 @@ import static kubatech.api.enums.ItemList.LegendaryRedTea;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-
-import cpw.mods.fml.common.FMLCommonHandler;
-import kubatech.api.enums.ItemList;
-import kubatech.api.helpers.ReflectionHelper;
-import kubatech.api.network.CustomTileEntityPacket;
-import kubatech.api.network.LoadConfigPacket;
 
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
@@ -46,6 +38,10 @@ import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.*;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
+import kubatech.api.enums.ItemList;
+import kubatech.api.helpers.ReflectionHelper;
+import kubatech.api.network.CustomTileEntityPacket;
+import kubatech.api.network.LoadConfigPacket;
 
 @SuppressWarnings("unused")
 @Mod(
@@ -124,7 +120,6 @@ public class kubatech {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
 
     }
 

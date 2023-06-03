@@ -25,17 +25,15 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
-import kubatech.Tags;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
+
+import cpw.mods.fml.common.registry.GameRegistry;
 import kubatech.api.LoaderReference;
 import kubatech.api.enums.ItemList;
 import kubatech.api.utils.ItemID;
 import kubatech.loaders.item.items.TeaUltimate;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.World;
-
 import thaumcraft.api.ThaumcraftApi;
 import thaumcraft.api.ThaumcraftApiHelper;
 import thaumcraft.api.aspects.Aspect;
@@ -44,17 +42,18 @@ import thaumcraft.api.crafting.InfusionRecipe;
 import thaumcraft.api.research.ResearchCategories;
 import thaumcraft.api.research.ResearchItem;
 import thaumcraft.api.research.ResearchPage;
-import cpw.mods.fml.common.registry.GameRegistry;
 
 public class TCLoader {
 
     public static final String TCCategoryKey = "KUBATECH";
 
     public static void init() {
-        ResearchCategories.registerCategory(
-            TCCategoryKey,
-            new ResourceLocation(Tags.MODID, "textures/gui/green_tea.png"),
-            new ResourceLocation("thaumcraft", "textures/gui/gui_researchback.png"));
+        /*
+         * ResearchCategories.registerCategory(
+         * TCCategoryKey,
+         * new ResourceLocation(Tags.MODID, "textures/gui/green_tea.png"),
+         * new ResourceLocation("thaumcraft", "textures/gui/gui_researchback.png"));
+         */
         if (!LoaderReference.GTNHCoreMod || !LoaderReference.DraconicEvolution) return;
         registerRecipe();
         registerResearch();
@@ -120,7 +119,7 @@ public class TCLoader {
         if (ultimateTeaResearch == null) {
             ultimateTeaResearch = new ResearchItem(
                 "KT_UltimateTea",
-                TCCategoryKey,
+                "NEWHORIZONS" /* TCCategoryKey */,
                 new AspectList().add(Aspect.MAGIC, 1)
                     .add(Aspect.HEAL, 1)
                     .add(Aspect.PLANT, 1)

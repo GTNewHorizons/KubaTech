@@ -26,21 +26,23 @@ import java.util.*;
 
 import javax.xml.bind.DatatypeConverter;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import kubatech.kubatech;
-
 import net.minecraft.launchwrapper.Launch;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModContainer;
+import kubatech.kubatech;
 
 public class ModUtils {
 
     public static final boolean isDeobfuscatedEnvironment = (boolean) Launch.blackboard
         .get("fml.deobfuscatedEnvironment");
     public static boolean isClientSided = false;
-    public static boolean isClientThreaded(){
-        return FMLCommonHandler.instance().getEffectiveSide().isClient();
+
+    public static boolean isClientThreaded() {
+        return FMLCommonHandler.instance()
+            .getEffectiveSide()
+            .isClient();
     }
 
     @FunctionalInterface

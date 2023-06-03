@@ -34,11 +34,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import kubatech.Tags;
-import kubatech.api.LoaderReference;
-import kubatech.api.implementations.KubaTechGTMultiBlockBase;
-import kubatech.client.effect.MegaApiaryBeesRenderer;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -48,6 +43,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
 
 import com.github.bartimaeusnek.bartworks.API.BorosilicateGlass;
 import com.gtnewhorizon.structurelib.StructureLibAPI;
@@ -90,6 +86,10 @@ import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energ
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
+import kubatech.Tags;
+import kubatech.api.LoaderReference;
+import kubatech.api.implementations.KubaTechGTMultiBlockBase;
+import kubatech.client.effect.MegaApiaryBeesRenderer;
 
 public class GT_MetaTileEntity_MegaIndustrialApiary
     extends KubaTechGTMultiBlockBase<GT_MetaTileEntity_MegaIndustrialApiary> implements ISurvivalConstructable {
@@ -330,7 +330,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     }
 
     @Override
-    public void onScrewdriverRightClick(byte aSide, EntityPlayer aPlayer, float aX, float aY, float aZ) {
+    public void onScrewdriverRightClick(ForgeDirection side, EntityPlayer aPlayer, float aX, float aY, float aZ) {
         if (this.mMaxProgresstime > 0) {
             GT_Utility.sendChatToPlayer(aPlayer, "Can't change mode when running !");
             return;
@@ -562,9 +562,9 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     }
 
     @Override
-    public ITexture[] getTexture(IGregTechTileEntity aBaseMetaTileEntity, byte aSide, byte aFacing, byte aColorIndex,
-        boolean aActive, boolean aRedstone) {
-        if (aSide == aFacing) {
+    public ITexture[] getTexture(IGregTechTileEntity aBaseMetaTileEntity, ForgeDirection side, ForgeDirection facing,
+        int colorIndex, boolean aActive, boolean aRedstone) {
+        if (side == facing) {
             if (aActive) return new ITexture[] { Textures.BlockIcons.getCasingTextureForId(CASING_INDEX),
                 TextureFactory.builder()
                     .addIcon(OVERLAY_FRONT_DISTILLATION_TOWER_ACTIVE)
@@ -699,7 +699,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 })
                     .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
                     .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
-                    .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+                    .setTextureGetter(toggleButtonTextureGetter)
+                    .setBackground(GT_UITextures.BUTTON_STANDARD)
                     .setSize(18, 18)
                     .addTooltip("Working status"))
                 .widget(
@@ -896,15 +897,16 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         .addTooltip(0, new Text("Input").color(Color.YELLOW.dark(3)))
                         .addTooltip(1, new Text("Output").color(Color.YELLOW.dark(3)))
                         .addTooltip(2, new Text("Operating").color(Color.GREEN.dark(3)))
-                        .setVariableBackgroundGetter(
-                            i -> new IDrawable[] { ModularUITextures.VANILLA_BACKGROUND,
-                                GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18), i
-                                    == 0 ? new Text("Input").color(Color.YELLOW.dark(3))
-                                        .withFixedSize(70 - 18, 18, 15, 0)
-                                        : i == 1 ? new Text("Output").color(Color.YELLOW.dark(3))
-                                            .withFixedSize(70 - 18, 18, 15, 0)
-                                            : new Text("Operating").color(Color.GREEN.dark(3))
-                                                .withFixedSize(70 - 18, 18, 15, 0) })
+                        .setTextureGetter(
+                            i -> i == 0 ? new Text("Input").color(Color.YELLOW.dark(3))
+                                .withFixedSize(70 - 18, 18, 15, 0)
+                                : i == 1 ? new Text("Output").color(Color.YELLOW.dark(3))
+                                    .withFixedSize(70 - 18, 18, 15, 0)
+                                    : new Text("Operating").color(Color.GREEN.dark(3))
+                                        .withFixedSize(70 - 18, 18, 15, 0))
+                        .setBackground(
+                            ModularUITextures.VANILLA_BACKGROUND,
+                            GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18))
                         .setSize(70, 18)
                         .addTooltip("Primary mode"))
                     .widget(
@@ -930,13 +932,14 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                             })
                             .addTooltip(0, new Text("Normal").color(Color.GREEN.dark(3)))
                             .addTooltip(1, new Text("Swarmer").color(Color.YELLOW.dark(3)))
-                            .setVariableBackgroundGetter(
-                                i -> new IDrawable[] { ModularUITextures.VANILLA_BACKGROUND,
-                                    GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18), i
-                                        == 0 ? new Text("Normal").color(Color.GREEN.dark(3))
-                                            .withFixedSize(70 - 18, 18, 15, 0)
-                                            : new Text("Swarmer").color(Color.YELLOW.dark(3))
-                                                .withFixedSize(70 - 18, 18, 15, 0) })
+                            .setTextureGetter(
+                                i -> i == 0 ? new Text("Normal").color(Color.GREEN.dark(3))
+                                    .withFixedSize(70 - 18, 18, 15, 0)
+                                    : new Text("Swarmer").color(Color.YELLOW.dark(3))
+                                        .withFixedSize(70 - 18, 18, 15, 0))
+                            .setBackground(
+                                ModularUITextures.VANILLA_BACKGROUND,
+                                GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18))
                             .setSize(70, 18)
                             .addTooltip("Secondary mode"))
                     .setEnabled(widget -> !getBaseMetaTileEntity().isActive())

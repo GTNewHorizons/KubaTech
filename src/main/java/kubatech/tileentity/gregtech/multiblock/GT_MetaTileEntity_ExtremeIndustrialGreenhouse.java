@@ -32,11 +32,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import kubatech.Tags;
-import kubatech.api.LoaderReference;
-import kubatech.api.implementations.KubaTechGTMultiBlockBase;
-import kubatech.client.effect.CropRenderer;
-
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFlower;
 import net.minecraft.block.BlockStem;
@@ -55,6 +50,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.IPlantable;
+import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
@@ -104,6 +100,10 @@ import ic2.api.crops.CropCard;
 import ic2.api.crops.Crops;
 import ic2.core.Ic2Items;
 import ic2.core.crop.TileEntityCrop;
+import kubatech.Tags;
+import kubatech.api.LoaderReference;
+import kubatech.api.implementations.KubaTechGTMultiBlockBase;
+import kubatech.client.effect.CropRenderer;
 
 @SuppressWarnings("unused")
 public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
@@ -183,7 +183,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     }
 
     @Override
-    public void onScrewdriverRightClick(byte aSide, EntityPlayer aPlayer, float aX, float aY, float aZ) {
+    public void onScrewdriverRightClick(ForgeDirection side, EntityPlayer aPlayer, float aX, float aY, float aZ) {
         if (aPlayer.isSneaking()) {
             if (this.mMaxProgresstime > 0) {
                 GT_Utility.sendChatToPlayer(aPlayer, "You can't change IC2 mode if the machine is working!");
@@ -210,8 +210,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     }
 
     @Override
-    public boolean onWireCutterRightClick(byte aSide, byte aWrenchingSide, EntityPlayer aPlayer, float aX, float aY,
-        float aZ) {
+    public boolean onWireCutterRightClick(ForgeDirection side, ForgeDirection wrenchingSide, EntityPlayer aPlayer,
+        float aX, float aY, float aZ) {
         isNoHumidity = !isNoHumidity;
         GT_Utility.sendChatToPlayer(aPlayer, "Give incoming crops no humidity " + isNoHumidity);
         return true;
@@ -625,7 +625,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 })
                     .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
                     .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
-                    .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+                    .setTextureGetter(toggleButtonTextureGetter)
+                    .setBackground(GT_UITextures.BUTTON_STANDARD)
                     .setSize(18, 18)
                     .addTooltip("Working status"))
                 .widget(
@@ -810,15 +811,16 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                         .addTooltip(0, new Text("Operating").color(Color.GREEN.dark(3)))
                         .addTooltip(1, new Text("Input").color(Color.YELLOW.dark(3)))
                         .addTooltip(2, new Text("Output").color(Color.YELLOW.dark(3)))
-                        .setVariableBackgroundGetter(
-                            i -> new IDrawable[] { ModularUITextures.VANILLA_BACKGROUND,
-                                GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18), i
-                                    == 0 ? new Text("Operating").color(Color.GREEN.dark(3))
-                                        .withFixedSize(70 - 18, 18, 15, 0)
-                                        : i == 1 ? new Text("Input").color(Color.YELLOW.dark(3))
-                                            .withFixedSize(70 - 18, 18, 15, 0)
-                                            : new Text("Output").color(Color.YELLOW.dark(3))
-                                                .withFixedSize(70 - 18, 18, 15, 0) })
+                        .setTextureGetter(
+                            i -> i == 0 ? new Text("Operating").color(Color.GREEN.dark(3))
+                                .withFixedSize(70 - 18, 18, 15, 0)
+                                : i == 1 ? new Text("Input").color(Color.YELLOW.dark(3))
+                                    .withFixedSize(70 - 18, 18, 15, 0)
+                                    : new Text("Output").color(Color.YELLOW.dark(3))
+                                        .withFixedSize(70 - 18, 18, 15, 0))
+                        .setBackground(
+                            ModularUITextures.VANILLA_BACKGROUND,
+                            GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18))
                         .setSize(70, 18)
                         .addTooltip("Setup mode"))
                     .widget(
@@ -845,13 +847,14 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                             })
                             .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
                             .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
-                            .setVariableBackgroundGetter(
-                                i -> new IDrawable[] { ModularUITextures.VANILLA_BACKGROUND,
-                                    GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18), i
-                                        == 0 ? new Text("Disabled").color(Color.RED.dark(3))
-                                            .withFixedSize(70 - 18, 18, 15, 0)
-                                            : new Text("Enabled").color(Color.GREEN.dark(3))
-                                                .withFixedSize(70 - 18, 18, 15, 0) })
+                            .setTextureGetter(
+                                i -> i == 0 ? new Text("Disabled").color(Color.RED.dark(3))
+                                    .withFixedSize(70 - 18, 18, 15, 0)
+                                    : new Text("Enabled").color(Color.GREEN.dark(3))
+                                        .withFixedSize(70 - 18, 18, 15, 0))
+                            .setBackground(
+                                ModularUITextures.VANILLA_BACKGROUND,
+                                GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18))
                             .setSize(70, 18)
                             .addTooltip("IC2 mode"))
                     .widget(
@@ -864,13 +867,14 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                             })
                             .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
                             .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
-                            .setVariableBackgroundGetter(
-                                i -> new IDrawable[] { ModularUITextures.VANILLA_BACKGROUND,
-                                    GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18), i
-                                        == 0 ? new Text("Disabled").color(Color.RED.dark(3))
-                                            .withFixedSize(70 - 18, 18, 15, 0)
-                                            : new Text("Enabled").color(Color.GREEN.dark(3))
-                                                .withFixedSize(70 - 18, 18, 15, 0) })
+                            .setTextureGetter(
+                                i -> i == 0 ? new Text("Disabled").color(Color.RED.dark(3))
+                                    .withFixedSize(70 - 18, 18, 15, 0)
+                                    : new Text("Enabled").color(Color.GREEN.dark(3))
+                                        .withFixedSize(70 - 18, 18, 15, 0))
+                            .setBackground(
+                                ModularUITextures.VANILLA_BACKGROUND,
+                                GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18))
                             .setSize(70, 18)
                             .addTooltip("No Humidity mode"))
                     .setEnabled(widget -> !getBaseMetaTileEntity().isActive())
@@ -984,9 +988,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     }
 
     @Override
-    public ITexture[] getTexture(IGregTechTileEntity aBaseMetaTileEntity, byte aSide, byte aFacing, byte aColorIndex,
-        boolean aActive, boolean aRedstone) {
-        if (aSide == aFacing) {
+    public ITexture[] getTexture(IGregTechTileEntity aBaseMetaTileEntity, ForgeDirection side, ForgeDirection facing,
+        int colorIndex, boolean aActive, boolean aRedstone) {
+        if (side == facing) {
             if (aActive) return new ITexture[] { Textures.BlockIcons.getCasingTextureForId(CASING_INDEX),
                 TextureFactory.builder()
                     .addIcon(OVERLAY_FRONT_DISTILLATION_TOWER_ACTIVE)
