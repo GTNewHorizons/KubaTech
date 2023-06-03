@@ -22,14 +22,24 @@ package kubatech.loaders;
 
 import static kubatech.api.utils.ModUtils.isClientSided;
 import static kubatech.api.utils.ModUtils.isDeobfuscatedEnvironment;
-import static kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.*;
+import static kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.DIAMOND_SPIKES_DAMAGE;
+import static kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.MOB_SPAWN_INTERVAL;
+import static kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber.MobNameToRecipeMap;
 
 import java.io.File;
 import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 

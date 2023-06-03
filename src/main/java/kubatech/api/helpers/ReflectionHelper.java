@@ -20,11 +20,15 @@
 
 package kubatech.api.helpers;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Objects;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
