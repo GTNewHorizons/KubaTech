@@ -61,6 +61,9 @@ import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.mojang.authlib.GameProfile;
 
+import atomicstryker.infernalmobs.common.InfernalMobsCore;
+import atomicstryker.infernalmobs.common.MobModifier;
+import atomicstryker.infernalmobs.common.mods.api.ModifierLoader;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
