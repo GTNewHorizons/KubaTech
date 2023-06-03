@@ -38,7 +38,6 @@ import static kubatech.nei.Mob_Handler.Translations.PLAYER_ONLY;
 import static kubatech.nei.Mob_Handler.Translations.RARE_DROPS;
 
 import java.awt.*;
-import java.lang.reflect.Field;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +48,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.entity.RendererLivingEntity;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
@@ -231,18 +229,6 @@ public class Mob_Handler extends TemplateRecipeHandler {
     @Override
     public String getGuiTexture() {
         return "kubatech:textures/gui/MobHandler.png";
-    }
-
-    private static final Field mainmodelfield;
-
-    static {
-        try {
-            mainmodelfield = RendererLivingEntity.class
-                .getDeclaredField(ModUtils.isDeobfuscatedEnvironment ? "mainModel" : "field_77045_g");
-            mainmodelfield.setAccessible(true);
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
