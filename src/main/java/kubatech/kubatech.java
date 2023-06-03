@@ -120,6 +120,7 @@ public class kubatech {
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         instance = this;
+        final long timeStart = System.currentTimeMillis();
         try {
             myClasses = ReflectionHelper.getClasses(
                 this.getClass()
@@ -128,6 +129,8 @@ public class kubatech {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        final long timeToLoad = System.currentTimeMillis() - timeStart;
+        info("Class discovery took " + timeToLoad + "ms !");
         proxy.preInit(event);
     }
 
