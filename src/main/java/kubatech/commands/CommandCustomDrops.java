@@ -22,13 +22,13 @@ package kubatech.commands;
 
 import java.io.File;
 
-import kubatech.loaders.MobRecipeLoader;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
+
+import kubatech.loaders.MobRecipeLoader;
 
 public class CommandCustomDrops extends CommandBase {
 
