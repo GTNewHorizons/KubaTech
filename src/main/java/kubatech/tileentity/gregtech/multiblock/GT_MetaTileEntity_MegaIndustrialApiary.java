@@ -795,28 +795,29 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         }
                     }),
                 builder)
-            .attachSyncer(
-                new FakeSyncWidget.ListSyncer<>(
-                    () -> flowersError ? flowersCheck.stream()
+            .attachSyncer(new FakeSyncWidget.ListSyncer<>(() -> {
+                if (flowersError) {
+                    List<String> s = flowersCheck.stream()
                         .map(flowersCache::get)
                         .filter(Objects::nonNull)
-                        .collect(Collectors.toList()) : Collections.emptyList(),
-                    f -> flowersGUI = f,
-                    (b, e) -> {
-                        try {
-                            b.writeStringToBuffer(e);
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    },
-                    b -> {
-                        try {
-                            return b.readStringFromBuffer(999);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }),
-                builder));
+                        .sorted()
+                        .collect(Collectors.toList());
+                    s.add(0, "Missing flower types:");
+                    return s;
+                } else return Collections.emptyList();
+            }, f -> flowersGUI = f, (b, e) -> {
+                try {
+                    b.writeStringToBuffer(e);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }, b -> {
+                try {
+                    return b.readStringFromBuffer(999);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }), builder));
 
         final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
         drawTexts(screenElements, null);
