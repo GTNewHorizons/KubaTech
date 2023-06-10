@@ -29,7 +29,13 @@ import static kubatech.api.Variables.*;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -209,7 +215,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     }
 
     private boolean isCacheDirty = true;
-    private final HashSet<String> flowersCache = new HashSet<>();
+    private final HashMap<String, String> flowersCache = new HashMap<>();
     private final HashSet<String> flowersCheck = new HashSet<>();
     private boolean flowersError = false;
     private boolean needsTVarUpdate = false;
@@ -324,7 +330,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             mStorage.add(new BeeSimulator(aNBT.getCompoundTag("mStorage." + i)));
         megaApiaryStorageVersion = aNBT.getInteger("MEGA_APIARY_STORAGE_VERSION");
         flowersCache.clear();
-        mStorage.forEach(s -> flowersCache.add(s.flowerType));
+        mStorage.forEach(s -> flowersCache.put(s.flowerType, s.flowerTypeDescription));
         flowersCache.remove("");
         isCacheDirty = false;
     }
@@ -541,11 +547,12 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         mCasing = 0;
         if (isCacheDirty) {
             flowersCache.clear();
-            mStorage.forEach(s -> flowersCache.add(s.flowerType));
+            mStorage.forEach(s -> flowersCache.put(s.flowerType, s.flowerTypeDescription));
             flowersCache.remove("");
             isCacheDirty = false;
         }
-        flowersCheck.addAll(flowersCache);
+        flowersCheck.clear();
+        flowersCheck.addAll(flowersCache.keySet());
         if (!checkPiece(STRUCTURE_PIECE_MAIN, 7, 8, 0)) return false;
         if (this.mGlassTier < 10 && !this.mEnergyHatches.isEmpty())
             for (GT_MetaTileEntity_Hatch_Energy hatchEnergy : this.mEnergyHatches)
@@ -758,6 +765,28 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                             throw new RuntimeException(e);
                         }
                     }),
+                builder)
+            .attachSyncer(
+                new FakeSyncWidget.ListSyncer<>(
+                    () -> flowersError ? flowersCheck.stream()
+                        .map(flowersCache::get)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList()) : Collections.emptyList(),
+                    f -> flowersGUI = f,
+                    (b, e) -> {
+                        try {
+                            b.writeStringToBuffer(e);
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    },
+                    b -> {
+                        try {
+                            return b.readStringFromBuffer(999);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }),
                 builder));
 
         final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
@@ -958,6 +987,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         return builder.build();
     }
 
+    private List<String> flowersGUI = Collections.emptyList();
+
     @Override
     protected void drawTexts(DynamicPositionedColumn screenElements, SlotWidget inventorySlot) {
         screenElements.setSynced(false)
@@ -968,14 +999,15 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             new DynamicPositionedRow().setSynced(false)
                 .widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get()))
                 .widget(new DynamicTextWidget(() -> {
-                    if (flowersError) return new Text("No flowers !").color(Color.RED.dark(3));
+                    if (flowersError) return new Text("Missing flowers!").color(Color.RED.dark(3));
                     if (getBaseMetaTileEntity().isActive()) return new Text("Working !").color(Color.GREEN.dark(3));
                     else if (getBaseMetaTileEntity().isAllowedToWork())
                         return new Text("Enabled").color(Color.GREEN.dark(3));
                     else if (getBaseMetaTileEntity().wasShutdown())
                         return new Text("Shutdown (CRITICAL)").color(Color.RED.dark(3));
                     else return new Text("Disabled").color(Color.RED.dark(3));
-                }))
+                }).dynamicTooltip(() -> flowersGUI)
+                    .setUpdateTooltipEveryTick(true))
                 .setEnabled(isFixed));
 
         screenElements
@@ -1026,6 +1058,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
         float maxBeeCycles;
         String flowerType;
+        String flowerTypeDescription;
 
         public BeeSimulator(ItemStack queenStack, World world, float t) {
             isValid = false;
@@ -1048,6 +1081,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             IBeeGenome genome = queen.getGenome();
             this.flowerType = genome.getFlowerProvider()
                 .getFlowerType();
+            this.flowerTypeDescription = genome.getFlowerProvider()
+                .getDescription();
             IAlleleBeeSpecies primary = genome.getPrimary();
             beeSpeed = genome.getSpeed() * beeModifier.getProductionModifier(null, 1.f);
             genome.getPrimary()
@@ -1071,12 +1106,16 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 specialDrops.add(new BeeDrop(tag.getCompoundTag("specialDrops" + i)));
             beeSpeed = tag.getFloat("beeSpeed");
             maxBeeCycles = tag.getFloat("maxBeeCycles");
-            if (tag.hasKey("flowerType")) flowerType = tag.getString("flowerType");
-            else {
+            if (tag.hasKey("flowerType") && tag.hasKey("flowerTypeDescription")) {
+                flowerType = tag.getString("flowerType");
+                flowerTypeDescription = tag.getString("flowerTypeDescription");
+            } else {
                 IBee queen = beeRoot.getMember(this.queenStack);
                 IBeeGenome genome = queen.getGenome();
                 this.flowerType = genome.getFlowerProvider()
                     .getFlowerType();
+                this.flowerTypeDescription = genome.getFlowerProvider()
+                    .getDescription();
             }
         }
 
@@ -1097,6 +1136,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             tag.setFloat("beeSpeed", beeSpeed);
             tag.setFloat("maxBeeCycles", maxBeeCycles);
             tag.setString("flowerType", flowerType);
+            tag.setString("flowerTypeDescription", flowerTypeDescription);
             return tag;
         }
 
