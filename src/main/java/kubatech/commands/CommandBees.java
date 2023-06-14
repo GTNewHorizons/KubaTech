@@ -41,6 +41,7 @@ import forestry.api.apiculture.IAlleleBeeSpecies;
 import forestry.api.apiculture.IBee;
 import forestry.api.apiculture.IBeeGenome;
 
+@CommandHandler.ChildCommand
 public class CommandBees extends CommandBase {
 
     @Override

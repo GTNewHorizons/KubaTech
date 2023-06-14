@@ -77,11 +77,6 @@ public class CommonProxy {
     public void serverStarting(FMLServerStartingEvent event) {
         RecipeLoader.addRecipesLate();
         CommandHandler cmd = new CommandHandler();
-        cmd.addCommand(new CommandHelp());
-        cmd.addCommand(new CommandConfig());
-        cmd.addCommand(new CommandBees());
-        cmd.addCommand(new CommandTea());
-        cmd.addCommand(new CommandCustomDrops());
         event.registerServerCommand(cmd);
     }
 

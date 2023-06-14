@@ -30,6 +30,7 @@ import net.minecraft.util.EnumChatFormatting;
 
 import kubatech.loaders.MobRecipeLoader;
 
+@CommandHandler.ChildCommand
 public class CommandCustomDrops extends CommandBase {
 
     @Override
