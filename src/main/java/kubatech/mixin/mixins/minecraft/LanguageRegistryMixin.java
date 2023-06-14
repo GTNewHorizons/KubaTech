@@ -11,15 +11,16 @@ import cpw.mods.fml.common.ModContainer;
 import cpw.mods.fml.common.registry.LanguageRegistry;
 import cpw.mods.fml.relauncher.Side;
 
+@SuppressWarnings("unused")
 @Mixin(value = LanguageRegistry.class)
 public class LanguageRegistryMixin {
 
-    @Inject(method = "loadLanguagesFor", at = @At(value = "HEAD"), remap = false)
+    @Inject(method = "loadLanguagesFor", at = @At(value = "HEAD"), remap = false, require = 1)
     private void loadLanguagesForHEAD(ModContainer container, Side side, CallbackInfo callbackInfo) {
         currentlyTranslating = container.getModId();
     }
 
-    @Inject(method = "loadLanguagesFor", at = @At(value = "RETURN"), remap = false)
+    @Inject(method = "loadLanguagesFor", at = @At(value = "RETURN"), remap = false, require = 1)
     private void loadLanguagesForRETURN(ModContainer container, Side side, CallbackInfo callbackInfo) {
         currentlyTranslating = null;
     }

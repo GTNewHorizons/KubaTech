@@ -2,7 +2,6 @@ package kubatech.mixin.mixins.minecraft;
 
 import static kubatech.mixin.MixinsVariablesHelper.currentlyTranslating;
 
-import java.lang.reflect.Field;
 import java.util.regex.Matcher;
 
 import net.minecraft.util.StringTranslate;
@@ -13,26 +12,21 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 import kubatech.Tags;
 
+@SuppressWarnings("unused")
 @Mixin(value = StringTranslate.class)
 public class StringTranslateMixin {
 
-    private static Field matcherTextField = null;
-
     @Redirect(
-        method = "parseLangFile",
-        at = @At(value = "INVOKE", target = "Ljava/util/regex/Matcher;replaceAll(S)S", remap = false),
-        remap = false)
+        method = "Lnet/minecraft/util/StringTranslate;parseLangFile(Ljava/io/InputStream;)Ljava/util/HashMap;",
+        at = @At(
+            value = "INVOKE",
+            target = "Ljava/util/regex/Matcher;replaceAll(Ljava/lang/String;)Ljava/lang/String;",
+            remap = false),
+        remap = false,
+        require = 1)
     private static String replaceAll(Matcher matcher, String replace) {
-        if (currentlyTranslating != null && currentlyTranslating.equals(Tags.MODID)) {
-            try {
-                if (matcherTextField == null) {
-                    matcherTextField = Matcher.class.getDeclaredField("text");
-                    matcherTextField.setAccessible(true);
-                }
-                return (String) matcherTextField.get(matcher);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
+        if (currentlyTranslating != null && currentlyTranslating.equals(Tags.MODID) && matcher.find()) {
+            return matcher.replaceFirst(matcher.group());
         }
         return matcher.replaceAll(replace);
     }
