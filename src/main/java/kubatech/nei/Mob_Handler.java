@@ -517,8 +517,8 @@ public class Mob_Handler extends TemplateRecipeHandler {
             if (isPlayerOnly) {
                 extraTooltip.add(EnumChatFormatting.RESET + PLAYER_ONLY.get());
                 extraTooltip.add(
-                    EnumChatFormatting.RESET
-                        + EEC_CHANCE.get(((double) chance / 100d) * Config.MobHandler.playerOnlyDropsModifier));
+                    EnumChatFormatting.RESET + EEC_CHANCE
+                        .get(((double) ((int) ((double) chance * Config.MobHandler.playerOnlyDropsModifier)) / 100d)));
             }
             extraTooltip.add(EnumChatFormatting.RESET + AVERAGE_REMINDER.get());
 

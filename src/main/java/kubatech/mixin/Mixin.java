@@ -19,6 +19,8 @@ public enum Mixin {
     EntityLivingBaseAccessor("minecraft.EntityLivingBaseAccessor", VANILLA),
     EntitySlimeAccessor("minecraft.EntitySlimeAccessor", VANILLA),
     RendererLivingEntityAccessor("minecraft.RendererLivingEntityAccessor", VANILLA),
+    StringTranslateMixin("minecraft.StringTranslateMixin", VANILLA),
+    LanguageRegistryMixin("minecraft.LanguageRegistryMixin", VANILLA),
 
     // Infernal Mobs
     InfernalMobsCoreAccessor("InfernalMobs.InfernalMobsCoreAccessor", INFERNAL_MOBS),
