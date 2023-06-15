@@ -19,7 +19,7 @@ import kubatech.Tags;
 public class LocaleMixin {
 
     @ModifyArg(
-        method = "Lnet/minecraft/client/resources/Locale;loadLocaleDataFiles(Lnet/minecraft/client/resources/IResourceManager;Ljava/util/List;)V",
+        method = "loadLocaleDataFiles",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/resources/IResourceManager;getAllResources(Lnet/minecraft/util/ResourceLocation;)Ljava/util/List;"),
@@ -31,7 +31,7 @@ public class LocaleMixin {
     }
 
     @Redirect(
-        method = "Lnet/minecraft/client/resources/Locale;loadLocaleData(Ljava/io/InputStream;)V",
+        method = "loadLocaleData(Ljava/io/InputStream;)V",
         at = @At(
             value = "INVOKE",
             target = "Ljava/util/regex/Matcher;replaceAll(Ljava/lang/String;)Ljava/lang/String;",

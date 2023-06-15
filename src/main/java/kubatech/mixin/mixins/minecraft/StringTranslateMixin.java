@@ -17,7 +17,7 @@ import kubatech.Tags;
 public class StringTranslateMixin {
 
     @Redirect(
-        method = "Lnet/minecraft/util/StringTranslate;parseLangFile(Ljava/io/InputStream;)Ljava/util/HashMap;",
+        method = "parseLangFile",
         at = @At(
             value = "INVOKE",
             target = "Ljava/util/regex/Matcher;replaceAll(Ljava/lang/String;)Ljava/lang/String;",
