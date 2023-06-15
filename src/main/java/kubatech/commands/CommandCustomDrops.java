@@ -22,12 +22,12 @@ package kubatech.commands;
 
 import java.io.File;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
+import kubatech.api.utils.ModUtils;
 import kubatech.loaders.MobRecipeLoader;
 
 @CommandHandler.ChildCommand
@@ -51,8 +51,7 @@ public class CommandCustomDrops extends CommandBase {
     @Override
     public void processCommand(ICommandSender p_71515_1_, String[] p_71515_2_) {
 
-        if (!Minecraft.getMinecraft()
-            .isSingleplayer()) {
+        if (!ModUtils.isClientSided) {
             p_71515_1_
                 .addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "This command is single-player only!"));
             return;
