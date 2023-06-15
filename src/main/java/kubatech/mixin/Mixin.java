@@ -22,6 +22,7 @@ public enum Mixin {
     StringTranslateMixin("minecraft.StringTranslateMixin", VANILLA),
     LanguageRegistryMixin("minecraft.LanguageRegistryMixin", VANILLA),
     LocaleMixin("minecraft.LocaleMixin", Side.CLIENT, VANILLA),
+    ItemStackAccessor("minecraft.ItemStackAccessor", VANILLA),
 
     // Infernal Mobs
     InfernalMobsCoreAccessor("InfernalMobs.InfernalMobsCoreAccessor", INFERNAL_MOBS),

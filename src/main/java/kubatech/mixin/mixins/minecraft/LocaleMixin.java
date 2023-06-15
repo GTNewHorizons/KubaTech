@@ -5,8 +5,8 @@ import static kubatech.mixin.MixinsVariablesHelper.currentlyTranslating;
 import java.util.regex.Matcher;
 
 import net.minecraft.client.resources.Locale;
-
 import net.minecraft.util.ResourceLocation;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
@@ -20,7 +20,9 @@ public class LocaleMixin {
 
     @ModifyArg(
         method = "Lnet/minecraft/client/resources/Locale;loadLocaleDataFiles(Lnet/minecraft/client/resources/IResourceManager;Ljava/util/List;)V",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/IResourceManager;getAllResources(Lnet/minecraft/util/ResourceLocation;)Ljava/util/List;"),
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/resources/IResourceManager;getAllResources(Lnet/minecraft/util/ResourceLocation;)Ljava/util/List;"),
         index = 0,
         require = 1)
     private ResourceLocation loadLocaleDataFiles(ResourceLocation resourceLocation) {
