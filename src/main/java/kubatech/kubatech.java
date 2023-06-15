@@ -116,7 +116,7 @@ public class kubatech {
     @SidedProxy(clientSide = Tags.MODID + ".ClientProxy", serverSide = Tags.MODID + ".CommonProxy")
     public static CommonProxy proxy;
 
-    private static Collection<ClassNode> myClasses;
+    public static Collection<ClassNode> myClasses;
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -131,7 +131,7 @@ public class kubatech {
             throw new RuntimeException(e);
         }
         final long timeToLoad = System.currentTimeMillis() - timeStart;
-        info("Class discovery took " + timeToLoad + "ms !");
+        info("Class discovery took " + timeToLoad + "ms ! Found " + myClasses.size() + " classes.");
         proxy.preInit(event);
     }
 
