@@ -7,7 +7,6 @@ import com.google.common.io.Files;
 public enum TargetedMod {
 
     VANILLA("Minecraft", "unused", true),
-    INFERNAL_MOBS("InfernalMobs", "InfernalMobs-", true),
 
     ;
 

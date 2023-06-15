@@ -91,7 +91,6 @@ import kubatech.api.utils.ModUtils;
 import kubatech.config.Config;
 import kubatech.kubatech;
 import kubatech.loaders.MobRecipeLoader;
-import kubatech.mixin.mixins.InfernalMobs.InfernalMobsCoreAccessor;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 
 public class Mob_Handler extends TemplateRecipeHandler {
@@ -590,9 +589,9 @@ public class Mob_Handler extends TemplateRecipeHandler {
 
             if (!LoaderReference.InfernalMobs) infernaltype = -1; // not supported
             else {
-                InfernalMobsCoreAccessor infernalMobsCore = (InfernalMobsCoreAccessor) InfernalMobsCore.instance();
-                if (!infernalMobsCore.callIsClassAllowed(mob)) infernaltype = 0; // not allowed
-                else if (infernalMobsCore.callCheckEntityClassForced(mob)) infernaltype = 2; // forced
+                InfernalMobsCore infernalMobsCore = InfernalMobsCore.instance();
+                if (!infernalMobsCore.isClassAllowed(mob)) infernaltype = 0; // not allowed
+                else if (infernalMobsCore.checkEntityClassForced(mob)) infernaltype = 2; // forced
                 else infernaltype = 1; // normal
             }
         }

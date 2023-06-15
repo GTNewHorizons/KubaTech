@@ -1,6 +1,5 @@
 package kubatech.mixin;
 
-import static kubatech.mixin.TargetedMod.INFERNAL_MOBS;
 import static kubatech.mixin.TargetedMod.VANILLA;
 
 import java.util.Arrays;
@@ -22,9 +21,6 @@ public enum Mixin {
     StringTranslateMixin("minecraft.StringTranslateMixin", VANILLA),
     LanguageRegistryMixin("minecraft.LanguageRegistryMixin", VANILLA),
     LocaleMixin("minecraft.LocaleMixin", Side.CLIENT, VANILLA),
-
-    // Infernal Mobs
-    InfernalMobsCoreAccessor("InfernalMobs.InfernalMobsCoreAccessor", INFERNAL_MOBS),
 
     ;
 

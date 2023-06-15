@@ -91,7 +91,6 @@ import kubatech.api.utils.ModUtils;
 import kubatech.api.utils.ModUtils.TriConsumer;
 import kubatech.config.Config;
 import kubatech.config.OverridesConfig;
-import kubatech.mixin.mixins.InfernalMobs.InfernalMobsCoreAccessor;
 import kubatech.mixin.mixins.minecraft.EntityAccessor;
 import kubatech.mixin.mixins.minecraft.EntityLivingAccessor;
 import kubatech.mixin.mixins.minecraft.EntityLivingBaseAccessor;
@@ -165,7 +164,7 @@ public class MobRecipeLoader {
         @SuppressWarnings("unchecked")
         private MobRecipe(EntityLiving e, String entityID, ArrayList<MobDrop> outputs) {
             if (LoaderReference.InfernalMobs) {
-                InfernalMobsCoreAccessor infernalMobsCore = (InfernalMobsCoreAccessor) InfernalMobsCore.instance();
+                InfernalMobsCore infernalMobsCore = InfernalMobsCore.instance();
                 if (infernaldrops == null) {
                     infernaldrops = new droplist();
                     LOG.info("Generating Infernal drops");
@@ -181,7 +180,7 @@ public class MobRecipeLoader {
                         i++;
                     }
                     if (i > 0) {
-                        double chance = infernalMobsCore.callCheckEntityClassForced(e) ? 1d
+                        double chance = infernalMobsCore.checkEntityClassForced(e) ? 1d
                             : (1d / infernalMobsCore.getEliteRarity());
                         ArrayList<ItemStack> elitelist = infernalMobsCore.getDropIdListElite();
                         for (ItemStack stack : elitelist) {
@@ -214,8 +213,8 @@ public class MobRecipeLoader {
                         }
                     }
                 }
-                infernalityAllowed = infernalMobsCore.callIsClassAllowed(e);
-                alwaysinfernal = infernalMobsCore.callCheckEntityClassForced(e);
+                infernalityAllowed = infernalMobsCore.isClassAllowed(e);
+                alwaysinfernal = infernalMobsCore.checkEntityClassForced(e);
             } else {
                 infernalityAllowed = false;
                 alwaysinfernal = false;
@@ -281,7 +280,7 @@ public class MobRecipeLoader {
             }
 
             if (LoaderReference.InfernalMobs) {
-                InfernalMobsCoreAccessor infernalMobsCore = (InfernalMobsCoreAccessor) InfernalMobsCore.instance();
+                InfernalMobsCore infernalMobsCore = InfernalMobsCore.instance();
                 if (infernalityAllowed && mEUt * 8 < MTE.getMaxInputVoltage()
                     && !infernalMobsCore.getDimensionBlackList()
                         .contains(
