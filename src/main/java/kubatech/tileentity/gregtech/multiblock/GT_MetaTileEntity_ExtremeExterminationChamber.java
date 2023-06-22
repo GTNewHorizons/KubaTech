@@ -133,7 +133,6 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     extends KubaTechGTMultiBlockBase<GT_MetaTileEntity_ExtremeExterminationChamber>
     implements CustomTileEntityPacketHandler, ISurvivalConstructable {
 
-    // public static final HashMap<String, MobRecipeLoader.MobRecipe> MobNameToRecipeMap = new HashMap<>();
     public static final double DIAMOND_SPIKES_DAMAGE = 9d;
     // Powered spawner with octadic capacitor spawns ~22/min ~= 0.366/sec ~= 2.72s/spawn ~= 54.54t/spawn
     public static final int MOB_SPAWN_INTERVAL = 55;
