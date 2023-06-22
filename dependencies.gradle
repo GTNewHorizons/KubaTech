@@ -40,7 +40,7 @@ dependencies {
     api("com.github.GTNewHorizons:EnderIO:2.4.18:dev")
     api("com.github.GTNewHorizons:ForestryMC:4.6.7:dev")
     api("com.github.GTNewHorizons:ModularUI:1.1.10:dev")
-    api(rfg.deobf("maven.modrinth:mobsinfo:0.0.2"))
+    api(project.files("libs/mobsinfo-0.0.2-dev.jar"))
     devOnlyNonPublishable("com.github.GTNewHorizons:Infernal-Mobs:1.7.9-GTNH:dev")
     //compileOnly("curse.maven:extrautilities-225561:2264384") {
     //    transitive = false
