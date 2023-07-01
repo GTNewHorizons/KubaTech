@@ -45,7 +45,6 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
 
-import com.kuba6000.mobsinfo.api.utils.FastRandom;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.Enchantment;
@@ -93,6 +92,7 @@ import com.gtnewhorizons.modularui.common.widget.DynamicTextWidget;
 import com.gtnewhorizons.modularui.common.widget.FakeSyncWidget;
 import com.gtnewhorizons.modularui.common.widget.SlotWidget;
 import com.gtnewhorizons.modularui.common.widget.TextWidget;
+import com.kuba6000.mobsinfo.api.utils.FastRandom;
 import com.kuba6000.mobsinfo.api.utils.ItemID;
 import com.mojang.authlib.GameProfile;
 
