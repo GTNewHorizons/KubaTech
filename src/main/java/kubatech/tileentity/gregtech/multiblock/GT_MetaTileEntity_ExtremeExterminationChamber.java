@@ -618,6 +618,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     @Override
     public boolean checkMachine(IGregTechTileEntity aBaseMetaTileEntity, ItemStack aStack) {
         mGlassTier = 0;
+        mCasing = 0;
         if (!checkPiece(STRUCTURE_PIECE_MAIN, 2, 6, 0)) return false;
         if (mCasing < 35 || mMaintenanceHatches.size() != 1
             || mEnergyHatches.size() == 0
