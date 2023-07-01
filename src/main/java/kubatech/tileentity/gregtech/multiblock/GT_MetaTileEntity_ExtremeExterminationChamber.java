@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
 
+import com.kuba6000.mobsinfo.api.utils.FastRandom;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.Enchantment;
@@ -124,7 +125,6 @@ import kubatech.api.LoaderReference;
 import kubatech.api.helpers.ReflectionHelper;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.api.tileentity.CustomTileEntityPacketHandler;
-import kubatech.api.utils.FastRandom;
 import kubatech.client.effect.EntityRenderer;
 import kubatech.loaders.MobHandlerLoader;
 import kubatech.network.CustomTileEntityPacket;
