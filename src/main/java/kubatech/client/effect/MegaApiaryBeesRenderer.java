@@ -92,34 +92,34 @@ public class MegaApiaryBeesRenderer extends EntityFX {
             .getIconIndex();
 
         GL11.glPushMatrix();
-        GL11.glTranslatef(0f, 0f, -4f);
+        GL11.glTranslatef(-0.5f, 0f, -4f);
         GL11.glScalef(0.1f, 0.1f, 0.1f);
         RenderItem.getInstance()
-            .renderIcon(0, 0, icon, 16, 16);
+            .renderIcon(0, 0, icon, icon.getIconWidth(), icon.getIconHeight());
         GL11.glPopMatrix();
 
         GL11.glPushMatrix();
-        GL11.glTranslatef(1f, 0f, 3f);
+        GL11.glTranslatef(1.5f, 0f, 3f);
         GL11.glRotatef(180f, 0f, 1f, 0f);
         GL11.glScalef(0.1f, 0.1f, 0.1f);
         RenderItem.getInstance()
-            .renderIcon(0, 0, icon, 16, 16);
+            .renderIcon(0, 0, icon, icon.getIconWidth(), icon.getIconHeight());
         GL11.glPopMatrix();
 
         GL11.glPushMatrix();
-        GL11.glTranslatef(4f, 0f, -1f);
+        GL11.glTranslatef(4f, 0f, -1.5f);
         GL11.glRotatef(-90f, 0f, 1f, 0f);
         GL11.glScalef(0.1f, 0.1f, 0.1f);
         RenderItem.getInstance()
-            .renderIcon(0, 0, icon, 16, 16);
+            .renderIcon(0, 0, icon, icon.getIconWidth(), icon.getIconHeight());
         GL11.glPopMatrix();
 
         GL11.glPushMatrix();
-        GL11.glTranslatef(-3f, 0f, 1f);
+        GL11.glTranslatef(-3f, 0f, 0.5f);
         GL11.glRotatef(90f, 0f, 1f, 0f);
         GL11.glScalef(0.1f, 0.1f, 0.1f);
         RenderItem.getInstance()
-            .renderIcon(0, 0, icon, 16, 16);
+            .renderIcon(0, 0, icon, icon.getIconWidth(), icon.getIconHeight());
         GL11.glPopMatrix();
 
         GL11.glPopMatrix();
