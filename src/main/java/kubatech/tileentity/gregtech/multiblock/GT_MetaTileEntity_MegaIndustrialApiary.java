@@ -429,7 +429,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             // TODO: Look for proper fix
             if (mUpdate < 0) mUpdate = 600;
         } else {
-            if (aBaseMetaTileEntity.isActive() && aTick % 100 == 0) {
+            if (aBaseMetaTileEntity.isActive() && aTick % 128 == 0) {
                 int[] abc = new int[] { 0, -2, 7 };
                 int[] xyz = new int[] { 0, 0, 0 };
                 this.getExtendedFacing()
@@ -437,7 +437,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 xyz[0] += aBaseMetaTileEntity.getXCoord();
                 xyz[1] += aBaseMetaTileEntity.getYCoord();
                 xyz[2] += aBaseMetaTileEntity.getZCoord();
-                showBees(aBaseMetaTileEntity.getWorld(), xyz[0], xyz[1], xyz[2], 100);
+                showBees(aBaseMetaTileEntity.getWorld(), xyz[0], xyz[1], xyz[2], 128);
             }
         }
     }
