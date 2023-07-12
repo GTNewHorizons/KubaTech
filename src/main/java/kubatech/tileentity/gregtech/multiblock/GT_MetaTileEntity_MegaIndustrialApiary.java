@@ -450,6 +450,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
     @Override
     public boolean checkRecipe(ItemStack aStack) {
+        int workingBees = 0;
         updateMaxSlots();
         if (mPrimaryMode < 2) {
             if (mPrimaryMode == 0 && mStorage.size() < mMaxSlots) {
@@ -517,9 +518,10 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     for (int i = 0, mStorageSize = Math.min(mStorage.size(), mMaxSlots); i < mStorageSize; i++) {
                         BeeSimulator beeSimulator = mStorage.get(i);
                         stacks.addAll(beeSimulator.getDrops(64_00d * boosted));
+                        workingBees++;
                     }
 
-                    this.lEUt = -(int) ((double) GT_Values.V[6] * (double) mMaxSlots * 0.99d);
+                    this.lEUt = -GT_Values.VP[6] * workingBees;
                     this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
                     this.mEfficiencyIncrease = 10000;
                     this.mMaxProgresstime = 100;
