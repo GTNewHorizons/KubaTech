@@ -493,7 +493,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     if (needsTVarUpdate) {
                         float t = (float) getVoltageTierExact();
                         needsTVarUpdate = false;
-                        mStorage.forEach(s -> s.updateTVar(t));
+                        World w = getBaseMetaTileEntity().getWorld();
+                        mStorage.forEach(s -> s.updateTVar(w, t));
                     }
 
                     int maxConsume = Math.min(mStorage.size(), mMaxSlots) * 40;
@@ -1095,6 +1096,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         float maxBeeCycles;
         String flowerType;
         String flowerTypeDescription;
+        private static IBeekeepingMode mode;
 
         public BeeSimulator(ItemStack queenStack, World world, float t) {
             isValid = false;
@@ -1105,11 +1107,11 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         }
 
         public void generate(World world, float t) {
+            if (mode == null) mode = beeRoot.getBeekeepingMode(world);
             drops.clear();
             specialDrops.clear();
             if (beeRoot.getType(this.queenStack) != EnumBeeType.QUEEN) return;
             IBee queen = beeRoot.getMember(this.queenStack);
-            IBeekeepingMode mode = beeRoot.getBeekeepingMode(world);
             IBeeModifier beeModifier = mode.getBeeModifier();
             float mod = beeModifier.getLifespanModifier(null, null, 1.f);
             int h = queen.getMaxHealth();
@@ -1120,7 +1122,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             this.flowerTypeDescription = genome.getFlowerProvider()
                 .getDescription();
             IAlleleBeeSpecies primary = genome.getPrimary();
-            beeSpeed = genome.getSpeed() * beeModifier.getProductionModifier(null, 1.f);
+            beeSpeed = genome.getSpeed();
             genome.getPrimary()
                 .getProductChances()
                 .forEach((key, value) -> drops.add(new BeeDrop(key, value, beeSpeed, t)));
@@ -1203,7 +1205,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             return beeRoot.getMemberStack(princess, EnumBeeType.PRINCESS.ordinal());
         }
 
-        public void updateTVar(float t) {
+        public void updateTVar(World world, float t) {
+            if (mode == null) mode = beeRoot.getBeekeepingMode(world);
             drops.forEach(d -> d.updateTVar(t));
             specialDrops.forEach(d -> d.updateTVar(t));
         }
@@ -1236,7 +1239,12 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             }
 
             public void evaluate() {
-                this.amount = Bee.getFinalChance(chance, beeSpeed, MAX_PRODUCTION_MODIFIER_FROM_UPGRADES, t);
+                this.amount = Bee.getFinalChance(
+                    chance,
+                    beeSpeed,
+                    MAX_PRODUCTION_MODIFIER_FROM_UPGRADES + mode.getBeeModifier()
+                        .getProductionModifier(null, MAX_PRODUCTION_MODIFIER_FROM_UPGRADES),
+                    t);
             }
 
             public double getAmount(double speedModifier) {
