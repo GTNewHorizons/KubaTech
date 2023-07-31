@@ -40,7 +40,7 @@ dependencies {
     api("com.github.GTNewHorizons:EnderIO:2.4.21:dev")
     api("com.github.GTNewHorizons:ForestryMC:4.6.13:dev")
     api("com.github.GTNewHorizons:ModularUI:1.1.15:dev")
-    api("com.github.GTNewHorizons:Mobs-Info:0.0.7-GTNH:dev")
+    api("com.github.GTNewHorizons:Mobs-Info:0.0.8-GTNH:dev")
     devOnlyNonPublishable("com.github.GTNewHorizons:Infernal-Mobs:1.7.9-GTNH:dev")
     //compileOnly("curse.maven:extrautilities-225561:2264384") {
     //    transitive = false
