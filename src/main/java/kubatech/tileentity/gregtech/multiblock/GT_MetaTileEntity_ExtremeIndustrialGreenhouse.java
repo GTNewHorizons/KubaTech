@@ -65,7 +65,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
@@ -138,6 +137,7 @@ import ic2.core.Ic2Items;
 import ic2.core.crop.TileEntityCrop;
 import kubatech.Tags;
 import kubatech.api.LoaderReference;
+import kubatech.api.helpers.GTHelper;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.api.utils.ModUtils;
 import kubatech.client.effect.CropRenderer;
@@ -635,45 +635,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         }
     }
 
-    private static class EIGGUISlot {
-
-        public EIGGUISlot() {};
-
-        public EIGGUISlot(int count, ItemStack stack, ArrayList<Integer> realSlots) {
-            this.count = count;
-            this.stack = stack;
-            this.realSlots = realSlots;
-        }
-
-        public int count;
-        public ItemStack stack;
-        public ArrayList<Integer> realSlots = new ArrayList<>();
-
-        public void write(PacketBuffer buffer) throws IOException {
-            buffer.writeVarIntToBuffer(count);
-            buffer.writeItemStackToBuffer(stack);
-        }
-
-        public static EIGGUISlot read(PacketBuffer buffer) throws IOException {
-            EIGGUISlot slot = new EIGGUISlot();
-            slot.count = buffer.readVarIntFromBuffer();
-            slot.stack = buffer.readItemStackFromBuffer();
-            return slot;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) return true;
-            if (!(obj instanceof EIGGUISlot)) return false;
-            return count == ((EIGGUISlot) obj).count && ItemID.createNoCopy(stack, false)
-                .hashCode()
-                == ItemID.createNoCopy(((EIGGUISlot) obj).stack, false)
-                    .hashCode()
-                && realSlots.equals(((EIGGUISlot) obj).realSlots);
-        }
-    }
-
-    List<EIGGUISlot> drawables = new ArrayList<>();
+    List<GTHelper.StackableGUISlot> drawables = new ArrayList<>();
     private int usedSlots = 0; // mStorage.size()
 
     @SuppressWarnings("UnstableApiUsage")
@@ -759,10 +721,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     realSlotMap.computeIfAbsent(id, unused -> new ArrayList<>())
                         .add(i);
                 }
-                List<EIGGUISlot> newDrawables = new ArrayList<>();
+                List<GTHelper.StackableGUISlot> newDrawables = new ArrayList<>();
                 for (Map.Entry<ItemID, Integer> entry : itemMap.entrySet()) {
                     newDrawables.add(
-                        new EIGGUISlot(
+                        new GTHelper.StackableGUISlot(
                             entry.getValue(),
                             stackMap.get(entry.getKey()),
                             realSlotMap.get(entry.getKey())));
@@ -784,7 +746,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 }
             }, buffer -> {
                 try {
-                    return EIGGUISlot.read(buffer);
+                    return GTHelper.StackableGUISlot.read(buffer);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -815,7 +777,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             drawables = new ArrayList<>();
             for (Map.Entry<ItemID, Integer> entry : itemMap.entrySet()) {
                 drawables.add(
-                    new EIGGUISlot(entry.getValue(), stackMap.get(entry.getKey()), realSlotMap.get(entry.getKey())));
+                    new GTHelper.StackableGUISlot(
+                        entry.getValue(),
+                        stackMap.get(entry.getKey()),
+                        realSlotMap.get(entry.getKey())));
             }
         }
 
@@ -827,9 +792,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     ItemStack input = player.inventory.getItemStack();
                     if (input != null) {
                         if (this.mMaxProgresstime > 0) {
-                            GT_Utility.sendChatToPlayer(
-                                player,
-                                EnumChatFormatting.RED + "Can't replace/insert while running !");
+                            GT_Utility
+                                .sendChatToPlayer(player, EnumChatFormatting.RED + "Can't replace while running !");
                             return;
                         }
                         if (addCrop(input, -1, true)) {
@@ -909,8 +873,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             ItemStack input = player.inventory.getItemStack();
             if (input != null) {
                 if (this.mMaxProgresstime > 0) {
-                    GT_Utility
-                        .sendChatToPlayer(player, EnumChatFormatting.RED + "Can't replace/insert while running !");
+                    GT_Utility.sendChatToPlayer(player, EnumChatFormatting.RED + "Can't insert while running !");
                     return;
                 }
                 if (addCrop(input)) {

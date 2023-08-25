@@ -23,6 +23,14 @@ package kubatech.api.helpers;
 import static gregtech.api.metatileentity.implementations.GT_MetaTileEntity_MultiBlockBase.isValidMetaTileEntity;
 import static kubatech.api.Variables.ln4;
 
+import java.io.IOException;
+import java.util.ArrayList;
+
+import net.minecraft.item.ItemStack;
+import net.minecraft.network.PacketBuffer;
+
+import com.kuba6000.mobsinfo.api.utils.ItemID;
+
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energy;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_MultiBlockBase;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
@@ -51,5 +59,43 @@ public class GTHelper {
 
     public static int getVoltageTier(GT_MetaTileEntity_MultiBlockBase mte) {
         return (int) getVoltageTierD(mte);
+    }
+
+    public static class StackableGUISlot {
+
+        public StackableGUISlot() {};
+
+        public StackableGUISlot(int count, ItemStack stack, ArrayList<Integer> realSlots) {
+            this.count = count;
+            this.stack = stack;
+            this.realSlots = realSlots;
+        }
+
+        public int count;
+        public ItemStack stack;
+        public ArrayList<Integer> realSlots = new ArrayList<>();
+
+        public void write(PacketBuffer buffer) throws IOException {
+            buffer.writeVarIntToBuffer(count);
+            buffer.writeItemStackToBuffer(stack);
+        }
+
+        public static StackableGUISlot read(PacketBuffer buffer) throws IOException {
+            StackableGUISlot slot = new StackableGUISlot();
+            slot.count = buffer.readVarIntFromBuffer();
+            slot.stack = buffer.readItemStackFromBuffer();
+            return slot;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (!(obj instanceof StackableGUISlot)) return false;
+            return count == ((StackableGUISlot) obj).count && ItemID.createNoCopy(stack, false)
+                .hashCode()
+                == ItemID.createNoCopy(((StackableGUISlot) obj).stack, false)
+                    .hashCode()
+                && realSlots.equals(((StackableGUISlot) obj).realSlots);
+        }
     }
 }
