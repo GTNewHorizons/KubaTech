@@ -721,7 +721,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         }
     }
 
-    private List<GTHelper.StackableGUISlot> drawables = new ArrayList<>();
+    private List<GTHelper.StackableItemSlot> drawables = new ArrayList<>();
     private int usedSlots = 0; // mStorage.size()
 
     @SuppressWarnings("UnstableApiUsage")
@@ -807,10 +807,10 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     realSlotMap.computeIfAbsent(id, unused -> new ArrayList<>())
                         .add(i);
                 }
-                List<GTHelper.StackableGUISlot> newDrawables = new ArrayList<>();
+                List<GTHelper.StackableItemSlot> newDrawables = new ArrayList<>();
                 for (Map.Entry<ItemID, Integer> entry : itemMap.entrySet()) {
                     newDrawables.add(
-                        new GTHelper.StackableGUISlot(
+                        new GTHelper.StackableItemSlot(
                             entry.getValue(),
                             stackMap.get(entry.getKey()),
                             realSlotMap.get(entry.getKey())));
@@ -832,7 +832,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 }
             }, buffer -> {
                 try {
-                    return GTHelper.StackableGUISlot.read(buffer);
+                    return GTHelper.StackableItemSlot.read(buffer);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -886,7 +886,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             drawables = new ArrayList<>();
             for (Map.Entry<ItemID, Integer> entry : itemMap.entrySet()) {
                 drawables.add(
-                    new GTHelper.StackableGUISlot(
+                    new GTHelper.StackableItemSlot(
                         entry.getValue(),
                         stackMap.get(entry.getKey()),
                         realSlotMap.get(entry.getKey())));
@@ -1007,7 +1007,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 () -> Arrays.asList(
                     EnumChatFormatting.GRAY + "Empty slot",
                     EnumChatFormatting.DARK_PURPLE + "There are " + (mMaxSlots - usedSlots) + " identical slots",
-                    EnumChatFormatting.GRAY + "Click with queen in mouse to insert"))
+                    EnumChatFormatting.GRAY + "Click with queen in mouse to insert",
+                    EnumChatFormatting.GRAY + "Shift click a queen in your inventory to insert"))
             .setSize(18, 18));
 
         final int perRow = 7;
