@@ -61,41 +61,40 @@ public class GTHelper {
         return (int) getVoltageTierD(mte);
     }
 
-    public static class StackableGUISlot {
+    public static class StackableItemSlot {
 
-        public StackableGUISlot() {};
-
-        public StackableGUISlot(int count, ItemStack stack, ArrayList<Integer> realSlots) {
+        public StackableItemSlot(int count, ItemStack stack, ArrayList<Integer> realSlots) {
             this.count = count;
             this.stack = stack;
             this.realSlots = realSlots;
         }
 
-        public int count;
-        public ItemStack stack;
-        public ArrayList<Integer> realSlots = new ArrayList<>();
+        public final int count;
+        public final ItemStack stack;
+        public final ArrayList<Integer> realSlots;
 
         public void write(PacketBuffer buffer) throws IOException {
             buffer.writeVarIntToBuffer(count);
             buffer.writeItemStackToBuffer(stack);
         }
 
-        public static StackableGUISlot read(PacketBuffer buffer) throws IOException {
-            StackableGUISlot slot = new StackableGUISlot();
-            slot.count = buffer.readVarIntFromBuffer();
-            slot.stack = buffer.readItemStackFromBuffer();
-            return slot;
+        public static StackableItemSlot read(PacketBuffer buffer) throws IOException {
+            return new StackableItemSlot(
+                buffer.readVarIntFromBuffer(),
+                buffer.readItemStackFromBuffer(),
+                new ArrayList<>());
         }
 
         @Override
         public boolean equals(Object obj) {
             if (this == obj) return true;
-            if (!(obj instanceof StackableGUISlot)) return false;
-            return count == ((StackableGUISlot) obj).count && ItemID.createNoCopy(stack, false)
+            if (!(obj instanceof StackableItemSlot)) return false;
+            StackableItemSlot other = (StackableItemSlot) obj;
+            return count == other.count && ItemID.createNoCopy(stack, false)
                 .hashCode()
-                == ItemID.createNoCopy(((StackableGUISlot) obj).stack, false)
+                == ItemID.createNoCopy(other.stack, false)
                     .hashCode()
-                && realSlots.equals(((StackableGUISlot) obj).realSlots);
+                && realSlots.equals(other.realSlots);
         }
     }
 }
