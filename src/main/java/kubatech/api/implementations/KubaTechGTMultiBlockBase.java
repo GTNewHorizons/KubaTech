@@ -162,15 +162,19 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
         this.lEUt = aEUt << (tiers << 1);
         aDuration >>= isPerfect ? (durationTiers << 1) : durationTiers;
         int dMulti = tiers - durationTiers;
+        boolean isUsingMEBus = mOutputBusses.stream()
+            .allMatch(p -> p instanceof GT_MetaTileEntity_Hatch_OutputBus_ME);
         if (dMulti > 0) {
             dMulti = 1 << (isPerfect ? (dMulti << 1) : dMulti);
             // TODO: Use more inputs???
             final ArrayList<ItemStack> stacks = new ArrayList<>(Arrays.asList(this.mOutputItems));
             for (ItemStack mOutputItem : this.mOutputItems) {
                 mOutputItem.stackSize *= dMulti;
-                int maxSize = mOutputItem.getMaxStackSize();
-                while (mOutputItem.stackSize > maxSize)
-                    stacks.add(mOutputItem.splitStack(Math.min(mOutputItem.stackSize - maxSize, maxSize)));
+                if (!isUsingMEBus) {
+                    int maxSize = mOutputItem.getMaxStackSize();
+                    while (mOutputItem.stackSize > maxSize)
+                        stacks.add(mOutputItem.splitStack(Math.min(mOutputItem.stackSize - maxSize, maxSize)));
+                }
             }
             if (stacks.size() != this.mOutputItems.length) this.mOutputItems = stacks.toArray(new ItemStack[0]);
             for (FluidStack mOutputFluid : this.mOutputFluids) mOutputFluid.amount *= dMulti;
