@@ -886,7 +886,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             .setBackground(
                 () -> new IDrawable[] { getBaseMetaTileEntity().getGUITextureSet()
                     .getItemSlot(),
-                    new Text(String.valueOf(mMaxSlots - usedSlots)).color(Color.PURPLE.normal)
+                    new Text(String.valueOf((mMaxSlots - usedSlots) > 99 ? "+99" : (mMaxSlots - usedSlots)))
+                        .color(Color.PURPLE.normal)
                         .alignment(Alignment.TopRight) })
             .dynamicTooltip(
                 () -> Arrays.asList(

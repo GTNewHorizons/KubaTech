@@ -1001,7 +1001,8 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             .setBackground(
                 () -> new IDrawable[] { getBaseMetaTileEntity().getGUITextureSet()
                     .getItemSlot(), GT_UITextures.OVERLAY_SLOT_BEE_QUEEN,
-                    new Text(String.valueOf(mMaxSlots - usedSlots)).color(Color.PURPLE.normal)
+                    new Text(String.valueOf((mMaxSlots - usedSlots) > 99 ? "+99" : (mMaxSlots - usedSlots)))
+                        .color(Color.PURPLE.normal)
                         .alignment(Alignment.TopRight) })
             .dynamicTooltip(
                 () -> Arrays.asList(
