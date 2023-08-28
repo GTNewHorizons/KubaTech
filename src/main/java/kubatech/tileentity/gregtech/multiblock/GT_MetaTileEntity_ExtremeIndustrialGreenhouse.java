@@ -892,8 +892,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 () -> Arrays.asList(
                     EnumChatFormatting.GRAY + "Empty slot",
                     EnumChatFormatting.DARK_PURPLE + "There are " + (mMaxSlots - usedSlots) + " identical slots",
-                    EnumChatFormatting.GRAY + "Click with queen in mouse to insert",
-                    EnumChatFormatting.GRAY + "Shift click a queen in your inventory to insert"))
+                    EnumChatFormatting.GRAY + "Click with crop in mouse to insert",
+                    EnumChatFormatting.GRAY + "Shift click a crop in your inventory to insert"))
             .setSize(18, 18));
 
         final int perRow = 7;
