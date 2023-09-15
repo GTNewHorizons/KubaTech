@@ -219,15 +219,17 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         super(aName);
     }
 
+    private List<ItemStack> getOutputsFromInternalSlots(Object s) {
+        ArrayList<ItemStack> l = new ArrayList<>(2);
+        l.add(((GreenHouseSlot) s).input.copy());
+        if (((GreenHouseSlot) s).undercrop != null) l.add(((GreenHouseSlot) s).undercrop.copy());
+        return l;
+    }
+
     @Override
     public void onRemoval() {
         super.onRemoval();
-        if (getBaseMetaTileEntity().isServerSide()) tryOutputAll(mStorage, s -> {
-            ArrayList<ItemStack> l = new ArrayList<>(2);
-            l.add(((GreenHouseSlot) s).input.copy());
-            if (((GreenHouseSlot) s).undercrop != null) l.add(((GreenHouseSlot) s).undercrop.copy());
-            return l;
-        });
+        if (getBaseMetaTileEntity().isServerSide()) tryOutputAll(mStorage, this::getOutputsFromInternalSlots);
     }
 
     @Override
@@ -430,12 +432,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     if (mStorage.size() >= mMaxSlots) break;
                 }
             } else if (setupphase == 2) {
-                tryOutputAll(mStorage, s -> {
-                    ArrayList<ItemStack> l = new ArrayList<>(2);
-                    l.add(((GreenHouseSlot) s).input.copy());
-                    if (((GreenHouseSlot) s).undercrop != null) l.add(((GreenHouseSlot) s).undercrop.copy());
-                    return l;
-                });
+                tryOutputAll(mStorage, this::getOutputsFromInternalSlots);
             }
 
             this.updateSlots();
@@ -826,16 +823,20 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                         return;
                     }
                 }
-                if (clickData.mouseButton == 1) {
-                    if (player.inventory.getItemStack() == null) {
-                        player.inventory.setItemStack(removed.input);
-                        ((EntityPlayerMP) player).isChangingQuantityOnly = false;
-                        ((EntityPlayerMP) player).updateHeldItem();
+                if (clickData.ctrl) {
+                    if (!addOutput(removed.input)) {
+                        mStorage.add(removed);
+                        GT_Utility.sendChatToPlayer(player, "No space to eject crop to!");
                         return;
                     }
+                    GT_Utility.sendChatToPlayer(player, "Crop ejected !");
+                    return;
                 }
-                addOutput(removed.input);
-                GT_Utility.sendChatToPlayer(player, "Crop ejected !");
+                if (player.inventory.getItemStack() == null) {
+                    player.inventory.setItemStack(removed.input);
+                    ((EntityPlayerMP) player).isChangingQuantityOnly = false;
+                    ((EntityPlayerMP) player).updateHeldItem();
+                }
             })
                 .setBackground(
                     () -> new IDrawable[] { getBaseMetaTileEntity().getGUITextureSet()
@@ -859,9 +860,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                         EnumChatFormatting.DARK_PURPLE + "There are "
                             + drawables.get(finalID).count
                             + " identical slots",
-                        EnumChatFormatting.GRAY + "Left click to eject into input bus",
-                        EnumChatFormatting.GRAY + "Right click to get into mouse",
+                        EnumChatFormatting.GRAY + "Click to get into mouse",
                         EnumChatFormatting.GRAY + "Shift click to get into inventory",
+                        EnumChatFormatting.GRAY + "Control click to eject into output bus",
                         EnumChatFormatting.GRAY + "Click with other crop in mouse to replace");
                     return Collections.emptyList();
                 })

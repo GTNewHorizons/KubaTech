@@ -943,17 +943,20 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         return;
                     }
                 }
-                if (clickData.mouseButton == 1) {
-                    if (player.inventory.getItemStack() == null) {
-                        player.inventory.setItemStack(removed.queenStack);
-                        ((EntityPlayerMP) player).isChangingQuantityOnly = false;
-                        ((EntityPlayerMP) player).updateHeldItem();
+                if (clickData.ctrl) {
+                    if (!addOutput(removed.queenStack)) {
+                        mStorage.add(removed);
+                        GT_Utility.sendChatToPlayer(player, "No space to eject queen!");
                         return;
                     }
+                    GT_Utility.sendChatToPlayer(player, "Queen ejected !");
+                    return;
                 }
-
-                addOutput(removed.queenStack);
-                GT_Utility.sendChatToPlayer(player, "Queen ejected !");
+                if (player.inventory.getItemStack() == null) {
+                    player.inventory.setItemStack(removed.queenStack);
+                    ((EntityPlayerMP) player).isChangingQuantityOnly = false;
+                    ((EntityPlayerMP) player).updateHeldItem();
+                }
             })
                 .setBackground(
                     () -> new IDrawable[] { getBaseMetaTileEntity().getGUITextureSet()
@@ -970,9 +973,9 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         EnumChatFormatting.DARK_PURPLE + "There are "
                             + drawables.get(finalID).count
                             + " identical slots",
-                        EnumChatFormatting.GRAY + "Left click to eject into input bus",
-                        EnumChatFormatting.GRAY + "Right click to get into mouse",
+                        EnumChatFormatting.GRAY + "Click to get into mouse",
                         EnumChatFormatting.GRAY + "Shift click to get into inventory",
+                        EnumChatFormatting.GRAY + "Control click to eject into output bus",
                         EnumChatFormatting.GRAY + "Click with other queen in mouse to replace");
                     return Collections.emptyList();
                 })
