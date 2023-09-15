@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
-import gregtech.api.interfaces.tileentity.IHasWorldObjectAndCoords;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -49,6 +48,7 @@ import com.gtnewhorizons.modularui.common.internal.wrapper.ModularUIContainer;
 import gregtech.api.enums.GT_Values;
 import gregtech.api.gui.modularui.GT_UITextures;
 import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
+import gregtech.api.interfaces.tileentity.IHasWorldObjectAndCoords;
 import gregtech.api.metatileentity.BaseMetaTileEntity;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_ExtendedPowerMultiBlockBase;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_OutputBus;
@@ -202,7 +202,8 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
         return tryOutputAll(list, mappingFunction, false);
     }
 
-    protected boolean tryOutputAll(List<?> list, Function<Object, List<ItemStack>> mappingFunction, boolean dropExtrasInWorld) {
+    protected boolean tryOutputAll(List<?> list, Function<Object, List<ItemStack>> mappingFunction,
+        boolean dropExtrasInWorld) {
         if (list == null || list.isEmpty() || mappingFunction == null) return false;
         int emptySlots = 0;
         boolean ignoreEmptiness = false;
@@ -245,7 +246,8 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
         IHasWorldObjectAndCoords te = getBaseMetaTileEntity();
         for (ItemStack stack : stacks) {
             EntityItem item = new EntityItem(te.getWorld(), te.getXCoord(), te.getYCoord(), te.getZCoord(), stack);
-            te.getWorld().spawnEntityInWorld(item);
+            te.getWorld()
+                .spawnEntityInWorld(item);
         }
     }
 
