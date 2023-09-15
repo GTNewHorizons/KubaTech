@@ -23,10 +23,13 @@ package kubatech.api.implementations;
 import static kubatech.api.Variables.ln2;
 import static kubatech.api.Variables.ln4;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+import gregtech.api.interfaces.tileentity.IHasWorldObjectAndCoords;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
@@ -196,6 +199,10 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
     }
 
     protected boolean tryOutputAll(List<?> list, Function<Object, List<ItemStack>> mappingFunction) {
+        return tryOutputAll(list, mappingFunction, false);
+    }
+
+    protected boolean tryOutputAll(List<?> list, Function<Object, List<ItemStack>> mappingFunction, boolean dropExtrasInWorld) {
         if (list == null || list.isEmpty() || mappingFunction == null) return false;
         int emptySlots = 0;
         boolean ignoreEmptiness = false;
@@ -207,19 +214,43 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
             for (int j = 0; j < i.getSizeInventory(); j++)
                 if (i.isValidSlot(j)) if (i.getStackInSlot(j) == null) emptySlots++;
         }
-        if (emptySlots == 0 && !ignoreEmptiness) return false;
+        if (emptySlots == 0 && !ignoreEmptiness && !dropExtrasInWorld) {
+            return false;
+        }
         boolean wasSomethingRemoved = false;
         while (!list.isEmpty()) {
             List<ItemStack> toOutputNow = mappingFunction.apply(list.get(0));
-            if (!ignoreEmptiness && emptySlots < toOutputNow.size()) break;
+            if (!ignoreEmptiness && emptySlots < toOutputNow.size()) {
+                if (dropExtrasInWorld && toOutputNow.size() > 0) {
+                    wasSomethingRemoved = true;
+                    dropItemsInWorld(toOutputNow);
+                    list.remove(0);
+                    continue;
+                }
+                break;
+            }
             emptySlots -= toOutputNow.size();
             list.remove(0);
             wasSomethingRemoved = true;
             for (ItemStack stack : toOutputNow) {
-                addOutput(stack);
+                if (!addOutput(stack) && dropExtrasInWorld) {
+                    dropItemsInWorld(stack);
+                }
             }
         }
         return wasSomethingRemoved;
+    }
+
+    private void dropItemsInWorld(ItemStack... stacks) {
+        IHasWorldObjectAndCoords te = getBaseMetaTileEntity();
+        for (ItemStack stack : stacks) {
+            EntityItem item = new EntityItem(te.getWorld(), te.getXCoord(), te.getYCoord(), te.getZCoord(), stack);
+            te.getWorld().spawnEntityInWorld(item);
+        }
+    }
+
+    private void dropItemsInWorld(Collection<ItemStack> stacks) {
+        dropItemsInWorld(stacks.toArray(new ItemStack[0]));
     }
 
     @Override

@@ -257,7 +257,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     public void onRemoval() {
         super.onRemoval();
         if (getBaseMetaTileEntity().isServerSide())
-            tryOutputAll(mStorage, s -> Collections.singletonList(((BeeSimulator) s).queenStack));
+            tryOutputAll(mStorage, s -> Collections.singletonList(((BeeSimulator) s).queenStack), true);
     }
 
     private boolean isCacheDirty = true;

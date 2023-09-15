@@ -229,7 +229,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     @Override
     public void onRemoval() {
         super.onRemoval();
-        if (getBaseMetaTileEntity().isServerSide()) tryOutputAll(mStorage, this::getOutputsFromInternalSlots);
+        if (getBaseMetaTileEntity().isServerSide()) tryOutputAll(mStorage, this::getOutputsFromInternalSlots, true);
     }
 
     @Override
