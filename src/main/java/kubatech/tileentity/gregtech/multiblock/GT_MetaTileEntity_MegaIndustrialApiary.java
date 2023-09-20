@@ -940,12 +940,14 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 if (clickData.shift) {
                     if (player.inventory.addItemStackToInventory(removed.queenStack)) {
                         player.inventoryContainer.detectAndSendChanges();
-                        return;
+                    } else {
+                        mStorage.add(realID, removed);
                     }
+                    return;
                 }
                 if (clickData.ctrl) {
                     if (!addOutput(removed.queenStack)) {
-                        mStorage.add(removed);
+                        mStorage.add(realID, removed);
                         GT_Utility.sendChatToPlayer(player, "No space to eject queen!");
                         return;
                     }
