@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+import com.gtnewhorizons.modularui.api.drawable.UITexture;
+import kubatech.Tags;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
@@ -243,6 +245,13 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
     }
 
     // UI stuff
+
+    public static final UITexture PICTURE_KUBATECH_LOGO = UITexture.fullImage(Tags.MODID, "gui/logo_13x15_dark");
+
+    @Override
+    public void addGregTechLogo(ModularWindow.Builder builder) {
+        super.addGregTechLogo(builder);
+    }
 
     protected static String voltageTooltipFormatted(int tier) {
         return GT_Values.TIER_COLORS[tier] + GT_Values.VN[tier] + EnumChatFormatting.GRAY;

@@ -45,6 +45,8 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
 
+import com.gtnewhorizons.modularui.api.math.CrossAxisAlignment;
+import com.gtnewhorizons.modularui.api.math.MainAxisAlignment;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.Enchantment;
@@ -670,71 +672,31 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     }
 
     @Override
-    public int getGUIHeight() {
-        return 166;
-    }
-
-    @Override
-    public int getGUIWidth() {
-        return 176;
-    }
-
-    @Override
-    public void bindPlayerInventoryUI(ModularWindow.Builder builder, UIBuildContext buildContext) {
-        builder.bindPlayerInventory(
-            buildContext.getPlayer(),
-            new Pos2d(7, 83),
-            this.getGUITextureSet()
-                .getItemSlot());
+    public void addGregTechLogo(ModularWindow.Builder builder) {
+        builder.widget(
+            new DrawableWidget().setDrawable(PICTURE_KUBATECH_LOGO).setSize(13, 15)
+                .setPos(178, 71).addTooltip(new Text(Tags.MODNAME).color(Color.GRAY.normal)));
     }
 
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
-        builder.widget(
-            new DrawableWidget().setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
-                .setPos(7, 4)
-                .setSize(143, 75)
-                .setEnabled(widget -> !isFixed.apply(widget)));
-        final SlotWidget inventorySlot = new SlotWidget(inventoryHandler, 1)
-            .setFilter(stack -> stack.getItem() == poweredSpawnerItem);
+        super.addUIWidgets(builder, buildContext);
 
         DynamicPositionedColumn configurationElements = new DynamicPositionedColumn();
-        addConfigurationWidgets(configurationElements, buildContext, inventorySlot);
+        addConfigurationWidgets(configurationElements, buildContext);
 
         builder.widget(
-            new DynamicPositionedColumn().setSynced(false)
-                .widget(inventorySlot)
-                .widget(new CycleButtonWidget().setToggle(() -> getBaseMetaTileEntity().isAllowedToWork(), works -> {
-                    if (works) getBaseMetaTileEntity().enableWorking();
-                    else getBaseMetaTileEntity().disableWorking();
-
-                    if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
-                    String tChat = GT_Utility.trans("090", "Machine Processing: ")
-                        + (works ? GT_Utility.trans("088", "Enabled") : GT_Utility.trans("087", "Disabled"));
-                    if (hasAlternativeModeText()) tChat = getAlternativeModeText();
-                    GT_Utility.sendChatToPlayer(buildContext.getPlayer(), tChat);
-                })
-                    .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
-                    .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
-                    .setTextureGetter(toggleButtonTextureGetter)
-                    .setBackground(GT_UITextures.BUTTON_STANDARD)
-                    .setSize(18, 18)
-                    .addTooltip("Working status"))
+            new DynamicPositionedColumn().setSynced(false).setAlignment(MainAxisAlignment.END)
                 .widget(configurationElements.setEnabled(widget -> !getBaseMetaTileEntity().isActive()))
                 .widget(
                     new DrawableWidget().setDrawable(GT_UITextures.OVERLAY_BUTTON_CROSS)
-                        .setSize(18, 18)
+                        .setSize(16, 16)
                         .addTooltip(new Text("Please stop the machine to configure it").color(Color.RED.dark(3)))
                         .setEnabled(widget -> getBaseMetaTileEntity().isActive()))
-                .setPos(151, 4));
-
-        final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
-        drawTexts(screenElements, inventorySlot);
-        builder.widget(screenElements);
+                .setPos(getPowerSwitchButtonPos().subtract(0, 18)));
     }
 
-    private void addConfigurationWidgets(DynamicPositionedColumn configurationElements, UIBuildContext buildContext,
-        SlotWidget inventorySlot) {
+    private void addConfigurationWidgets(DynamicPositionedColumn configurationElements, UIBuildContext buildContext) {
         configurationElements.setSynced(false);
         configurationElements.widget(new CycleButtonWidget().setToggle(() -> isInRitualMode, v -> {
             if (this.mMaxProgresstime > 0) {
@@ -756,7 +718,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         })
             .setTextureGetter(toggleButtonTextureGetter)
             .setBackground(GT_UITextures.BUTTON_STANDARD)
-            .setSize(18, 18)
+            .setSize(16, 16)
             .addTooltip("Ritual mode"));
         configurationElements.widget(new CycleButtonWidget().setToggle(() -> mIsProducingInfernalDrops, v -> {
             if (this.mMaxProgresstime > 0) {
@@ -773,13 +735,15 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         })
             .setTextureGetter(toggleButtonTextureGetter)
             .setBackground(GT_UITextures.BUTTON_STANDARD)
-            .setSize(18, 18)
+            .setSize(16, 16)
             .addTooltip("Is allowed to spawn infernal mobs")
             .addTooltip(new Text("Does not affect mobs that are always infernal !").color(Color.GRAY.normal)));
     }
 
     @Override
     protected void drawTexts(DynamicPositionedColumn screenElements, SlotWidget inventorySlot) {
+        inventorySlot.setFilter(stack -> stack.getItem() == poweredSpawnerItem);
+
         screenElements.setSynced(false)
             .setSpace(0)
             .setPos(10, 7);
