@@ -34,6 +34,7 @@ import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_DISTILLATION_
 import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_DISTILLATION_TOWER_ACTIVE;
 import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_DISTILLATION_TOWER_ACTIVE_GLOW;
 import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_DISTILLATION_TOWER_GLOW;
+import static gregtech.api.metatileentity.BaseTileEntity.TOOLTIP_DELAY;
 import static gregtech.api.util.GT_StructureUtility.buildHatchAdder;
 import static gregtech.api.util.GT_StructureUtility.ofFrame;
 import static kubatech.api.Variables.Author;
@@ -45,8 +46,6 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
 
-import com.gtnewhorizons.modularui.api.math.CrossAxisAlignment;
-import com.gtnewhorizons.modularui.api.math.MainAxisAlignment;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.Enchantment;
@@ -85,7 +84,7 @@ import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.math.Color;
-import com.gtnewhorizons.modularui.api.math.Pos2d;
+import com.gtnewhorizons.modularui.api.math.MainAxisAlignment;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
 import com.gtnewhorizons.modularui.common.widget.CycleButtonWidget;
@@ -674,8 +673,11 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     @Override
     public void addGregTechLogo(ModularWindow.Builder builder) {
         builder.widget(
-            new DrawableWidget().setDrawable(PICTURE_KUBATECH_LOGO).setSize(13, 15)
-                .setPos(178, 71).addTooltip(new Text(Tags.MODNAME).color(Color.GRAY.normal)));
+            new DrawableWidget().setDrawable(PICTURE_KUBATECH_LOGO)
+                .setSize(13, 15)
+                .setPos(178, 71)
+                .addTooltip(new Text(Tags.MODNAME).color(Color.GRAY.normal))
+                .setTooltipShowUpDelay(TOOLTIP_DELAY));
     }
 
     @Override
@@ -686,12 +688,14 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         addConfigurationWidgets(configurationElements, buildContext);
 
         builder.widget(
-            new DynamicPositionedColumn().setSynced(false).setAlignment(MainAxisAlignment.END)
+            new DynamicPositionedColumn().setSynced(false)
+                .setAlignment(MainAxisAlignment.END)
                 .widget(configurationElements.setEnabled(widget -> !getBaseMetaTileEntity().isActive()))
                 .widget(
                     new DrawableWidget().setDrawable(GT_UITextures.OVERLAY_BUTTON_CROSS)
                         .setSize(16, 16)
                         .addTooltip(new Text("Please stop the machine to configure it").color(Color.RED.dark(3)))
+                        .setTooltipShowUpDelay(TOOLTIP_DELAY)
                         .setEnabled(widget -> getBaseMetaTileEntity().isActive()))
                 .setPos(getPowerSwitchButtonPos().subtract(0, 18)));
     }
@@ -719,7 +723,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             .setTextureGetter(toggleButtonTextureGetter)
             .setBackground(GT_UITextures.BUTTON_STANDARD)
             .setSize(16, 16)
-            .addTooltip("Ritual mode"));
+            .addTooltip("Ritual mode")
+            .setTooltipShowUpDelay(TOOLTIP_DELAY));
         configurationElements.widget(new CycleButtonWidget().setToggle(() -> mIsProducingInfernalDrops, v -> {
             if (this.mMaxProgresstime > 0) {
                 GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Can't change mode when running !");
@@ -737,7 +742,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             .setBackground(GT_UITextures.BUTTON_STANDARD)
             .setSize(16, 16)
             .addTooltip("Is allowed to spawn infernal mobs")
-            .addTooltip(new Text("Does not affect mobs that are always infernal !").color(Color.GRAY.normal)));
+            .addTooltip(new Text("Does not affect mobs that are always infernal !").color(Color.GRAY.normal))
+            .setTooltipShowUpDelay(TOOLTIP_DELAY));
     }
 
     @Override
