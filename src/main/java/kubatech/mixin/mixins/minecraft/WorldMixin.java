@@ -16,7 +16,7 @@ public class WorldMixin {
 
     @SuppressWarnings("ConstantConditions")
     @ModifyReturnValue(method = "getBlock", at = @At("RETURN"), require = 1)
-    private Block getBlockDetector(Block block, int x, int y, int z) {
+    private Block kubatech$getBlockDetector(Block block, int x, int y, int z) {
         if (block == BlockLoader.kubaBlock) BlockLoader.kubaBlock.setLastBlockAccess((World) (Object) this, x, y, z);
         return block;
     }
