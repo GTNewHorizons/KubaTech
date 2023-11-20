@@ -129,7 +129,6 @@ import ic2.core.crop.TileEntityCrop;
 import kubatech.Tags;
 import kubatech.api.DynamicInventory;
 import kubatech.api.LoaderReference;
-import kubatech.api.helpers.GTHelper;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.client.effect.CropRenderer;
 
@@ -649,13 +648,12 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     addCrop(stack, i, false);
                     return slot.input;
                 }
-            });
+            })
+            .setEnabled(() -> this.mMaxProgresstime == 0);
 
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
         super.addUIWidgets(builder, buildContext);
-
-        EntityPlayer player = buildContext.getPlayer();
 
         builder.widget(
             dynamicInventory.asWidget(builder, buildContext)

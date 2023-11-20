@@ -2,7 +2,6 @@ package kubatech.api;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +14,9 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 
+import org.lwjgl.opengl.GL11;
+
+import com.gtnewhorizons.modularui.api.GlStateManager;
 import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.IDrawable;
 import com.gtnewhorizons.modularui.api.drawable.ItemDrawable;
@@ -25,6 +27,8 @@ import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
 import com.gtnewhorizons.modularui.api.widget.Widget;
+import com.gtnewhorizons.modularui.common.internal.Theme;
+import com.gtnewhorizons.modularui.common.internal.wrapper.ModularGui;
 import com.gtnewhorizons.modularui.common.widget.ButtonWidget;
 import com.gtnewhorizons.modularui.common.widget.ChangeableWidget;
 import com.gtnewhorizons.modularui.common.widget.DynamicPositionedRow;
@@ -46,6 +50,7 @@ public class DynamicInventory<T> {
     TInventoryInjector inventoryInjector = null;
     TInventoryExtractor<T> inventoryExtractor = null;
     TInventoryReplacerOrMerger inventoryReplacer = null;
+    Supplier<Boolean> isEnabled = null;
 
     public DynamicInventory(int width, int height, Supplier<Integer> slotsGetter, List<T> inventory,
         TInventoryGetter<T> inventoryGetter) {
@@ -68,6 +73,11 @@ public class DynamicInventory<T> {
 
     public DynamicInventory<T> allowInventoryReplace(TInventoryReplacerOrMerger inventoryReplacer) {
         this.inventoryReplacer = inventoryReplacer;
+        return this;
+    }
+
+    public DynamicInventory<T> setEnabled(Supplier<Boolean> isEnabled) {
+        this.isEnabled = isEnabled;
         return this;
     }
 
@@ -179,8 +189,25 @@ public class DynamicInventory<T> {
 
         for (int ID = 0; ID < drawables.size(); ID++) {
             final int finalID = ID;
-            buttons.add(new ButtonWidget().setOnClick((clickData, widget) -> {
+            buttons.add(new ButtonWidget() {
+
+                @Override
+                public void drawBackground(float partialTicks) {
+                    super.drawBackground(partialTicks);
+                    // Copied from SlotWidget#draw
+                    if (isHovering() && !getContext().getCursor()
+                        .hasDraggable()) {
+                        GL11.glDisable(GL11.GL_LIGHTING);
+                        GL11.glEnable(GL11.GL_BLEND);
+                        GlStateManager.colorMask(true, true, true, false);
+                        ModularGui.drawSolidRect(1, 1, 16, 16, Theme.INSTANCE.getSlotHighlight());
+                        GlStateManager.colorMask(true, true, true, true);
+                        GL11.glDisable(GL11.GL_BLEND);
+                    }
+                }
+            }.setOnClick((clickData, widget) -> {
                 if (!(player instanceof EntityPlayerMP)) return;
+                if (!isEnabled.get()) return;
 
                 if (clickData.mouseButton == 2) {
                     // special button handler goes here
@@ -251,8 +278,10 @@ public class DynamicInventory<T> {
                         new ItemDrawable(drawables.size() > finalID ? drawables.get(finalID).stack : null)
                             .withFixedSize(16, 16, 1, 1),
                         new Text(
-                            drawables.size() > finalID ? (drawables.get(finalID).count > 99 ? "+99"
-                                : String.valueOf(drawables.get(finalID).count)) : "").color(Color.PURPLE.normal)
+                            drawables.size() > finalID ? (drawables.get(finalID).count <= 1 ? ""
+                                : (drawables.get(finalID).count > 99 ? "+99"
+                                    : String.valueOf(drawables.get(finalID).count)))
+                                : "").color(Color.PURPLE.normal)
                                     .alignment(Alignment.TopRight),
                         new Text(
                             drawables.size() > finalID ? String.valueOf(drawables.get(finalID).stack.stackSize) : "")
@@ -260,24 +289,39 @@ public class DynamicInventory<T> {
                                 .shadow()
                                 .alignment(Alignment.BottomRight) })
                 .dynamicTooltip(() -> {
-                    if (drawables.size() > finalID) return Arrays.asList(
-                        "x" + drawables.get(finalID).stack.stackSize
-                            + " "
-                            + drawables.get(finalID).stack.getDisplayName(),
-                        EnumChatFormatting.DARK_PURPLE + "There are "
-                            + drawables.get(finalID).count
-                            + " identical slots",
-                        EnumChatFormatting.GRAY + "Left click to eject into input bus",
-                        EnumChatFormatting.GRAY + "Right click to get into mouse",
-                        EnumChatFormatting.GRAY + "Shift click to get into inventory",
-                        EnumChatFormatting.GRAY + "Click with other crop in mouse to replace");
+                    if (drawables.size() > finalID) {
+                        List<String> tip = new ArrayList<String>(
+                            Collections.singletonList(drawables.get(finalID).stack.getDisplayName()));
+                        if (drawables.get(finalID).count > 1) tip.add(
+                            EnumChatFormatting.DARK_PURPLE + "There are "
+                                + drawables.get(finalID).count
+                                + " identical slots");
+                        return tip;
+                    }
                     return Collections.emptyList();
                 })
                 .setSize(18, 18));
         }
 
-        buttons.add(new ButtonWidget().setOnClick((clickData, widget) -> {
+        buttons.add(new ButtonWidget() {
+
+            @Override
+            public void drawBackground(float partialTicks) {
+                super.drawBackground(partialTicks);
+                // Copied from SlotWidget#draw
+                if (isHovering() && !getContext().getCursor()
+                    .hasDraggable()) {
+                    GL11.glDisable(GL11.GL_LIGHTING);
+                    GL11.glEnable(GL11.GL_BLEND);
+                    GlStateManager.colorMask(true, true, true, false);
+                    ModularGui.drawSolidRect(1, 1, 16, 16, Theme.INSTANCE.getSlotHighlight());
+                    GlStateManager.colorMask(true, true, true, true);
+                    GL11.glDisable(GL11.GL_BLEND);
+                }
+            }
+        }.setOnClick((clickData, widget) -> {
             if (!(player instanceof EntityPlayerMP)) return;
+            if (!isEnabled.get()) return;
             ItemStack input = player.inventory.getItemStack();
             if (input != null) {
                 if (clickData.mouseButton == 1) {
@@ -307,18 +351,20 @@ public class DynamicInventory<T> {
         })
             .setBackground(
                 () -> new IDrawable[] { getItemSlot(),
-                    new Text(String.valueOf((slots - usedSlots) > 99 ? "+99" : (slots - usedSlots)))
-                        .color(Color.PURPLE.normal)
-                        .alignment(Alignment.TopRight) })
-            .dynamicTooltip(
-                () -> Arrays.asList(
-                    EnumChatFormatting.GRAY + "Empty slot",
-                    EnumChatFormatting.DARK_PURPLE + "There are " + (slots - usedSlots) + " identical slots",
-                    EnumChatFormatting.GRAY + "Click with crop in mouse to insert",
-                    EnumChatFormatting.GRAY + "Shift click a crop in your inventory to insert"))
+                    new Text(
+                        (slots - usedSlots) <= 1 ? ""
+                            : ((slots - usedSlots) > 99 ? "+99" : String.valueOf((slots - usedSlots))))
+                                .color(Color.PURPLE.normal)
+                                .alignment(Alignment.TopRight) })
+            .dynamicTooltip(() -> {
+                List<String> tip = new ArrayList<String>(Collections.singleton(EnumChatFormatting.GRAY + "Empty slot"));
+                if (slots - usedSlots > 1)
+                    tip.add(EnumChatFormatting.DARK_PURPLE + "There are " + (slots - usedSlots) + " identical slots");
+                return tip;
+            })
             .setSize(18, 18));
 
-        final int perRow = 7;
+        final int perRow = width / 18;
         for (int i = 0, imax = ((buttons.size() - 1) / perRow); i <= imax; i++) {
             DynamicPositionedRow row = new DynamicPositionedRow().setSynced(false);
             for (int j = 0, jmax = (i == imax ? (buttons.size() - 1) % perRow : (perRow - 1)); j <= jmax; j++) {

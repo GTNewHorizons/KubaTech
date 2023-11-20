@@ -41,7 +41,6 @@ import static kubatech.api.Variables.buildAuthorList;
 import static kubatech.api.utils.ItemUtils.readItemStackFromNBT;
 import static kubatech.api.utils.ItemUtils.writeItemStackToNBT;
 
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,9 +48,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -77,20 +73,15 @@ import com.gtnewhorizon.structurelib.structure.IStructureElementNoPlacement;
 import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizons.modularui.api.ModularUITextures;
-import com.gtnewhorizons.modularui.api.drawable.IDrawable;
-import com.gtnewhorizons.modularui.api.drawable.ItemDrawable;
 import com.gtnewhorizons.modularui.api.drawable.Text;
-import com.gtnewhorizons.modularui.api.math.Alignment;
+import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
 import com.gtnewhorizons.modularui.api.math.Color;
-import com.gtnewhorizons.modularui.api.math.Pos2d;
 import com.gtnewhorizons.modularui.api.screen.ModularUIContext;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
-import com.gtnewhorizons.modularui.api.widget.Widget;
 import com.gtnewhorizons.modularui.common.builder.UIInfo;
 import com.gtnewhorizons.modularui.common.internal.wrapper.ModularUIContainer;
 import com.gtnewhorizons.modularui.common.widget.ButtonWidget;
-import com.gtnewhorizons.modularui.common.widget.ChangeableWidget;
 import com.gtnewhorizons.modularui.common.widget.Column;
 import com.gtnewhorizons.modularui.common.widget.CycleButtonWidget;
 import com.gtnewhorizons.modularui.common.widget.DrawableWidget;
@@ -98,10 +89,8 @@ import com.gtnewhorizons.modularui.common.widget.DynamicPositionedColumn;
 import com.gtnewhorizons.modularui.common.widget.DynamicPositionedRow;
 import com.gtnewhorizons.modularui.common.widget.DynamicTextWidget;
 import com.gtnewhorizons.modularui.common.widget.FakeSyncWidget;
-import com.gtnewhorizons.modularui.common.widget.Scrollable;
 import com.gtnewhorizons.modularui.common.widget.SlotWidget;
 import com.gtnewhorizons.modularui.common.widget.TextWidget;
-import com.kuba6000.mobsinfo.api.utils.ItemID;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -130,10 +119,9 @@ import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
 import kubatech.Tags;
+import kubatech.api.DynamicInventory;
 import kubatech.api.LoaderReference;
-import kubatech.api.helpers.GTHelper;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
-import kubatech.api.utils.ModUtils;
 import kubatech.client.effect.MegaApiaryBeesRenderer;
 
 public class GT_MetaTileEntity_MegaIndustrialApiary
@@ -640,25 +628,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         return new ITexture[] { Textures.BlockIcons.getCasingTextureForId(CASING_INDEX) };
     }
 
-    @Override
-    public int getGUIHeight() {
-        return 166;
-    }
-
-    @Override
-    public int getGUIWidth() {
-        return 176;
-    }
-
-    @Override
-    public void bindPlayerInventoryUI(ModularWindow.Builder builder, UIBuildContext buildContext) {
-        builder.bindPlayerInventory(
-            buildContext.getPlayer(),
-            new Pos2d(7, 83),
-            this.getGUITextureSet()
-                .getItemSlot());
-    }
-
     private static final UIInfo<?, ?> MegaApiaryUI = createKTMetaTileEntityUI(
         KT_ModulaUIContainer_MegaIndustrialApiary::new);
 
@@ -716,311 +685,59 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         }
     }
 
-    private List<GTHelper.StackableItemSlot> drawables = new ArrayList<>();
-    private int usedSlots = 0; // mStorage.size()
-
-    @SuppressWarnings("UnstableApiUsage")
-    @Override
-    public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
-        builder.widget(
-            new DrawableWidget().setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
-                .setPos(7, 4)
-                .setSize(143, 75)
-                .setEnabled(widget -> !isFixed.apply(widget)));
-
-        buildContext.addSyncedWindow(CONFIGURATION_WINDOW_ID, this::createConfigurationWindow);
-        EntityPlayer player = buildContext.getPlayer();
-
-        // Slot is not needed
-
-        builder.widget(
-            new DynamicPositionedColumn().setSynced(false)
-                .widget(new CycleButtonWidget().setToggle(() -> getBaseMetaTileEntity().isAllowedToWork(), works -> {
-                    if (works) getBaseMetaTileEntity().enableWorking();
-                    else getBaseMetaTileEntity().disableWorking();
-
-                    if (!(player instanceof EntityPlayerMP)) return;
-                    String tChat = GT_Utility.trans("090", "Machine Processing: ")
-                        + (works ? GT_Utility.trans("088", "Enabled") : GT_Utility.trans("087", "Disabled"));
-                    if (hasAlternativeModeText()) tChat = getAlternativeModeText();
-                    GT_Utility.sendChatToPlayer(player, tChat);
-                })
-                    .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
-                    .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
-                    .setTextureGetter(toggleButtonTextureGetter)
-                    .setBackground(GT_UITextures.BUTTON_STANDARD)
-                    .setSize(18, 18)
-                    .addTooltip("Working status"))
-                .widget(
-                    new ButtonWidget().setOnClick(
-                        (clickData, widget) -> {
-                            if (!widget.isClient()) widget.getContext()
-                                .openSyncedWindow(CONFIGURATION_WINDOW_ID);
-                        })
-                        .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
-                        .addTooltip("Configuration")
-                        .setSize(18, 18))
-                .setPos(151, 4));
-
-        ChangeableWidget beesContainer = new ChangeableWidget(() -> createBeesContainerWidget(player));
-
-        AtomicInteger lastMaxSlots = new AtomicInteger();
-        AtomicInteger lastUsedSlots = new AtomicInteger();
-        builder.widget(beesContainer.attachSyncer(new FakeSyncWidget.IntegerSyncer(() -> {
-            if (lastMaxSlots.get() != mMaxSlots) {
-                lastMaxSlots.set(mMaxSlots);
-                beesContainer.notifyChangeNoSync();
+    DynamicInventory<BeeSimulator> dynamicInventory = new DynamicInventory<>(
+        128,
+        60,
+        () -> mMaxSlots,
+        mStorage,
+        s -> s.queenStack).allowInventoryInjection(input -> {
+            World w = getBaseMetaTileEntity().getWorld();
+            float t = (float) getVoltageTierExact();
+            BeeSimulator bs = new BeeSimulator(input, w, t);
+            if (bs.isValid) {
+                mStorage.add(bs);
+                return input;
             }
-            return mMaxSlots;
-        }, i -> {
-            if (mMaxSlots != i) {
-                mMaxSlots = i;
-                beesContainer.notifyChangeNoSync();
-            }
-        }), builder)
-            .attachSyncer(new FakeSyncWidget.IntegerSyncer(() -> {
-                if (lastUsedSlots.get() != mStorage.size()) {
-                    lastUsedSlots.set(mStorage.size());
-                    beesContainer.notifyChangeNoSync();
-                }
-                return mStorage.size();
-            }, i -> {
-                if (usedSlots != i) {
-                    usedSlots = i;
-                    beesContainer.notifyChangeNoSync();
-                }
-            }), builder)
-            .attachSyncer(new FakeSyncWidget.ListSyncer<>(() -> {
-                HashMap<ItemID, Integer> itemMap = new HashMap<>();
-                HashMap<ItemID, ItemStack> stackMap = new HashMap<>();
-                HashMap<ItemID, ArrayList<Integer>> realSlotMap = new HashMap<>();
-                for (int i = 0, mStorageSize = mStorage.size(); i < mStorageSize; i++) {
-                    BeeSimulator slot = mStorage.get(i);
-                    ItemID id = ItemID.createNoCopy(slot.queenStack, false);
-                    itemMap.merge(id, 1, Integer::sum);
-                    stackMap.putIfAbsent(id, slot.queenStack);
-                    realSlotMap.computeIfAbsent(id, unused -> new ArrayList<>())
-                        .add(i);
-                }
-                List<GTHelper.StackableItemSlot> newDrawables = new ArrayList<>();
-                for (Map.Entry<ItemID, Integer> entry : itemMap.entrySet()) {
-                    newDrawables.add(
-                        new GTHelper.StackableItemSlot(
-                            entry.getValue(),
-                            stackMap.get(entry.getKey()),
-                            realSlotMap.get(entry.getKey())));
-                }
-                if (!Objects.equals(newDrawables, drawables)) {
-                    drawables = newDrawables;
-                    beesContainer.notifyChangeNoSync();
-                }
-                return drawables;
-            }, l -> {
-                drawables.clear();
-                drawables.addAll(l);
-                beesContainer.notifyChangeNoSync();
-            }, (buffer, i) -> {
-                try {
-                    i.write(buffer);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }, buffer -> {
-                try {
-                    return GTHelper.StackableItemSlot.read(buffer);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }), builder)
-            .attachSyncer(new FakeSyncWidget.ListSyncer<>(() -> {
-                if (flowersError) {
-                    List<String> s = flowersCheck.stream()
-                        .map(flowersCache::get)
-                        .filter(Objects::nonNull)
-                        .sorted()
-                        .collect(Collectors.toList());
-                    s.add(0, "Missing flower types:");
-                    return s;
-                } else return Collections.emptyList();
-            }, f -> flowersGUI = f, (b, e) -> {
-                try {
-                    b.writeStringToBuffer(e);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }, b -> {
-                try {
-                    return b.readStringFromBuffer(999);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }), builder));
-
-        final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
-        drawTexts(screenElements, null);
-        builder.widget(screenElements);
-    }
-
-    private Widget createBeesContainerWidget(EntityPlayer player) {
-        Scrollable beesContainer = new Scrollable().setVerticalScroll();
-
-        ArrayList<Widget> buttons = new ArrayList<>();
-
-        if (!ModUtils.isClientThreaded()) {
-            HashMap<ItemID, Integer> itemMap = new HashMap<>();
-            HashMap<ItemID, ItemStack> stackMap = new HashMap<>();
-            HashMap<ItemID, ArrayList<Integer>> realSlotMap = new HashMap<>();
-            for (int i = 0, mStorageSize = mStorage.size(); i < mStorageSize; i++) {
-                BeeSimulator slot = mStorage.get(i);
-                ItemID id = ItemID.createNoCopy(slot.queenStack, false);
-                itemMap.merge(id, 1, Integer::sum);
-                stackMap.putIfAbsent(id, slot.queenStack);
-                realSlotMap.computeIfAbsent(id, unused -> new ArrayList<>())
-                    .add(i);
-            }
-            drawables = new ArrayList<>();
-            for (Map.Entry<ItemID, Integer> entry : itemMap.entrySet()) {
-                drawables.add(
-                    new GTHelper.StackableItemSlot(
-                        entry.getValue(),
-                        stackMap.get(entry.getKey()),
-                        realSlotMap.get(entry.getKey())));
-            }
-        }
-
-        for (int ID = 0; ID < drawables.size(); ID++) {
-            final int finalID = ID;
-            buttons.add(new ButtonWidget().setOnClick((clickData, widget) -> {
-                if (!(player instanceof EntityPlayerMP)) return;
-                if (!clickData.shift) {
-                    ItemStack input = player.inventory.getItemStack();
-                    if (input != null) {
-                        if (this.mMaxProgresstime > 0) {
-                            GT_Utility
-                                .sendChatToPlayer(player, EnumChatFormatting.RED + "Can't replace while running !");
-                            return;
-                        }
-                        if (beeRoot.getType(input) == EnumBeeType.QUEEN) {
-                            World w = getBaseMetaTileEntity().getWorld();
-                            float t = (float) getVoltageTierExact();
-                            BeeSimulator bs = new BeeSimulator(input, w, t);
-                            if (bs.isValid) {
-                                if (mStorage.size() > finalID) {
-                                    int realID = drawables.get(finalID).realSlots.get(0);
-                                    BeeSimulator removed = mStorage.remove(realID);
-                                    mStorage.add(realID, bs);
-                                    player.inventory.setItemStack(removed.queenStack);
-                                } else {
-                                    mStorage.add(bs);
-                                    player.inventory.setItemStack(null);
-                                }
-                                ((EntityPlayerMP) player).isChangingQuantityOnly = false;
-                                ((EntityPlayerMP) player).updateHeldItem();
-
-                                isCacheDirty = true;
-                            }
-                        }
-                        return;
-                    }
-                }
-
-                if (mStorage.size() <= finalID) return;
-                if (this.mMaxProgresstime > 0) {
-                    GT_Utility.sendChatToPlayer(player, EnumChatFormatting.RED + "Can't eject while running !");
-                    return;
-                }
-                int realID = drawables.get(finalID).realSlots.get(0);
-                BeeSimulator removed = mStorage.remove(realID);
-                isCacheDirty = true;
-                if (clickData.shift) {
-                    if (player.inventory.addItemStackToInventory(removed.queenStack)) {
-                        player.inventoryContainer.detectAndSendChanges();
-                        return;
-                    }
-                }
-                if (clickData.mouseButton == 1) {
-                    if (player.inventory.getItemStack() == null) {
-                        player.inventory.setItemStack(removed.queenStack);
-                        ((EntityPlayerMP) player).isChangingQuantityOnly = false;
-                        ((EntityPlayerMP) player).updateHeldItem();
-                        return;
-                    }
-                }
-
-                addOutput(removed.queenStack);
-                GT_Utility.sendChatToPlayer(player, "Queen ejected !");
-            })
-                .setBackground(
-                    () -> new IDrawable[] { getBaseMetaTileEntity().getGUITextureSet()
-                        .getItemSlot(),
-                        new ItemDrawable(drawables.size() > finalID ? drawables.get(finalID).stack : null)
-                            .withFixedSize(16, 16, 1, 1),
-                        new Text(
-                            drawables.size() > finalID ? (drawables.get(finalID).count > 99 ? "+99"
-                                : String.valueOf(drawables.get(finalID).count)) : "").color(Color.PURPLE.normal)
-                                    .alignment(Alignment.TopRight) })
-                .dynamicTooltip(() -> {
-                    if (drawables.size() > finalID) return Arrays.asList(
-                        drawables.get(finalID).stack.getDisplayName(),
-                        EnumChatFormatting.DARK_PURPLE + "There are "
-                            + drawables.get(finalID).count
-                            + " identical slots",
-                        EnumChatFormatting.GRAY + "Left click to eject into input bus",
-                        EnumChatFormatting.GRAY + "Right click to get into mouse",
-                        EnumChatFormatting.GRAY + "Shift click to get into inventory",
-                        EnumChatFormatting.GRAY + "Click with other queen in mouse to replace");
-                    return Collections.emptyList();
-                })
-                .setSize(18, 18));
-        }
-
-        buttons.add(new ButtonWidget().setOnClick((clickData, widget) -> {
-            if (!(player instanceof EntityPlayerMP)) return;
-            ItemStack input = player.inventory.getItemStack();
-            if (input != null) {
-                if (this.mMaxProgresstime > 0) {
-                    GT_Utility.sendChatToPlayer(player, EnumChatFormatting.RED + "Can't insert while running !");
-                    return;
-                }
+            return null;
+        })
+            .allowInventoryExtraction(mStorage::remove)
+            .allowInventoryReplace((i, stack) -> {
+                if (stack.stackSize != 1) return null;
                 World w = getBaseMetaTileEntity().getWorld();
                 float t = (float) getVoltageTierExact();
-                BeeSimulator bs = new BeeSimulator(input, w, t);
+                BeeSimulator bs = new BeeSimulator(stack, w, t);
                 if (bs.isValid) {
-                    mStorage.add(bs);
-                    player.inventory.setItemStack(null);
-                    ((EntityPlayerMP) player).isChangingQuantityOnly = false;
-                    ((EntityPlayerMP) player).updateHeldItem();
+                    BeeSimulator removed = mStorage.remove(i);
+                    mStorage.add(i, bs);
+                    return removed.queenStack;
                 }
-            }
-        })
-            .setBackground(
-                () -> new IDrawable[] { getBaseMetaTileEntity().getGUITextureSet()
-                    .getItemSlot(), GT_UITextures.OVERLAY_SLOT_BEE_QUEEN,
-                    new Text(String.valueOf((mMaxSlots - usedSlots) > 99 ? "+99" : (mMaxSlots - usedSlots)))
-                        .color(Color.PURPLE.normal)
-                        .alignment(Alignment.TopRight) })
-            .dynamicTooltip(
-                () -> Arrays.asList(
-                    EnumChatFormatting.GRAY + "Empty slot",
-                    EnumChatFormatting.DARK_PURPLE + "There are " + (mMaxSlots - usedSlots) + " identical slots",
-                    EnumChatFormatting.GRAY + "Click with queen in mouse to insert",
-                    EnumChatFormatting.GRAY + "Shift click a queen in your inventory to insert"))
-            .setSize(18, 18));
+                return null;
+            })
+            .setEnabled(() -> this.mMaxProgresstime == 0);
 
-        final int perRow = 7;
-        for (int i = 0, imax = ((buttons.size() - 1) / perRow); i <= imax; i++) {
-            DynamicPositionedRow row = new DynamicPositionedRow().setSynced(false);
-            for (int j = 0, jmax = (i == imax ? (buttons.size() - 1) % perRow : (perRow - 1)); j <= jmax; j++) {
-                final int finalI = i * perRow;
-                final int finalJ = j;
-                final int ID = finalI + finalJ;
-                row.widget(buttons.get(ID));
-            }
-            beesContainer.widget(row.setPos(0, i * 18));
-        }
-        beesContainer.setPos(10, 16)
-            .setSize(128, 60);
-        return beesContainer;
+    @Override
+    public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
+        super.addUIWidgets(builder, buildContext);
+
+        builder.widget(
+            dynamicInventory.asWidget(builder, buildContext)
+                .setPos(10, 16)
+                .setBackground(new Rectangle().setColor(Color.rgb(163, 163, 198))));
+    }
+
+    @Override
+    protected void addConfigurationWidgets(DynamicPositionedColumn configurationElements, UIBuildContext buildContext) {
+        buildContext.addSyncedWindow(CONFIGURATION_WINDOW_ID, this::createConfigurationWindow);
+        configurationElements.setSynced(false);
+        configurationElements.widget(
+            new ButtonWidget().setOnClick(
+                (clickData, widget) -> {
+                    if (!widget.isClient()) widget.getContext()
+                        .openSyncedWindow(CONFIGURATION_WINDOW_ID);
+                })
+                .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
+                .addTooltip("Configuration")
+                .setSize(16, 16));
     }
 
     protected ModularWindow createConfigurationWindow(final EntityPlayer player) {
