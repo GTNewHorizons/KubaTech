@@ -229,7 +229,9 @@ public class DynamicInventory<T> {
                         if (drawables.size() <= finalID) return;
                         if (player.capabilities.isCreativeMode && player.inventory.getItemStack() == null) {
                             int realID = drawables.get(finalID).realSlots.get(0);
-                            ItemStack stack = inventoryGetter.get(inventory.get(realID));
+                            ItemStack stack = inventoryGetter.get(inventory.get(realID))
+                                .copy();
+                            stack.stackSize = stack.getMaxStackSize();
                             player.inventory.setItemStack(stack);
                             ((EntityPlayerMP) player).isChangingQuantityOnly = false;
                             ((EntityPlayerMP) player).updateHeldItem();
