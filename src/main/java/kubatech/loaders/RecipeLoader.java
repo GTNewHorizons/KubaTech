@@ -33,6 +33,7 @@ import static gregtech.api.util.GT_RecipeConstants.UniversalChemical;
 import static kubatech.api.enums.ItemList.BlackTea;
 import static kubatech.api.enums.ItemList.BlackTeaLeaf;
 import static kubatech.api.enums.ItemList.BruisedTeaLeaf;
+import static kubatech.api.enums.ItemList.DraconicEvolutionFusionCrafter;
 import static kubatech.api.enums.ItemList.EarlGrayTea;
 import static kubatech.api.enums.ItemList.ExtremeExterminationChamber;
 import static kubatech.api.enums.ItemList.ExtremeIndustrialApiary;
@@ -67,9 +68,6 @@ import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidRegistry;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.dreammaster.gthandler.CustomItemList;
 
 import cpw.mods.fml.common.registry.GameRegistry;
@@ -80,16 +78,15 @@ import gregtech.api.metatileentity.MetaTileEntity;
 import gregtech.api.util.GT_ModHandler;
 import gregtech.api.util.GT_Utility;
 import gtPlusPlus.core.lib.CORE;
-import kubatech.Tags;
 import kubatech.api.LoaderReference;
 import kubatech.api.enums.ItemList;
+import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_DEFusionCrafter;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeExterminationChamber;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialGreenhouse;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_MegaIndustrialApiary;
 
 public class RecipeLoader {
 
-    private static final Logger LOG = LogManager.getLogger(Tags.MODID + "[Recipe Loader]");
     protected static final long bitsd = GT_ModHandler.RecipeBits.NOT_REMOVABLE | GT_ModHandler.RecipeBits.REVERSIBLE
         | GT_ModHandler.RecipeBits.BUFFERED
         | GT_ModHandler.RecipeBits.DISMANTLEABLE;
@@ -153,23 +150,18 @@ public class RecipeLoader {
                         : gregtech.api.enums.ItemList.Robot_Arm_IV,
                     'Z', OrePrefixes.circuit.get(Materials.Ultimate) });
         }
+        if (registerMTEUsingID(
+            5_001,
+            DraconicEvolutionFusionCrafter,
+            GT_MetaTileEntity_DEFusionCrafter.class,
+            "multimachine.defusioncrafter",
+            "Draconic Evolution Fusion Crafter",
+            LoaderReference.DraconicEvolution)) {
+            // Controller recipe added in TecTech
+            DEFCRecipes.addRecipes();
+        }
         RegisterTeaLine();
         if (MTEID > MTEIDMax + 1) throw new RuntimeException("MTE ID's");
-    }
-
-    private static boolean registerMTE(ItemList item, Class<? extends MetaTileEntity> mte, String aName,
-        String aNameRegional) {
-        return registerMTE(item, mte, aName, aNameRegional, true);
-    }
-
-    private static boolean registerMTE(ItemList item, Class<? extends MetaTileEntity> mte, String aName,
-        String aNameRegional, boolean... deps) {
-        boolean dep = true;
-        for (boolean i : deps) if (!i) {
-            dep = false;
-            break;
-        }
-        return registerMTE(item, mte, aName, aNameRegional, dep);
     }
 
     private static boolean registerMTE(ItemList item, Class<? extends MetaTileEntity> mte, String aName,

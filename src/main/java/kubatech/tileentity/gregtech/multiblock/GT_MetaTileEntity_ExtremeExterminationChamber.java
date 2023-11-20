@@ -160,6 +160,11 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         }
     }
 
+    @Override
+    public void onUnload() {
+        if (LoaderReference.BloodMagic) MinecraftForge.EVENT_BUS.unregister(this);
+    }
+
     private static final String WellOfSufferingRitualName = "AW013Suffering";
 
     private static final Item poweredSpawnerItem = Item.getItemFromBlock(EnderIO.blockPoweredSpawner);
@@ -484,6 +489,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
 
     private final WeaponCache weaponCache = new WeaponCache();
 
+    @SuppressWarnings("unlikely-arg-type")
     @Override
     @NotNull
     public CheckRecipeResult checkProcessing() {
@@ -520,7 +526,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
 
             double attackDamage = DIAMOND_SPIKES_DAMAGE; // damage from spikes
             GT_MetaTileEntity_Hatch_InputBus inputbus = this.mInputBusses.size() == 0 ? null : this.mInputBusses.get(0);
-            if (inputbus != null && !isValidMetaTileEntity(inputbus)) inputbus = null;
+            if (inputbus != null && !inputbus.isValid()) inputbus = null;
             ItemStack lootingHolder = inputbus == null ? null : inputbus.getStackInSlot(0);
             weaponCheck: {
                 // noinspection EqualsBetweenInconvertibleTypes

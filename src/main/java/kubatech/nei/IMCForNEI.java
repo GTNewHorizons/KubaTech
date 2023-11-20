@@ -30,21 +30,10 @@ public class IMCForNEI {
 
     public static void IMCSender() {
         if (LoaderReference.EnderIO) sendCatalyst("mobsinfo.mobhandler", "gregtech:gt.blockmachines:14201");
-    }
-
-    private static void sendHandler(String aName, String aBlock, int width, int height, int maxrecipesperpage,
-        int yshift) {
-        NBTTagCompound aNBT = new NBTTagCompound();
-        aNBT.setString("handler", aName);
-        aNBT.setString("modName", Tags.MODNAME);
-        aNBT.setString("modId", Tags.MODID);
-        aNBT.setBoolean("modRequired", true);
-        aNBT.setString("itemName", aBlock);
-        aNBT.setInteger("handlerHeight", height);
-        aNBT.setInteger("handlerWidth", width);
-        aNBT.setInteger("maxRecipesPerPage", maxrecipesperpage);
-        aNBT.setInteger("yShift", yshift);
-        FMLInterModComms.sendMessage("NotEnoughItems", "registerHandlerInfo", aNBT);
+        if (LoaderReference.DraconicEvolution) {
+            sendGTStyledHandler("kubatech.defusioncrafter", "gregtech:gt.blockmachines:5001");
+            sendCatalyst("kubatech.defusioncrafter", "gregtech:gt.blockmachines:5001");
+        }
     }
 
     private static void sendGTStyledHandler(String aName, String aBlock) {
