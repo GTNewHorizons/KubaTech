@@ -560,12 +560,6 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
         return valid;
     }
-
-    @Override
-    public boolean useModularUI() {
-        return true;
-    }
-
     @Override
     public int getGUIHeight() {
         return 166;

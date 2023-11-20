@@ -641,11 +641,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
     }
 
     @Override
-    public boolean useModularUI() {
-        return true;
-    }
-
-    @Override
     public int getGUIHeight() {
         return 166;
     }

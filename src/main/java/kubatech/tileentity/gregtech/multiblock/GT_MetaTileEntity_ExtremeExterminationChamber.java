@@ -114,7 +114,6 @@ import crazypants.enderio.EnderIO;
 import gregtech.api.GregTech_API;
 import gregtech.api.enums.Materials;
 import gregtech.api.enums.Textures;
-import gregtech.api.gui.modularui.GT_UITextures;
 import gregtech.api.interfaces.ITexture;
 import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
@@ -666,41 +665,7 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     }
 
     @Override
-    public boolean useModularUI() {
-        return true;
-    }
-
-    @Override
-    public void addGregTechLogo(ModularWindow.Builder builder) {
-        builder.widget(
-            new DrawableWidget().setDrawable(PICTURE_KUBATECH_LOGO)
-                .setSize(13, 15)
-                .setPos(178, 71)
-                .addTooltip(new Text(Tags.MODNAME).color(Color.GRAY.normal))
-                .setTooltipShowUpDelay(TOOLTIP_DELAY));
-    }
-
-    @Override
-    public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
-        super.addUIWidgets(builder, buildContext);
-
-        DynamicPositionedColumn configurationElements = new DynamicPositionedColumn();
-        addConfigurationWidgets(configurationElements, buildContext);
-
-        builder.widget(
-            new DynamicPositionedColumn().setSynced(false)
-                .setAlignment(MainAxisAlignment.END)
-                .widget(configurationElements.setEnabled(widget -> !getBaseMetaTileEntity().isActive()))
-                .widget(
-                    new DrawableWidget().setDrawable(GT_UITextures.OVERLAY_BUTTON_CROSS)
-                        .setSize(16, 16)
-                        .addTooltip(new Text("Please stop the machine to configure it").color(Color.RED.dark(3)))
-                        .setTooltipShowUpDelay(TOOLTIP_DELAY)
-                        .setEnabled(widget -> getBaseMetaTileEntity().isActive()))
-                .setPos(getPowerSwitchButtonPos().subtract(0, 18)));
-    }
-
-    private void addConfigurationWidgets(DynamicPositionedColumn configurationElements, UIBuildContext buildContext) {
+    protected void addConfigurationWidgets(DynamicPositionedColumn configurationElements, UIBuildContext buildContext) {
         configurationElements.setSynced(false);
         configurationElements.widget(new CycleButtonWidget().setToggle(() -> isInRitualMode, v -> {
             if (this.mMaxProgresstime > 0) {
@@ -721,7 +686,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             }
         })
             .setTextureGetter(toggleButtonTextureGetter)
-            .setBackground(GT_UITextures.BUTTON_STANDARD)
+            .setVariableBackgroundGetter(
+                toggleButtonBackgroundGetterOrDisabled.apply(() -> getBaseMetaTileEntity().isActive()))
             .setSize(16, 16)
             .addTooltip("Ritual mode")
             .setTooltipShowUpDelay(TOOLTIP_DELAY));
@@ -739,7 +705,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             else GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Mobs can spawn infernal now");
         })
             .setTextureGetter(toggleButtonTextureGetter)
-            .setBackground(GT_UITextures.BUTTON_STANDARD)
+            .setVariableBackgroundGetter(
+                toggleButtonBackgroundGetterOrDisabled.apply(() -> getBaseMetaTileEntity().isActive()))
             .setSize(16, 16)
             .addTooltip("Is allowed to spawn infernal mobs")
             .addTooltip(new Text("Does not affect mobs that are always infernal !").color(Color.GRAY.normal))

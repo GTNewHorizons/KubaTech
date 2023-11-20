@@ -20,13 +20,20 @@
 
 package kubatech.api.implementations;
 
+import static gregtech.api.metatileentity.BaseTileEntity.TOOLTIP_DELAY;
 import static kubatech.api.Variables.ln2;
 import static kubatech.api.Variables.ln4;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
+import com.gtnewhorizons.modularui.api.drawable.Text;
+import com.gtnewhorizons.modularui.api.math.Color;
+import com.gtnewhorizons.modularui.api.math.MainAxisAlignment;
+import com.gtnewhorizons.modularui.common.widget.DrawableWidget;
+import com.gtnewhorizons.modularui.common.widget.DynamicPositionedColumn;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
@@ -249,8 +256,34 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
     public static final UITexture PICTURE_KUBATECH_LOGO = UITexture.fullImage(Tags.MODID, "gui/logo_13x15_dark");
 
     @Override
+    public boolean useModularUI() {
+        return true;
+    }
+
+    @Override
     public void addGregTechLogo(ModularWindow.Builder builder) {
-        super.addGregTechLogo(builder);
+        builder.widget(
+            new DrawableWidget().setDrawable(PICTURE_KUBATECH_LOGO)
+                .setSize(13,15)
+                .setPos(191-13, 86-15)
+                .addTooltip(new Text(Tags.MODNAME).color(Color.GRAY.normal))
+                .setTooltipShowUpDelay(TOOLTIP_DELAY));
+    }
+
+    @Override
+    public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
+        super.addUIWidgets(builder, buildContext);
+
+        DynamicPositionedColumn configurationElements = new DynamicPositionedColumn();
+        addConfigurationWidgets(configurationElements, buildContext);
+
+        builder.widget(
+            configurationElements.setAlignment(MainAxisAlignment.END)
+                .setPos(getPowerSwitchButtonPos().subtract(0, 18)));
+    }
+
+    protected void addConfigurationWidgets(DynamicPositionedColumn configurationElements, UIBuildContext buildContext){
+
     }
 
     protected static String voltageTooltipFormatted(int tier) {
@@ -261,4 +294,10 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
     protected static final Function<Integer, IDrawable> toggleButtonTextureGetter = val -> val == 0
         ? GT_UITextures.OVERLAY_BUTTON_CROSS
         : GT_UITextures.OVERLAY_BUTTON_CHECKMARK;
+    protected static final Function<Integer, IDrawable[]> toggleButtonBackgroundGetter = val -> new IDrawable[] {
+        val == 0 ? GT_UITextures.BUTTON_STANDARD : GT_UITextures.BUTTON_STANDARD_PRESSED };
+
+    protected static final Function<Supplier<Boolean>, Function<Integer, IDrawable[]>> toggleButtonBackgroundGetterOrDisabled = isActive -> val -> isActive
+        .get() ? new IDrawable[] {}
+            : new IDrawable[] { val == 0 ? GT_UITextures.BUTTON_STANDARD : GT_UITextures.BUTTON_STANDARD_PRESSED };
 }
