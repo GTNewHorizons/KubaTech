@@ -84,9 +84,9 @@ import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.IDrawable;
 import com.gtnewhorizons.modularui.api.drawable.ItemDrawable;
 import com.gtnewhorizons.modularui.api.drawable.Text;
+import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
 import com.gtnewhorizons.modularui.api.math.Alignment;
 import com.gtnewhorizons.modularui.api.math.Color;
-import com.gtnewhorizons.modularui.api.math.Pos2d;
 import com.gtnewhorizons.modularui.api.screen.ModularUIContext;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
@@ -560,24 +560,6 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
         return valid;
     }
-    @Override
-    public int getGUIHeight() {
-        return 166;
-    }
-
-    @Override
-    public int getGUIWidth() {
-        return 176;
-    }
-
-    @Override
-    public void bindPlayerInventoryUI(ModularWindow.Builder builder, UIBuildContext buildContext) {
-        builder.bindPlayerInventory(
-            buildContext.getPlayer(),
-            new Pos2d(7, 83),
-            this.getGUITextureSet()
-                .getItemSlot());
-    }
 
     private static final UIInfo<?, ?> GreenhouseUI = createKTMetaTileEntityUI(
         KT_ModulaUIContainer_ExtremeIndustrialGreenhouse::new);
@@ -632,48 +614,27 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     List<GTHelper.StackableItemSlot> drawables = new ArrayList<>();
     private int usedSlots = 0; // mStorage.size()
 
+    @Override
+    protected void addConfigurationWidgets(DynamicPositionedColumn configurationElements, UIBuildContext buildContext) {
+        buildContext.addSyncedWindow(CONFIGURATION_WINDOW_ID, this::createConfigurationWindow);
+        configurationElements.setSynced(false);
+        configurationElements.widget(
+            new ButtonWidget().setOnClick(
+                (clickData, widget) -> {
+                    if (!widget.isClient()) widget.getContext()
+                        .openSyncedWindow(CONFIGURATION_WINDOW_ID);
+                })
+                .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
+                .addTooltip("Configuration")
+                .setSize(16, 16));
+    }
+
     @SuppressWarnings("UnstableApiUsage")
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
-        builder.widget(
-            new DrawableWidget().setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
-                .setPos(7, 4)
-                .setSize(143, 75)
-                .setEnabled(widget -> !isFixed.apply(widget)));
+        super.addUIWidgets(builder, buildContext);
 
-        buildContext.addSyncedWindow(CONFIGURATION_WINDOW_ID, this::createConfigurationWindow);
         EntityPlayer player = buildContext.getPlayer();
-
-        // Slot is not needed
-
-        builder.widget(
-            new DynamicPositionedColumn().setSynced(false)
-                .widget(new CycleButtonWidget().setToggle(() -> getBaseMetaTileEntity().isAllowedToWork(), works -> {
-                    if (works) getBaseMetaTileEntity().enableWorking();
-                    else getBaseMetaTileEntity().disableWorking();
-
-                    if (!(player instanceof EntityPlayerMP)) return;
-                    String tChat = GT_Utility.trans("090", "Machine Processing: ")
-                        + (works ? GT_Utility.trans("088", "Enabled") : GT_Utility.trans("087", "Disabled"));
-                    if (hasAlternativeModeText()) tChat = getAlternativeModeText();
-                    GT_Utility.sendChatToPlayer(player, tChat);
-                })
-                    .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
-                    .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
-                    .setTextureGetter(toggleButtonTextureGetter)
-                    .setBackground(GT_UITextures.BUTTON_STANDARD)
-                    .setSize(18, 18)
-                    .addTooltip("Working status"))
-                .widget(
-                    new ButtonWidget().setOnClick(
-                        (clickData, widget) -> {
-                            if (!widget.isClient()) widget.getContext()
-                                .openSyncedWindow(CONFIGURATION_WINDOW_ID);
-                        })
-                        .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
-                        .addTooltip("Configuration")
-                        .setSize(18, 18))
-                .setPos(151, 4));
 
         ChangeableWidget cropsContainer = new ChangeableWidget(() -> createCropsContainerWidget(player));
 
@@ -745,10 +706,6 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     throw new RuntimeException(e);
                 }
             }), builder));
-
-        final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
-        drawTexts(screenElements, null);
-        builder.widget(screenElements);
     }
 
     protected Widget createCropsContainerWidget(EntityPlayer player) {
@@ -903,7 +860,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             cropsContainer.widget(row.setPos(0, i * 18));
         }
         return cropsContainer.setPos(10, 16)
-            .setSize(128, 60);
+            .setSize(128, 60)
+            .setBackground(new Rectangle().setColor(Color.rgb(163, 163, 198)));
     }
 
     protected ModularWindow createConfigurationWindow(final EntityPlayer player) {
