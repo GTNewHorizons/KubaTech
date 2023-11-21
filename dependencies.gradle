@@ -36,10 +36,15 @@
 
 dependencies {
     api('com.github.GTNewHorizons:GT5-Unofficial:5.09.44.86:dev')
+    {
+        exclude group:"com.github.GTNewHorizons", module:"ModularUI"
+    }
+
     api("com.github.GTNewHorizons:EnderCore:0.2.18:dev")
     api("com.github.GTNewHorizons:EnderIO:2.5.4:dev")
     api("com.github.GTNewHorizons:ForestryMC:4.7.0:dev")
     api("com.github.GTNewHorizons:ModularUI:1.1.22:dev")
+    //runtimeOnly(project.files("lib/muitest-dev.jar"))
     api("com.github.GTNewHorizons:Mobs-Info:0.1.10-GTNH:dev")
     devOnlyNonPublishable("com.github.GTNewHorizons:Infernal-Mobs:1.7.9-GTNH:dev")
     //compileOnly("curse.maven:extrautilities-225561:2264384") {

@@ -24,7 +24,6 @@ import static com.gtnewhorizon.structurelib.structure.StructureUtility.isAir;
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.ofBlock;
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.onElementPass;
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.transpose;
-import static com.kuba6000.mobsinfo.api.MobRecipe.MobNameToRecipeMap;
 import static gregtech.api.enums.GT_HatchElement.Energy;
 import static gregtech.api.enums.GT_HatchElement.InputBus;
 import static gregtech.api.enums.GT_HatchElement.Maintenance;
@@ -83,17 +82,14 @@ import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizons.modularui.api.drawable.Text;
+import com.gtnewhorizons.modularui.api.drawable.UITexture;
+import com.gtnewhorizons.modularui.api.forge.ItemStackHandler;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
 import com.gtnewhorizons.modularui.common.widget.CycleButtonWidget;
 import com.gtnewhorizons.modularui.common.widget.DynamicPositionedColumn;
-import com.gtnewhorizons.modularui.common.widget.DynamicPositionedRow;
-import com.gtnewhorizons.modularui.common.widget.DynamicTextWidget;
-import com.gtnewhorizons.modularui.common.widget.FakeSyncWidget;
 import com.gtnewhorizons.modularui.common.widget.SlotWidget;
-import com.gtnewhorizons.modularui.common.widget.TextWidget;
 import com.kuba6000.mobsinfo.api.utils.FastRandom;
-import com.kuba6000.mobsinfo.api.utils.ItemID;
 import com.mojang.authlib.GameProfile;
 
 import WayofTime.alchemicalWizardry.api.alchemy.energy.ReagentRegistry;
@@ -111,6 +107,7 @@ import crazypants.enderio.EnderIO;
 import gregtech.api.GregTech_API;
 import gregtech.api.enums.Materials;
 import gregtech.api.enums.Textures;
+import gregtech.api.gui.modularui.GT_UITextures;
 import gregtech.api.interfaces.ITexture;
 import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
@@ -126,6 +123,7 @@ import kubatech.api.LoaderReference;
 import kubatech.api.helpers.ReflectionHelper;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.api.tileentity.CustomTileEntityPacketHandler;
+import kubatech.api.utils.ModUtils;
 import kubatech.client.effect.EntityRenderer;
 import kubatech.loaders.MobHandlerLoader;
 import kubatech.network.CustomTileEntityPacket;
@@ -220,6 +218,10 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         aNBT.setBoolean("mAnimationEnabled", mAnimationEnabled);
         aNBT.setByte("mGlassTier", mGlassTier);
         aNBT.setBoolean("mIsProducingInfernalDrops", mIsProducingInfernalDrops);
+        if (weaponCache.getStackInSlot(0) != null) aNBT.setTag(
+            "weaponCache",
+            weaponCache.getStackInSlot(0)
+                .writeToNBT(new NBTTagCompound()));
     }
 
     @Override
@@ -230,6 +232,8 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
         mGlassTier = aNBT.getByte("mGlassTier");
         mIsProducingInfernalDrops = !aNBT.hasKey("mIsProducingInfernalDrops")
             || aNBT.getBoolean("mIsProducingInfernalDrops");
+        if (aNBT.hasKey("weaponCache"))
+            weaponCache.setStackInSlot(0, ItemStack.loadItemStackFromNBT(aNBT.getCompoundTag("weaponCache")));
     }
 
     @Override
@@ -476,12 +480,41 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
 
     private CustomTileEntityPacket mobPacket = null;
 
-    private static class WeaponCache {
+    private static class WeaponCache extends ItemStackHandler {
 
         boolean isValid = false;
-        ItemID id = null;
         int looting = 0;
         double attackDamage = 0;
+
+        public WeaponCache() {
+            super(1);
+        }
+
+        @Override
+        protected void onContentsChanged(int slot) {
+            if (slot != 0) return;
+            if (ModUtils.isClientThreaded()) return;
+            ItemStack stack = getStackInSlot(0);
+            if (stack == null) {
+                isValid = false;
+                return;
+            }
+            // noinspection unchecked
+            attackDamage = ((Multimap<String, AttributeModifier>) stack.getAttributeModifiers())
+                .get(SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName())
+                .stream()
+                .mapToDouble(
+                    attr -> attr.getAmount()
+                        + (double) EnchantmentHelper.func_152377_a(stack, EnumCreatureAttribute.UNDEFINED))
+                .sum();
+            looting = Math.min(4, EnchantmentHelper.getEnchantmentLevel(Enchantment.looting.effectId, stack));
+            isValid = true;
+        }
+
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) {
+            return Enchantment.looting.canApply(stack);
+        }
     }
 
     private final WeaponCache weaponCache = new WeaponCache();
@@ -522,38 +555,23 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
                 return CheckRecipeResultRegistry.insufficientPower(recipe.mEUt * 8);
 
             double attackDamage = DIAMOND_SPIKES_DAMAGE; // damage from spikes
-            GT_MetaTileEntity_Hatch_InputBus inputbus = this.mInputBusses.size() == 0 ? null : this.mInputBusses.get(0);
-            if (inputbus != null && !inputbus.isValid()) inputbus = null;
-            ItemStack lootingHolder = inputbus == null ? null : inputbus.getStackInSlot(0);
             weaponCheck: {
-                // noinspection EqualsBetweenInconvertibleTypes
-                if (weaponCache.isValid && weaponCache.id.equals(lootingHolder)) break weaponCheck;
-                if (lootingHolder == null || !Enchantment.looting.canApply(lootingHolder)) {
-                    weaponCache.isValid = false;
-                    break weaponCheck;
+                GT_MetaTileEntity_Hatch_InputBus inputbus = this.mInputBusses.size() == 0 ? null
+                    : this.mInputBusses.get(0);
+                if (inputbus != null && !inputbus.isValid()) inputbus = null;
+                ItemStack lootingHolder = inputbus == null ? null : inputbus.getStackInSlot(0);
+                if (lootingHolder == null) break weaponCheck;
+                if (weaponCache.getStackInSlot(0) != null) break weaponCheck;
+                if (weaponCache.isItemValid(0, lootingHolder)) {
+                    weaponCache.setStackInSlot(0, lootingHolder);
+                    inputbus.setInventorySlotContents(0, null);
+                    updateSlots();
                 }
-                try {
-                    // noinspection unchecked
-                    weaponCache.attackDamage = ((Multimap<String, AttributeModifier>) lootingHolder
-                        .getAttributeModifiers())
-                            .get(SharedMonsterAttributes.attackDamage.getAttributeUnlocalizedName())
-                            .stream()
-                            .mapToDouble(
-                                attr -> attr.getAmount() + (double) EnchantmentHelper
-                                    .func_152377_a(lootingHolder, EnumCreatureAttribute.UNDEFINED))
-                            .sum();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-                weaponCache.isValid = true;
-                weaponCache.looting = Math
-                    .min(4, EnchantmentHelper.getEnchantmentLevel(Enchantment.looting.effectId, lootingHolder));
-                weaponCache.id = ItemID.createNoCopy(lootingHolder, true, true);
             }
             if (weaponCache.isValid) attackDamage += weaponCache.attackDamage;
 
             if (EECPlayer == null) EECPlayer = new EECFakePlayer(this);
-            EECPlayer.currentWeapon = lootingHolder;
+            EECPlayer.currentWeapon = weaponCache.getStackInSlot(0);
 
             this.mOutputItems = recipe.generateOutputs(
                 rand,
@@ -565,15 +583,16 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
             EECPlayer.currentWeapon = null;
 
             this.mOutputFluids = new FluidStack[] { FluidRegistry.getFluidStack("xpjuice", 120) };
+            ItemStack weapon = weaponCache.getStackInSlot(0);
             int times = this.calculatePerfectOverclock(this.lEUt, this.mMaxProgresstime);
-            if (weaponCache.isValid && lootingHolder.isItemStackDamageable()) {
-                EECPlayer.currentWeapon = lootingHolder;
-                Item lootingHolderItem = lootingHolder.getItem();
+            if (weaponCache.isValid && weapon.isItemStackDamageable()) {
+                EECPlayer.currentWeapon = weapon;
+                Item lootingHolderItem = weapon.getItem();
                 for (int i = 0; i < times + 1; i++) {
                     // noinspection ConstantConditions
-                    if (!lootingHolderItem.hitEntity(lootingHolder, recipe.recipe.entity, EECPlayer)) break;
-                    if (lootingHolder.stackSize == 0) {
-                        inputbus.setInventorySlotContents(0, null);
+                    if (!lootingHolderItem.hitEntity(weapon, recipe.recipe.entity, EECPlayer)) break;
+                    if (weapon.stackSize == 0) {
+                        weaponCache.setStackInSlot(0, null);
                         break;
                     }
                 }
@@ -717,80 +736,96 @@ public class GT_MetaTileEntity_ExtremeExterminationChamber
     }
 
     @Override
+    public void createInventorySlots() {
+        final SlotWidget spawnerSlot = new SlotWidget(inventoryHandler, 1);
+        spawnerSlot.setBackground(
+            GT_UITextures.SLOT_DARK_GRAY,
+            UITexture.fullImage(Tags.MODID, "gui/slot/gray_spawner")
+                .withFixedSize(16, 16)
+                .withOffset(1, 1));
+        spawnerSlot.setFilter(stack -> stack.getItem() == poweredSpawnerItem);
+        slotWidgets.add(spawnerSlot);
+        final SlotWidget weaponSlot = new SlotWidget(weaponCache, 0);
+        weaponSlot.setBackground(
+            GT_UITextures.SLOT_DARK_GRAY,
+            UITexture.fullImage(Tags.MODID, "gui/slot/gray_sword")
+                .withFixedSize(16, 16)
+                .withOffset(1, 1));
+        slotWidgets.add(weaponSlot);
+    }
+
+    @Override
     protected void drawTexts(DynamicPositionedColumn screenElements, SlotWidget inventorySlot) {
-        inventorySlot.setFilter(stack -> stack.getItem() == poweredSpawnerItem);
+        super.drawTexts(screenElements, inventorySlot);
 
-        screenElements.setSynced(false)
-            .setSpace(0)
-            .setPos(10, 7);
-
-        screenElements.widget(
-            new DynamicPositionedRow().setSynced(false)
-                .widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get()))
-                .widget(new DynamicTextWidget(() -> {
-                    if (getBaseMetaTileEntity().isActive()) return new Text("Working !").color(Color.GREEN.dark(3));
-                    else if (getBaseMetaTileEntity().isAllowedToWork())
-                        return new Text("Enabled").color(Color.GREEN.dark(3));
-                    else if (getBaseMetaTileEntity().wasShutdown())
-                        return new Text("Shutdown (CRITICAL)").color(Color.RED.dark(3));
-                    else return new Text("Disabled").color(Color.RED.dark(3));
-                }))
-                .setEnabled(isFixed));
-        screenElements.widget(new DynamicTextWidget(() -> {
-            ItemStack aStack = mInventory[1];
-            if (aStack == null) return new Text("Insert Powered Spawner").color(Color.RED.dark(3));
-            else {
-                Text invalid = new Text("Invalid Spawner").color(Color.RED.dark(3));
-                if (aStack.getItem() != poweredSpawnerItem) return invalid;
-
-                if (aStack.getTagCompound() == null) return invalid;
-                String mobType = aStack.getTagCompound()
-                    .getString("mobType");
-                if (mobType.isEmpty()) return invalid;
-
-                if (!MobNameToRecipeMap.containsKey(mobType)) return invalid;
-
-                return new Text(StatCollector.translateToLocal("entity." + mobType + ".name"))
-                    .color(Color.GREEN.dark(3));
-            }
-        }).setEnabled(isFixed));
-
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("132", "Pipe is loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mWrench))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mWrench, val -> mWrench = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("133", "Screws are loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mScrewdriver))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mScrewdriver, val -> mScrewdriver = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("134", "Something is stuck.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mSoftHammer))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mSoftHammer, val -> mSoftHammer = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("135", "Platings are dented.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mHardHammer))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mHardHammer, val -> mHardHammer = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("136", "Circuitry burned out.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mSolderingTool))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mSolderingTool, val -> mSolderingTool = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("137", "That doesn't belong there."))
-                    .setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mCrowbar))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mCrowbar, val -> mCrowbar = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("138", "Incomplete Structure.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mMachine))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mMachine, val -> mMachine = val));
+        /*
+         * screenElements.setSynced(false)
+         * .setSpace(0)
+         * .setPos(10, 7);
+         * screenElements.widget(
+         * new DynamicPositionedRow().setSynced(false)
+         * .widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get()))
+         * .widget(new DynamicTextWidget(() -> {
+         * if (getBaseMetaTileEntity().isActive()) return new Text("Working !").color(Color.GREEN.dark(3));
+         * else if (getBaseMetaTileEntity().isAllowedToWork())
+         * return new Text("Enabled").color(Color.GREEN.dark(3));
+         * else if (getBaseMetaTileEntity().wasShutdown())
+         * return new Text("Shutdown (CRITICAL)").color(Color.RED.dark(3));
+         * else return new Text("Disabled").color(Color.RED.dark(3));
+         * }))
+         * .setEnabled(isFixed));
+         * screenElements.widget(new DynamicTextWidget(() -> {
+         * ItemStack aStack = mInventory[1];
+         * if (aStack == null) return new Text("Insert Powered Spawner").color(Color.RED.dark(3));
+         * else {
+         * Text invalid = new Text("Invalid Spawner").color(Color.RED.dark(3));
+         * if (aStack.getItem() != poweredSpawnerItem) return invalid;
+         * if (aStack.getTagCompound() == null) return invalid;
+         * String mobType = aStack.getTagCompound()
+         * .getString("mobType");
+         * if (mobType.isEmpty()) return invalid;
+         * if (!MobNameToRecipeMap.containsKey(mobType)) return invalid;
+         * return new Text(StatCollector.translateToLocal("entity." + mobType + ".name"))
+         * .color(Color.GREEN.dark(3));
+         * }
+         * }).setEnabled(isFixed));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("132", "Pipe is loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mWrench))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mWrench, val -> mWrench = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("133", "Screws are loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mScrewdriver))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mScrewdriver, val -> mScrewdriver = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("134", "Something is stuck.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mSoftHammer))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mSoftHammer, val -> mSoftHammer = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("135", "Platings are dented.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mHardHammer))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mHardHammer, val -> mHardHammer = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("136", "Circuitry burned out.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mSolderingTool))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mSolderingTool, val -> mSolderingTool = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("137", "That doesn't belong there."))
+         * .setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mCrowbar))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mCrowbar, val -> mCrowbar = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("138", "Incomplete Structure.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mMachine))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mMachine, val -> mMachine = val));
+         */
     }
 
     private static class EECFakePlayer extends FakePlayer {

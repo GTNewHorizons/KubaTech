@@ -24,6 +24,7 @@ import static gregtech.api.metatileentity.BaseTileEntity.TOOLTIP_DELAY;
 import static kubatech.api.Variables.ln2;
 import static kubatech.api.Variables.ln4;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
@@ -39,6 +40,7 @@ import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.drawable.UITexture;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.math.MainAxisAlignment;
+import com.gtnewhorizons.modularui.api.math.Pos2d;
 import com.gtnewhorizons.modularui.api.screen.ITileWithModularUI;
 import com.gtnewhorizons.modularui.api.screen.ModularUIContext;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
@@ -48,8 +50,10 @@ import com.gtnewhorizons.modularui.common.builder.UIBuilder;
 import com.gtnewhorizons.modularui.common.builder.UIInfo;
 import com.gtnewhorizons.modularui.common.internal.wrapper.ModularGui;
 import com.gtnewhorizons.modularui.common.internal.wrapper.ModularUIContainer;
+import com.gtnewhorizons.modularui.common.widget.Column;
 import com.gtnewhorizons.modularui.common.widget.DrawableWidget;
 import com.gtnewhorizons.modularui.common.widget.DynamicPositionedColumn;
+import com.gtnewhorizons.modularui.common.widget.SlotWidget;
 
 import gregtech.api.enums.GT_Values;
 import gregtech.api.gui.modularui.GT_UITextures;
@@ -270,9 +274,46 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
                 .setTooltipShowUpDelay(TOOLTIP_DELAY));
     }
 
+    protected List<SlotWidget> slotWidgets = new ArrayList<>(1);
+
+    public void createInventorySlots() {
+        final SlotWidget inventorySlot = new SlotWidget(inventoryHandler, 1);
+        inventorySlot.setBackground(GT_UITextures.SLOT_DARK_GRAY);
+        slotWidgets.add(inventorySlot);
+    }
+
+    @Override
+    public Pos2d getPowerSwitchButtonPos() {
+        return new Pos2d(174, 166 - (slotWidgets.size() * 18));
+    }
+
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
-        super.addUIWidgets(builder, buildContext);
+        builder.widget(
+            new DrawableWidget().setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
+                .setPos(4, 4)
+                .setSize(190, 85));
+
+        slotWidgets.clear();
+        createInventorySlots();
+
+        Column slotsColumn = new Column();
+        for (int i = slotWidgets.size() - 1; i >= 0; i--) {
+            slotsColumn.widget(slotWidgets.get(i));
+        }
+        builder.widget(
+            slotsColumn.setAlignment(MainAxisAlignment.END)
+                .setPos(173, 167 - 1));
+
+        final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
+        drawTexts(screenElements, slotWidgets.size() > 0 ? slotWidgets.get(0) : null);
+        builder.widget(screenElements);
+
+        builder.widget(createPowerSwitchButton(builder))
+            .widget(createVoidExcessButton(builder))
+            .widget(createInputSeparationButton(builder))
+            .widget(createBatchModeButton(builder))
+            .widget(createLockToSingleRecipeButton(builder));
 
         DynamicPositionedColumn configurationElements = new DynamicPositionedColumn();
         addConfigurationWidgets(configurationElements, buildContext);

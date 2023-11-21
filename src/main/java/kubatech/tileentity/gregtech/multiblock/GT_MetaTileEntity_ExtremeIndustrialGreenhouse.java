@@ -652,6 +652,11 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             .setEnabled(() -> this.mMaxProgresstime == 0);
 
     @Override
+    public void createInventorySlots() {
+
+    }
+
+    @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
         super.addUIWidgets(builder, buildContext);
 
