@@ -99,8 +99,8 @@ public class MobHandlerLoader {
             mDuration = Math.max(MOB_SPAWN_INTERVAL, (int) ((recipe.maxEntityHealth / DIAMOND_SPIKES_DAMAGE) * 10d));
         }
 
-        public ItemStack[] generateOutputs(Random rnd, GT_MetaTileEntity_ExtremeEntityCrusher MTE,
-            double attackDamage, int lootinglevel, boolean preferInfernalDrops) {
+        public ItemStack[] generateOutputs(Random rnd, GT_MetaTileEntity_ExtremeEntityCrusher MTE, double attackDamage,
+            int lootinglevel, boolean preferInfernalDrops) {
             MTE.lEUt = mEUt;
             MTE.mMaxProgresstime = Math.max(MOB_SPAWN_INTERVAL, (int) ((recipe.maxEntityHealth / attackDamage) * 10d));
             ArrayList<ItemStack> stacks = new ArrayList<>(this.mOutputs.size());

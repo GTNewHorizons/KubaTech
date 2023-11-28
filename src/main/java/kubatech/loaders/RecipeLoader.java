@@ -96,7 +96,7 @@ public class RecipeLoader {
 
     public static void addRecipes() {
         if (registerMTE(
-                ExtremeEntityCrusher,
+            ExtremeEntityCrusher,
             GT_MetaTileEntity_ExtremeEntityCrusher.class,
             "multimachine.entitycrusher",
             "Extreme Entity Crusher",
