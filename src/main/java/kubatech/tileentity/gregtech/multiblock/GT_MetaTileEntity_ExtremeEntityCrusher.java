@@ -261,7 +261,7 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
         tt.addMachineType("Powered Spawner")
             .addInfo("Controller block for the EEC : Extreme Entity Crusher")
             .addInfo(Author)
-            .addInfo("Spawns and exterminates monsters for you.")
+            .addInfo("Spawns and kills monsters for you.")
             .addInfo("You have to insert the powered spawner in the controller.")
             .addInfo("Base energy usage: 2,000 EU/t")
             .addInfo("Supports perfect OC, minimum time: 20 ticks, after that multiplies the outputs.")
