@@ -304,7 +304,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         GT_Multiblock_Tooltip_Builder tt = new GT_Multiblock_Tooltip_Builder();
         tt.addMachineType("Apiary")
             .addInfo(
-                "Controller block for Industrial Apicultural Acclimatiser and Drone Domestication Station aka Mega Apiary")
+                "Controller block for Industrial Apicultural Acclimatiser and Drone Domestication Station (Mega Apiary)")
             .addInfo(buildAuthorList("kuba6000", "Runakai"))
             .addInfo("The ideal home for your bees")
             .addInfo("Use screwdriver to change primary mode (INPUT/OUTPUT/OPERATING)")
