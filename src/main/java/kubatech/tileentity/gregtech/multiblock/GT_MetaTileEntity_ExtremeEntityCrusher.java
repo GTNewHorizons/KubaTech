@@ -258,8 +258,8 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
     @Override
     protected GT_Multiblock_Tooltip_Builder createTooltip() {
         GT_Multiblock_Tooltip_Builder tt = new GT_Multiblock_Tooltip_Builder();
-        tt.addMachineType("Powered Spawner")
-            .addInfo("Controller block for the Extreme Entity Crusher (EEC)")
+        tt.addMachineType("Powered Spawner, EEC")
+            .addInfo("Controller block for the Extreme Entity Crusher")
             .addInfo(Author)
             .addInfo("Spawns and kills monsters for you.")
             .addInfo("You have to insert the powered spawner in the controller.")
