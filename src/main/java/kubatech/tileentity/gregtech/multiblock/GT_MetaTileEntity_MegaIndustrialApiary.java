@@ -949,62 +949,6 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             return ret;
         }));
         super.drawTexts(screenElements, inventorySlot);
-
-        /*
-         * screenElements.setSynced(false)
-         * .setSpace(0)
-         * .setPos(10, 7);
-         * screenElements.widget(
-         * new DynamicPositionedRow().setSynced(false)
-         * .widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get()))
-         * .widget(new DynamicTextWidget(() -> {
-         * if (flowersError) return new Text("Missing flowers!").color(Color.RED.dark(3));
-         * if (getBaseMetaTileEntity().isActive()) return new Text("Working !").color(Color.GREEN.dark(3));
-         * else if (getBaseMetaTileEntity().isAllowedToWork())
-         * return new Text("Enabled").color(Color.GREEN.dark(3));
-         * else if (getBaseMetaTileEntity().wasShutdown())
-         * return new Text("Shutdown (CRITICAL)").color(Color.RED.dark(3));
-         * else return new Text("Disabled").color(Color.RED.dark(3));
-         * }).dynamicTooltip(() -> flowersGUI)
-         * .setUpdateTooltipEveryTick(true))
-         * .setEnabled(isFixed));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("132", "Pipe is loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mWrench))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mWrench, val -> mWrench = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("133", "Screws are loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mScrewdriver))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mScrewdriver, val -> mScrewdriver = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("134", "Something is stuck.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mSoftHammer))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mSoftHammer, val -> mSoftHammer = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("135", "Platings are dented.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mHardHammer))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mHardHammer, val -> mHardHammer = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("136", "Circuitry burned out.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mSolderingTool))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mSolderingTool, val -> mSolderingTool = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("137", "That doesn't belong there."))
-         * .setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mCrowbar))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mCrowbar, val -> mCrowbar = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("138", "Incomplete Structure.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mMachine))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mMachine, val -> mMachine = val));
-         */
     }
 
     final HashMap<ItemID, Double> dropProgress = new HashMap<>();
