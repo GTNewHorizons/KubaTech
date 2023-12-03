@@ -41,6 +41,7 @@ import static kubatech.api.Variables.buildAuthorList;
 import static kubatech.api.utils.ItemUtils.readItemStackFromNBT;
 import static kubatech.api.utils.ItemUtils.writeItemStackToNBT;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +49,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -55,6 +57,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -76,6 +79,7 @@ import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
 import com.gtnewhorizons.modularui.api.math.Color;
+import com.gtnewhorizons.modularui.api.math.MainAxisAlignment;
 import com.gtnewhorizons.modularui.api.screen.ModularUIContext;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
@@ -86,8 +90,6 @@ import com.gtnewhorizons.modularui.common.widget.Column;
 import com.gtnewhorizons.modularui.common.widget.CycleButtonWidget;
 import com.gtnewhorizons.modularui.common.widget.DrawableWidget;
 import com.gtnewhorizons.modularui.common.widget.DynamicPositionedColumn;
-import com.gtnewhorizons.modularui.common.widget.DynamicPositionedRow;
-import com.gtnewhorizons.modularui.common.widget.DynamicTextWidget;
 import com.gtnewhorizons.modularui.common.widget.FakeSyncWidget;
 import com.gtnewhorizons.modularui.common.widget.SlotWidget;
 import com.gtnewhorizons.modularui.common.widget.TextWidget;
@@ -513,7 +515,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                     List<ItemStack> stacks = new ArrayList<>();
                     for (int i = 0, mStorageSize = Math.min(mStorage.size(), mMaxSlots); i < mStorageSize; i++) {
                         BeeSimulator beeSimulator = mStorage.get(i);
-                        stacks.addAll(beeSimulator.getDrops(64_00d * boosted));
+                        stacks.addAll(beeSimulator.getDrops(this, 64_00d * boosted));
                     }
 
                     this.lEUt = -(int) ((double) GT_Values.V[6] * (double) mMaxSlots * 0.99d);
@@ -719,14 +721,44 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
 
     }
 
+    private boolean isInInventory = true;
+
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
-        super.addUIWidgets(builder, buildContext);
-
+        isInInventory = !getBaseMetaTileEntity().isActive();
+        builder.widget(
+            new DrawableWidget().setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
+                .setPos(4, 4)
+                .setSize(190, 85)
+                .setEnabled(w -> !isInInventory));
         builder.widget(
             dynamicInventory.asWidget(builder, buildContext)
                 .setPos(10, 16)
-                .setBackground(new Rectangle().setColor(Color.rgb(163, 163, 198))));
+                .setBackground(new Rectangle().setColor(Color.rgb(163, 163, 198)))
+                .setEnabled(w -> isInInventory));
+        builder.widget(
+            new CycleButtonWidget().setToggle(() -> isInInventory, i -> isInInventory = i)
+                .setTextureGetter(i -> i == 0 ? new Text("Inventory") : new Text("Status"))
+                .setBackground(GT_UITextures.BUTTON_STANDARD)
+                .setPos(140, 4)
+                .setSize(55, 16));
+
+        final DynamicPositionedColumn screenElements = new DynamicPositionedColumn();
+        drawTexts(screenElements, null);
+        builder.widget(screenElements.setEnabled(w -> !isInInventory));
+
+        builder.widget(createPowerSwitchButton(builder))
+            .widget(createVoidExcessButton(builder))
+            .widget(createInputSeparationButton(builder))
+            .widget(createBatchModeButton(builder))
+            .widget(createLockToSingleRecipeButton(builder));
+
+        DynamicPositionedColumn configurationElements = new DynamicPositionedColumn();
+        addConfigurationWidgets(configurationElements, buildContext);
+
+        builder.widget(
+            configurationElements.setAlignment(MainAxisAlignment.END)
+                .setPos(getPowerSwitchButtonPos().subtract(0, 18)));
     }
 
     @Override
@@ -843,66 +875,137 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         return builder.build();
     }
 
-    private List<String> flowersGUI = Collections.emptyList();
+    // private List<String> flowersGUI = Collections.emptyList();
+
+    private HashMap<ItemStack, Double> GUIDropProgress = new HashMap<>();
+
+    @Override
+    protected String generateCurrentRecipeInfoString() {
+        if (mSecondaryMode == 1) return super.generateCurrentRecipeInfoString();
+        StringBuilder ret = new StringBuilder(EnumChatFormatting.WHITE + "Progress: ")
+            .append(String.format("%,.2f", (double) mProgresstime / 20))
+            .append("s / ")
+            .append(String.format("%,.2f", (double) mMaxProgresstime / 20))
+            .append("s (")
+            .append(String.format("%,.1f", (double) mProgresstime / mMaxProgresstime * 100))
+            .append("%)\n");
+
+        for (Map.Entry<ItemStack, Double> drop : GUIDropProgress.entrySet()) {
+            ret.append(
+                drop.getKey()
+                    .getDisplayName())
+                .append(": ")
+                .append(
+                    String.format(
+                        "%.2f (+%d)",
+                        drop.getValue(),
+                        Arrays.stream(mOutputItems)
+                            .filter(s -> s.isItemEqual(drop.getKey()))
+                            .mapToInt(i -> i.stackSize)
+                            .sum()));
+        }
+
+        return ret.toString();
+    }
 
     @Override
     protected void drawTexts(DynamicPositionedColumn screenElements, SlotWidget inventorySlot) {
-        screenElements.setSynced(false)
-            .setSpace(0)
-            .setPos(10, 7);
 
-        screenElements.widget(
-            new DynamicPositionedRow().setSynced(false)
-                .widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get()))
-                .widget(new DynamicTextWidget(() -> {
-                    if (flowersError) return new Text("Missing flowers!").color(Color.RED.dark(3));
-                    if (getBaseMetaTileEntity().isActive()) return new Text("Working !").color(Color.GREEN.dark(3));
-                    else if (getBaseMetaTileEntity().isAllowedToWork())
-                        return new Text("Enabled").color(Color.GREEN.dark(3));
-                    else if (getBaseMetaTileEntity().wasShutdown())
-                        return new Text("Shutdown (CRITICAL)").color(Color.RED.dark(3));
-                    else return new Text("Disabled").color(Color.RED.dark(3));
-                }).dynamicTooltip(() -> flowersGUI)
-                    .setUpdateTooltipEveryTick(true))
-                .setEnabled(isFixed));
+        screenElements.widget(new FakeSyncWidget.IntegerSyncer(() -> mSecondaryMode, b -> mSecondaryMode = b));
+        screenElements.widget(new FakeSyncWidget<>(() -> {
+            HashMap<ItemStack, Double> ret = new HashMap<>();
+            HashMap<BeeSimulator.BeeDrop, Double> dropProgress = new HashMap<>();
 
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("132", "Pipe is loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mWrench))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mWrench, val -> mWrench = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("133", "Screws are loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mScrewdriver))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mScrewdriver, val -> mScrewdriver = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("134", "Something is stuck.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mSoftHammer))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mSoftHammer, val -> mSoftHammer = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("135", "Platings are dented.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mHardHammer))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mHardHammer, val -> mHardHammer = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("136", "Circuitry burned out.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mSolderingTool))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mSolderingTool, val -> mSolderingTool = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("137", "That doesn't belong there."))
-                    .setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mCrowbar))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mCrowbar, val -> mCrowbar = val));
-        screenElements
-            .widget(
-                new TextWidget(GT_Utility.trans("138", "Incomplete Structure.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-                    .setEnabled(widget -> !mMachine))
-            .widget(new FakeSyncWidget.BooleanSyncer(() -> mMachine, val -> mMachine = val));
+            for (Map.Entry<BeeSimulator.BeeDrop, Double> drop : this.dropProgress.entrySet()) {
+                dropProgress.merge(drop.getKey(), drop.getValue(), Double::sum);
+            }
+
+            for (Map.Entry<BeeSimulator.BeeDrop, Double> drop : dropProgress.entrySet()) {
+                ret.put(drop.getKey().stack, drop.getValue());
+            }
+            return ret;
+        }, h -> GUIDropProgress = h, (buffer, h) -> {
+            buffer.writeVarIntToBuffer(h.size());
+            for (Map.Entry<ItemStack, Double> itemStackDoubleEntry : h.entrySet()) {
+                try {
+                    buffer.writeItemStackToBuffer(itemStackDoubleEntry.getKey());
+                    buffer.writeDouble(itemStackDoubleEntry.getValue());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }, buffer -> {
+            int len = buffer.readVarIntFromBuffer();
+            HashMap<ItemStack, Double> ret = new HashMap<>(len);
+            for (int i = 0; i < len; i++) {
+                try {
+                    ret.put(buffer.readItemStackFromBuffer(), buffer.readDouble());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return ret;
+        }));
+        super.drawTexts(screenElements, inventorySlot);
+
+        /*
+         * screenElements.setSynced(false)
+         * .setSpace(0)
+         * .setPos(10, 7);
+         * screenElements.widget(
+         * new DynamicPositionedRow().setSynced(false)
+         * .widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get()))
+         * .widget(new DynamicTextWidget(() -> {
+         * if (flowersError) return new Text("Missing flowers!").color(Color.RED.dark(3));
+         * if (getBaseMetaTileEntity().isActive()) return new Text("Working !").color(Color.GREEN.dark(3));
+         * else if (getBaseMetaTileEntity().isAllowedToWork())
+         * return new Text("Enabled").color(Color.GREEN.dark(3));
+         * else if (getBaseMetaTileEntity().wasShutdown())
+         * return new Text("Shutdown (CRITICAL)").color(Color.RED.dark(3));
+         * else return new Text("Disabled").color(Color.RED.dark(3));
+         * }).dynamicTooltip(() -> flowersGUI)
+         * .setUpdateTooltipEveryTick(true))
+         * .setEnabled(isFixed));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("132", "Pipe is loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mWrench))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mWrench, val -> mWrench = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("133", "Screws are loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mScrewdriver))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mScrewdriver, val -> mScrewdriver = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("134", "Something is stuck.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mSoftHammer))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mSoftHammer, val -> mSoftHammer = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("135", "Platings are dented.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mHardHammer))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mHardHammer, val -> mHardHammer = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("136", "Circuitry burned out.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mSolderingTool))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mSolderingTool, val -> mSolderingTool = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("137", "That doesn't belong there."))
+         * .setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mCrowbar))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mCrowbar, val -> mCrowbar = val));
+         * screenElements
+         * .widget(
+         * new TextWidget(GT_Utility.trans("138", "Incomplete Structure.")).setDefaultColor(COLOR_TEXT_WHITE.get())
+         * .setEnabled(widget -> !mMachine))
+         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mMachine, val -> mMachine = val));
+         */
     }
+
+    final HashMap<BeeSimulator.BeeDrop, Double> dropProgress = new HashMap<>();
 
     private static class BeeSimulator {
 
@@ -997,13 +1100,11 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             return tag;
         }
 
-        final HashMap<BeeDrop, Double> dropProgress = new HashMap<>();
-
-        public List<ItemStack> getDrops(final double timePassed) {
-            drops.forEach(d -> dropProgress.merge(d, d.getAmount(timePassed / 550d), Double::sum));
-            specialDrops.forEach(d -> dropProgress.merge(d, d.getAmount(timePassed / 550d), Double::sum));
+        public List<ItemStack> getDrops(final GT_MetaTileEntity_MegaIndustrialApiary MTE, final double timePassed) {
+            drops.forEach(d -> MTE.dropProgress.merge(d, d.getAmount(timePassed / 550d), Double::sum));
+            specialDrops.forEach(d -> MTE.dropProgress.merge(d, d.getAmount(timePassed / 550d), Double::sum));
             List<ItemStack> currentDrops = new ArrayList<>();
-            dropProgress.entrySet()
+            MTE.dropProgress.entrySet()
                 .forEach(e -> {
                     double v = e.getValue();
                     while (v > 1.f) {

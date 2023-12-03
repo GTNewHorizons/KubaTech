@@ -511,7 +511,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             List<ItemStack> outputs = new ArrayList<>();
             for (int i = 0; i < Math.min(mMaxSlots, mStorage.size()); i++) outputs.addAll(
                 mStorage.get(i)
-                    .getIC2Drops(((double) this.mMaxProgresstime * 32d) * multiplier));
+                    .getIC2Drops(this, ((double) this.mMaxProgresstime * 32d) * multiplier));
             this.mOutputItems = outputs.toArray(new ItemStack[0]);
         } else {
             this.mMaxProgresstime = Math.max(20, 100 / (tier - 3)); // Min 1 s
@@ -660,6 +660,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
     @Override
     public void addUIWidgets(ModularWindow.Builder builder, UIBuildContext buildContext) {
+        isInInventory = !getBaseMetaTileEntity().isActive();
         builder.widget(
             new DrawableWidget().setDrawable(GT_UITextures.PICTURE_SCREEN_BLACK)
                 .setPos(4, 4)
@@ -828,7 +829,14 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 drop.getKey()
                     .getDisplayName())
                 .append(": ")
-                .append(drop.getValue());
+                .append(
+                    String.format(
+                        "%.2f (+%d)",
+                        drop.getValue(),
+                        Arrays.stream(mOutputItems)
+                            .filter(s -> s.isItemEqual(drop.getKey()))
+                            .mapToInt(i -> i.stackSize)
+                            .sum()));
         }
 
         return ret.toString();
@@ -841,10 +849,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             HashMap<ItemStack, Double> ret = new HashMap<>();
             HashMap<String, Double> dropProgress = new HashMap<>();
 
-            for (GreenHouseSlot slot : mStorage) {
-                for (Map.Entry<String, Double> drop : slot.dropprogress.entrySet()) {
-                    dropProgress.merge(drop.getKey(), drop.getValue(), Double::sum);
-                }
+            for (Map.Entry<String, Double> drop : dropprogress.entrySet()) {
+                dropProgress.merge(drop.getKey(), drop.getValue(), Double::sum);
             }
 
             for (Map.Entry<String, Double> drop : dropProgress.entrySet()) {
@@ -1016,6 +1022,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         if (addCrop(input, -1, false)) return input;
         return null;
     }
+
+    final Map<String, Double> dropprogress = new HashMap<>();
 
     private static class GreenHouseSlot extends InventoryCrafting {
 
@@ -1370,10 +1378,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             return drops;
         }
 
-        final Map<String, Double> dropprogress = new HashMap<>();
         static final Map<String, ItemStack> dropstacks = new HashMap<>();
 
-        public List<ItemStack> getIC2Drops(double timeelapsed) {
+        public List<ItemStack> getIC2Drops(GT_MetaTileEntity_ExtremeIndustrialGreenhouse tileEntity,
+            double timeelapsed) {
             int r = rn.nextInt(10);
             if (generations.size() <= r) return new ArrayList<>();
             double growthPercent = (timeelapsed / (double) growthticks);
@@ -1383,13 +1391,11 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             for (ItemStack s : copied) {
                 double pro = ((double) s.stackSize * growthPercent);
                 s.stackSize = 1;
-                if (dropprogress.containsKey(s.toString()))
-                    dropprogress.put(s.toString(), dropprogress.get(s.toString()) + pro);
-                else dropprogress.put(s.toString(), pro);
+                tileEntity.dropprogress.merge(s.toString(), pro, Double::sum);
                 if (!dropstacks.containsKey(s.toString())) dropstacks.put(s.toString(), s.copy());
             }
             copied.clear();
-            for (Map.Entry<String, Double> entry : dropprogress.entrySet()) if (entry.getValue() >= 1d) {
+            for (Map.Entry<String, Double> entry : tileEntity.dropprogress.entrySet()) if (entry.getValue() >= 1d) {
                 copied.add(
                     dropstacks.get(entry.getKey())
                         .copy());
