@@ -57,7 +57,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -93,6 +92,7 @@ import com.gtnewhorizons.modularui.common.widget.DynamicPositionedColumn;
 import com.gtnewhorizons.modularui.common.widget.FakeSyncWidget;
 import com.gtnewhorizons.modularui.common.widget.SlotWidget;
 import com.gtnewhorizons.modularui.common.widget.TextWidget;
+import com.kuba6000.mobsinfo.api.utils.ItemID;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -117,6 +117,7 @@ import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energy;
 import gregtech.api.recipe.check.CheckRecipeResult;
 import gregtech.api.recipe.check.CheckRecipeResultRegistry;
+import gregtech.api.recipe.check.SimpleCheckRecipeResult;
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
@@ -484,9 +485,10 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                         mStorage.forEach(s -> s.generate(w, t));
                     }
 
-                    if (mStorage.size() > mMaxSlots) return CheckRecipeResultRegistry.NO_RECIPE;
+                    if (mStorage.size() > mMaxSlots)
+                        return SimpleCheckRecipeResult.ofFailure("MegaApiary_slotoverflow");
 
-                    if (flowersError) return CheckRecipeResultRegistry.NO_RECIPE;
+                    if (flowersError) return SimpleCheckRecipeResult.ofFailure("MegaApiary_noflowers");
 
                     if (needsTVarUpdate) {
                         float t = (float) getVoltageTierExact();
@@ -897,7 +899,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .append(": ")
                 .append(
                     String.format(
-                        "%.2f (+%d)",
+                        "%.2f (+%d)\n",
                         drop.getValue(),
                         Arrays.stream(mOutputItems)
                             .filter(s -> s.isItemEqual(drop.getKey()))
@@ -914,14 +916,14 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
         screenElements.widget(new FakeSyncWidget.IntegerSyncer(() -> mSecondaryMode, b -> mSecondaryMode = b));
         screenElements.widget(new FakeSyncWidget<>(() -> {
             HashMap<ItemStack, Double> ret = new HashMap<>();
-            HashMap<BeeSimulator.BeeDrop, Double> dropProgress = new HashMap<>();
+            HashMap<ItemID, Double> dropProgress = new HashMap<>();
 
-            for (Map.Entry<BeeSimulator.BeeDrop, Double> drop : this.dropProgress.entrySet()) {
+            for (Map.Entry<ItemID, Double> drop : this.dropProgress.entrySet()) {
                 dropProgress.merge(drop.getKey(), drop.getValue(), Double::sum);
             }
 
-            for (Map.Entry<BeeSimulator.BeeDrop, Double> drop : dropProgress.entrySet()) {
-                ret.put(drop.getKey().stack, drop.getValue());
+            for (Map.Entry<ItemID, Double> drop : dropProgress.entrySet()) {
+                ret.put(BeeSimulator.dropstacks.get(drop.getKey()), drop.getValue());
             }
             return ret;
         }, h -> GUIDropProgress = h, (buffer, h) -> {
@@ -1005,7 +1007,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
          */
     }
 
-    final HashMap<BeeSimulator.BeeDrop, Double> dropProgress = new HashMap<>();
+    final HashMap<ItemID, Double> dropProgress = new HashMap<>();
 
     private static class BeeSimulator {
 
@@ -1100,18 +1102,27 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             return tag;
         }
 
+        static final Map<ItemID, ItemStack> dropstacks = new HashMap<>();
+
         public List<ItemStack> getDrops(final GT_MetaTileEntity_MegaIndustrialApiary MTE, final double timePassed) {
-            drops.forEach(d -> MTE.dropProgress.merge(d, d.getAmount(timePassed / 550d), Double::sum));
-            specialDrops.forEach(d -> MTE.dropProgress.merge(d, d.getAmount(timePassed / 550d), Double::sum));
+            drops.forEach(d -> {
+                MTE.dropProgress.merge(d.id, d.getAmount(timePassed / 550d), Double::sum);
+                if (!dropstacks.containsKey(d.id)) dropstacks.put(d.id, d.stack);
+            });
+            specialDrops.forEach(d -> {
+                MTE.dropProgress.merge(d.id, d.getAmount(timePassed / 550d), Double::sum);
+                if (!dropstacks.containsKey(d.id)) dropstacks.put(d.id, d.stack);
+            });
             List<ItemStack> currentDrops = new ArrayList<>();
             MTE.dropProgress.entrySet()
                 .forEach(e -> {
                     double v = e.getValue();
                     while (v > 1.f) {
                         int size = Math.min((int) v, 64);
-                        currentDrops.add(
-                            e.getKey()
-                                .get(size));
+                        ItemStack stack = dropstacks.get(e.getKey())
+                            .copy();
+                        stack.stackSize = size;
+                        currentDrops.add(stack);
                         v -= size;
                         e.setValue(v);
                     }
@@ -1136,7 +1147,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
             private static final float MAX_PRODUCTION_MODIFIER_FROM_UPGRADES = 17.19926784f; // 4*1.2^8
             final ItemStack stack;
             double amount;
-            final GT_Utility.ItemId id;
+            final ItemID id;
 
             final float chance;
             final float beeSpeed;
@@ -1147,7 +1158,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 this.chance = chance;
                 this.beeSpeed = beeSpeed;
                 this.t = t;
-                id = GT_Utility.ItemId.createNoCopy(stack);
+                id = ItemID.createNoCopy(this.stack);
                 evaluate();
             }
 
@@ -1183,7 +1194,7 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 beeSpeed = tag.getFloat("beeSpeed");
                 t = tag.getFloat("t");
                 amount = tag.getDouble("amount");
-                id = GT_Utility.ItemId.createNoCopy(stack);
+                id = ItemID.createNoCopy(stack);
             }
 
             public NBTTagCompound toNBTTagCompound() {

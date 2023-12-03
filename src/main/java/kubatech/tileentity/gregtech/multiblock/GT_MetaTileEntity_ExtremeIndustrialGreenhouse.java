@@ -115,6 +115,7 @@ import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Input
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_MultiInput;
 import gregtech.api.recipe.check.CheckRecipeResult;
 import gregtech.api.recipe.check.CheckRecipeResultRegistry;
+import gregtech.api.recipe.check.SimpleCheckRecipeResult;
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
@@ -436,7 +437,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             this.mEfficiencyIncrease = 10000;
             return CheckRecipeResultRegistry.SUCCESSFUL;
         }
-        if (mStorage.size() > mMaxSlots) return CheckRecipeResultRegistry.NO_RECIPE;
+        if (mStorage.size() > mMaxSlots) return SimpleCheckRecipeResult.ofFailure("EIG_slotoverflow");
         if (mStorage.isEmpty()) return CheckRecipeResultRegistry.NO_RECIPE;
 
         waterusage = 0;
@@ -465,7 +466,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             fluidsToUse.add(i);
             if (watercheck <= 0) break;
         }
-        if (watercheck > 0 && !debug) return CheckRecipeResultRegistry.NO_RECIPE;
+        if (watercheck > 0 && !debug) return SimpleCheckRecipeResult.ofFailure("EIG_missingwater");
         watercheck = waterusage;
         for (GT_MetaTileEntity_Hatch_Input i : fluidsToUse) {
             int used = i.drain(watercheck, true).amount;
@@ -506,7 +507,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         double multiplier = 1.d + (((double) boost / (double) maxboost) * 4d);
 
         if (isIC2Mode) {
-            if (glasTier < 6) return CheckRecipeResultRegistry.NO_RECIPE;
+            if (glasTier < 6) return SimpleCheckRecipeResult.ofFailure("EIG_ic2glass");
             this.mMaxProgresstime = 100;
             List<ItemStack> outputs = new ArrayList<>();
             for (int i = 0; i < Math.min(mMaxSlots, mStorage.size()); i++) outputs.addAll(
@@ -831,7 +832,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 .append(": ")
                 .append(
                     String.format(
-                        "%.2f (+%d)",
+                        "%.2f (+%d)\n",
                         drop.getValue(),
                         Arrays.stream(mOutputItems)
                             .filter(s -> s.isItemEqual(drop.getKey()))
@@ -880,59 +881,6 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             return ret;
         }));
         super.drawTexts(screenElements, inventorySlot);
-        /*
-         * screenElements.setSynced(false)
-         * .setSpace(0)
-         * .setPos(10, 7);
-         * screenElements.widget(
-         * new DynamicPositionedRow().setSynced(false)
-         * .widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get()))
-         * .widget(new DynamicTextWidget(() -> {
-         * if (getBaseMetaTileEntity().isActive()) return new Text("Working !").color(Color.GREEN.dark(3));
-         * else if (getBaseMetaTileEntity().isAllowedToWork())
-         * return new Text("Enabled").color(Color.GREEN.dark(3));
-         * else if (getBaseMetaTileEntity().wasShutdown())
-         * return new Text("Shutdown (CRITICAL)").color(Color.RED.dark(3));
-         * else return new Text("Disabled").color(Color.RED.dark(3));
-         * }))
-         * .setEnabled(isFixed));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("132", "Pipe is loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mWrench))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mWrench, val -> mWrench = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("133", "Screws are loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mScrewdriver))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mScrewdriver, val -> mScrewdriver = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("134", "Something is stuck.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mSoftHammer))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mSoftHammer, val -> mSoftHammer = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("135", "Platings are dented.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mHardHammer))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mHardHammer, val -> mHardHammer = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("136", "Circuitry burned out.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mSolderingTool))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mSolderingTool, val -> mSolderingTool = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("137", "That doesn't belong there."))
-         * .setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mCrowbar))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mCrowbar, val -> mCrowbar = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("138", "Incomplete Structure.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mMachine))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mMachine, val -> mMachine = val));
-         */
     }
 
     @Override

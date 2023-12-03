@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -337,8 +336,4 @@ public abstract class KubaTechGTMultiBlockBase<T extends GT_MetaTileEntity_Exten
         : GT_UITextures.OVERLAY_BUTTON_CHECKMARK;
     protected static final Function<Integer, IDrawable[]> toggleButtonBackgroundGetter = val -> new IDrawable[] {
         val == 0 ? GT_UITextures.BUTTON_STANDARD : GT_UITextures.BUTTON_STANDARD_PRESSED };
-
-    protected static final Function<Supplier<Boolean>, Function<Integer, IDrawable[]>> toggleButtonBackgroundGetterOrDisabled = isActive -> val -> isActive
-        .get() ? new IDrawable[] {}
-            : new IDrawable[] { val == 0 ? GT_UITextures.BUTTON_STANDARD : GT_UITextures.BUTTON_STANDARD_PRESSED };
 }

@@ -61,7 +61,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.StatCollector;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProviderHell;
@@ -115,6 +114,7 @@ import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energ
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_InputBus;
 import gregtech.api.recipe.check.CheckRecipeResult;
 import gregtech.api.recipe.check.CheckRecipeResultRegistry;
+import gregtech.api.recipe.check.SimpleCheckRecipeResult;
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
@@ -267,7 +267,7 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
             .addInfo("Base energy usage: 2,000 EU/t")
             .addInfo("Supports perfect OC, minimum time: 20 ticks, after that multiplies the outputs.")
             .addInfo("Recipe time is based on mob health.")
-            .addInfo("You can additionally put a weapon in the ULV input bus.")
+            .addInfo("You can additionally put a weapon inside the GUI.")
             .addInfo("It will speed up the process and apply the looting level from the weapon (maximum 4 levels).")
             .addInfo(EnumChatFormatting.RED + "Enchanting the spikes inside does nothing!")
             .addInfo("Also produces 120 Liquid XP per operation.")
@@ -288,10 +288,6 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
             .addOtherStructurePart("Steel Frame Box", "All vertical edges without corners")
             .addOtherStructurePart("Diamond spikes", "Inside second layer")
             .addOutputBus("Any bottom casing", 1)
-            .addOtherStructurePart(
-                "1x ULV " + StatCollector.translateToLocal("GT5U.MBTT.InputBus"),
-                "Any bottom casing",
-                1)
             .addOutputHatch("Any bottom casing", 1)
             .addEnergyHatch("Any bottom casing", 1)
             .addMaintenanceHatch("Any bottom casing", 1)
@@ -524,14 +520,14 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
     public CheckRecipeResult checkProcessing() {
         if (getBaseMetaTileEntity().isClientSide()) return CheckRecipeResultRegistry.NO_RECIPE;
         ItemStack aStack = mInventory[1];
-        if (aStack == null) return CheckRecipeResultRegistry.NO_RECIPE;
+        if (aStack == null) return SimpleCheckRecipeResult.ofFailure("EEC_nospawner");
 
-        if (aStack.getItem() != poweredSpawnerItem) return CheckRecipeResultRegistry.NO_RECIPE;
+        if (aStack.getItem() != poweredSpawnerItem) return SimpleCheckRecipeResult.ofFailure("EEC_nospawner");
 
-        if (aStack.getTagCompound() == null) return CheckRecipeResultRegistry.NO_RECIPE;
+        if (aStack.getTagCompound() == null) return SimpleCheckRecipeResult.ofFailure("EEC_invalidspawner");
         String mobType = aStack.getTagCompound()
             .getString("mobType");
-        if (mobType.isEmpty()) return CheckRecipeResultRegistry.NO_RECIPE;
+        if (mobType.isEmpty()) return SimpleCheckRecipeResult.ofFailure("EEC_invalidspawner");
 
         if (mobType.equals("Skeleton") && getBaseMetaTileEntity().getWorld().provider instanceof WorldProviderHell
             && rand.nextInt(5) > 0) mobType = "witherSkeleton";
@@ -540,7 +536,8 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
 
         if (recipe == null) return CheckRecipeResultRegistry.NO_RECIPE;
         if (!recipe.recipe.isPeacefulAllowed && this.getBaseMetaTileEntity()
-            .getWorld().difficultySetting == EnumDifficulty.PEACEFUL) return CheckRecipeResultRegistry.NO_RECIPE;
+            .getWorld().difficultySetting == EnumDifficulty.PEACEFUL)
+            return SimpleCheckRecipeResult.ofFailure("EEC_peaceful");
 
         if (isInRitualMode && isRitualValid()) {
             if (getMaxInputEu() < recipe.mEUt / 4) return CheckRecipeResultRegistry.insufficientPower(recipe.mEUt / 4);
@@ -707,8 +704,7 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
             }
         })
             .setTextureGetter(toggleButtonTextureGetter)
-            .setVariableBackgroundGetter(
-                toggleButtonBackgroundGetterOrDisabled.apply(() -> getBaseMetaTileEntity().isActive()))
+            .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
             .setSize(16, 16)
             .addTooltip("Ritual mode")
             .setTooltipShowUpDelay(TOOLTIP_DELAY));
@@ -726,8 +722,7 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
             else GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Mobs can spawn infernal now");
         })
             .setTextureGetter(toggleButtonTextureGetter)
-            .setVariableBackgroundGetter(
-                toggleButtonBackgroundGetterOrDisabled.apply(() -> getBaseMetaTileEntity().isActive()))
+            .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
             .setSize(16, 16)
             .addTooltip("Is allowed to spawn infernal mobs")
             .addTooltip(new Text("Does not affect mobs that are always infernal !").color(Color.GRAY.normal))
@@ -751,80 +746,6 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
                 .withFixedSize(16, 16)
                 .withOffset(1, 1));
         slotWidgets.add(weaponSlot);
-    }
-
-    @Override
-    protected void drawTexts(DynamicPositionedColumn screenElements, SlotWidget inventorySlot) {
-        super.drawTexts(screenElements, inventorySlot);
-
-        /*
-         * screenElements.setSynced(false)
-         * .setSpace(0)
-         * .setPos(10, 7);
-         * screenElements.widget(
-         * new DynamicPositionedRow().setSynced(false)
-         * .widget(new TextWidget("Status: ").setDefaultColor(COLOR_TEXT_GRAY.get()))
-         * .widget(new DynamicTextWidget(() -> {
-         * if (getBaseMetaTileEntity().isActive()) return new Text("Working !").color(Color.GREEN.dark(3));
-         * else if (getBaseMetaTileEntity().isAllowedToWork())
-         * return new Text("Enabled").color(Color.GREEN.dark(3));
-         * else if (getBaseMetaTileEntity().wasShutdown())
-         * return new Text("Shutdown (CRITICAL)").color(Color.RED.dark(3));
-         * else return new Text("Disabled").color(Color.RED.dark(3));
-         * }))
-         * .setEnabled(isFixed));
-         * screenElements.widget(new DynamicTextWidget(() -> {
-         * ItemStack aStack = mInventory[1];
-         * if (aStack == null) return new Text("Insert Powered Spawner").color(Color.RED.dark(3));
-         * else {
-         * Text invalid = new Text("Invalid Spawner").color(Color.RED.dark(3));
-         * if (aStack.getItem() != poweredSpawnerItem) return invalid;
-         * if (aStack.getTagCompound() == null) return invalid;
-         * String mobType = aStack.getTagCompound()
-         * .getString("mobType");
-         * if (mobType.isEmpty()) return invalid;
-         * if (!MobNameToRecipeMap.containsKey(mobType)) return invalid;
-         * return new Text(StatCollector.translateToLocal("entity." + mobType + ".name"))
-         * .color(Color.GREEN.dark(3));
-         * }
-         * }).setEnabled(isFixed));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("132", "Pipe is loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mWrench))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mWrench, val -> mWrench = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("133", "Screws are loose.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mScrewdriver))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mScrewdriver, val -> mScrewdriver = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("134", "Something is stuck.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mSoftHammer))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mSoftHammer, val -> mSoftHammer = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("135", "Platings are dented.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mHardHammer))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mHardHammer, val -> mHardHammer = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("136", "Circuitry burned out.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mSolderingTool))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mSolderingTool, val -> mSolderingTool = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("137", "That doesn't belong there."))
-         * .setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mCrowbar))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mCrowbar, val -> mCrowbar = val));
-         * screenElements
-         * .widget(
-         * new TextWidget(GT_Utility.trans("138", "Incomplete Structure.")).setDefaultColor(COLOR_TEXT_WHITE.get())
-         * .setEnabled(widget -> !mMachine))
-         * .widget(new FakeSyncWidget.BooleanSyncer(() -> mMachine, val -> mMachine = val));
-         */
     }
 
     private static class EECFakePlayer extends FakePlayer {
