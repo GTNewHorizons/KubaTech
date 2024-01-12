@@ -86,7 +86,7 @@ import com.gtnewhorizons.modularui.api.forge.ItemStackHandler;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
 import com.gtnewhorizons.modularui.common.widget.CycleButtonWidget;
-import com.gtnewhorizons.modularui.common.widget.DynamicPositionedColumn;
+import com.gtnewhorizons.modularui.common.widget.DynamicPositionedRow;
 import com.gtnewhorizons.modularui.common.widget.SlotWidget;
 import com.kuba6000.mobsinfo.api.utils.FastRandom;
 import com.mojang.authlib.GameProfile;
@@ -692,7 +692,7 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
     }
 
     @Override
-    protected void addConfigurationWidgets(DynamicPositionedColumn configurationElements, UIBuildContext buildContext) {
+    protected void addConfigurationWidgets(DynamicPositionedRow configurationElements, UIBuildContext buildContext) {
         configurationElements.setSynced(true);
         configurationElements.widget(new CycleButtonWidget().setToggle(() -> isInRitualMode, v -> {
             if (this.mMaxProgresstime > 0) {
