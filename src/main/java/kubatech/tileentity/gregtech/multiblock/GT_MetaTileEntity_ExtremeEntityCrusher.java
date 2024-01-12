@@ -745,8 +745,7 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
             voidAllDamagedAndEnchantedItems = v;
 
             if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
-            if (!voidAllDamagedAndEnchantedItems)
-                GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Void nothing");
+            if (!voidAllDamagedAndEnchantedItems) GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Void nothing");
             else GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Void all damaged and enchanted items");
         })
             .setTextureGetter(toggleButtonTextureGetter)
