@@ -206,6 +206,7 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
     private byte mGlassTier = 0;
     private boolean mAnimationEnabled = true;
     private boolean mIsProducingInfernalDrops = true;
+    private boolean isOutputsEnchantedAndDamaged = true;
 
     private EntityRenderer entityRenderer = null;
     private boolean renderEntity = false;
@@ -218,6 +219,7 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
         aNBT.setBoolean("mAnimationEnabled", mAnimationEnabled);
         aNBT.setByte("mGlassTier", mGlassTier);
         aNBT.setBoolean("mIsProducingInfernalDrops", mIsProducingInfernalDrops);
+        aNBT.setBoolean("isOutputsEnchantedAndDamaged", isOutputsEnchantedAndDamaged);
         if (weaponCache.getStackInSlot(0) != null) aNBT.setTag(
             "weaponCache",
             weaponCache.getStackInSlot(0)
@@ -232,6 +234,8 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
         mGlassTier = aNBT.getByte("mGlassTier");
         mIsProducingInfernalDrops = !aNBT.hasKey("mIsProducingInfernalDrops")
             || aNBT.getBoolean("mIsProducingInfernalDrops");
+        isOutputsEnchantedAndDamaged = !aNBT.hasKey("isOutputsEnchantedAndDamaged")
+            || aNBT.getBoolean("isOutputsEnchantedAndDamaged");
         if (aNBT.hasKey("weaponCache"))
             weaponCache.setStackInSlot(0, ItemStack.loadItemStackFromNBT(aNBT.getCompoundTag("weaponCache")));
     }
@@ -543,7 +547,8 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
         if (isInRitualMode && isRitualValid()) {
             if (getMaxInputEu() < recipe.mEUt / 4) return CheckRecipeResultRegistry.insufficientPower(recipe.mEUt / 4);
             this.mOutputFluids = new FluidStack[] { FluidRegistry.getFluidStack("xpjuice", 5000) };
-            this.mOutputItems = recipe.generateOutputs(rand, this, 3, 0, mIsProducingInfernalDrops);
+            this.mOutputItems = recipe
+                .generateOutputs(rand, this, 3, 0, mIsProducingInfernalDrops, isOutputsEnchantedAndDamaged);
             this.lEUt /= 4L;
             this.mMaxProgresstime = 400;
         } else {
@@ -575,7 +580,8 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
                 this,
                 attackDamage,
                 weaponCache.isValid ? weaponCache.looting : 0,
-                mIsProducingInfernalDrops);
+                mIsProducingInfernalDrops,
+                isOutputsEnchantedAndDamaged);
 
             EECPlayer.currentWeapon = null;
 
@@ -597,6 +603,7 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
             }
         }
         if (this.lEUt > 0) this.lEUt = -this.lEUt;
+        if (!isOutputsEnchantedAndDamaged) this.mOutputFluids[0].amount /= 10;
         this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
         this.mEfficiencyIncrease = 10000;
 
@@ -666,6 +673,9 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
         info.add(
             "Is allowed to produce infernal drops: " + EnumChatFormatting.YELLOW
                 + (mIsProducingInfernalDrops ? "Yes" : "No"));
+        info.add(
+            "Will outputs be enchanted and Damaged: " + EnumChatFormatting.YELLOW
+                + (isOutputsEnchantedAndDamaged ? "Yes" : "No"));
         info.add("Is in ritual mode: " + EnumChatFormatting.YELLOW + (isInRitualMode ? "Yes" : "No"));
         if (isInRitualMode) info.add(
             "Is connected to ritual: "
@@ -727,6 +737,26 @@ public class GT_MetaTileEntity_ExtremeEntityCrusher
             .setSize(16, 16)
             .addTooltip("Is allowed to spawn infernal mobs")
             .addTooltip(new Text("Does not affect mobs that are always infernal !").color(Color.GRAY.normal))
+            .setTooltipShowUpDelay(TOOLTIP_DELAY));
+        configurationElements.widget(new CycleButtonWidget().setToggle(() -> isOutputsEnchantedAndDamaged, v -> {
+            if (this.mMaxProgresstime > 0) {
+                GT_Utility.sendChatToPlayer(buildContext.getPlayer(), "Can't change mode when running !");
+                return;
+            }
+
+            isOutputsEnchantedAndDamaged = v;
+
+            if (!(buildContext.getPlayer() instanceof EntityPlayerMP)) return;
+            if (!isOutputsEnchantedAndDamaged) GT_Utility
+                .sendChatToPlayer(buildContext.getPlayer(), "All outputs will not be enchanted and damaged now");
+            else GT_Utility
+                .sendChatToPlayer(buildContext.getPlayer(), "Outputs will be enchanted and damaged normally");
+        })
+            .setTextureGetter(toggleButtonTextureGetter)
+            .setVariableBackgroundGetter(toggleButtonBackgroundGetter)
+            .setSize(16, 16)
+            .addTooltip("Will outputs be enchanted and damaged")
+            .addTooltip(new Text("Reduce the Liquid XP production to 1/10 if disabled !").color(Color.GRAY.normal))
             .setTooltipShowUpDelay(TOOLTIP_DELAY));
     }
 
