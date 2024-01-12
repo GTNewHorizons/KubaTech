@@ -100,7 +100,7 @@ public class MobHandlerLoader {
         }
 
         public ItemStack[] generateOutputs(Random rnd, GT_MetaTileEntity_ExtremeEntityCrusher MTE, double attackDamage,
-            int lootinglevel, boolean preferInfernalDrops, boolean enchantedAndDamaged) {
+            int lootinglevel, boolean preferInfernalDrops, boolean voidAllDamagedAndEnchantedItems) {
             MTE.lEUt = mEUt;
             MTE.mMaxProgresstime = Math.max(MOB_SPAWN_INTERVAL, (int) ((recipe.maxEntityHealth / attackDamage) * 10d));
             ArrayList<ItemStack> stacks = new ArrayList<>(this.mOutputs.size());
@@ -112,6 +112,7 @@ public class MobHandlerLoader {
                 MTE.getBaseMetaTileEntity()
                     .getZCoord());
             for (MobDrop o : this.mOutputs) {
+                if (voidAllDamagedAndEnchantedItems && (o.damages != null || o.enchantable != null)) continue;
                 int chance = o.chance;
 
                 double dChance = (double) chance / 100d;
@@ -144,17 +145,15 @@ public class MobHandlerLoader {
                 if (chance == 10000 || rnd.nextInt(10000) < chance) {
                     ItemStack s = o.stack.copy();
                     s.stackSize = amount;
-                    if (enchantedAndDamaged) {
-                        if (o.enchantable != null) EnchantmentHelper.addRandomEnchantment(rnd, s, o.enchantable);
-                        if (o.damages != null) {
-                            int rChance = rnd.nextInt(recipe.mMaxDamageChance);
-                            int cChance = 0;
-                            for (Map.Entry<Integer, Integer> damage : o.damages.entrySet()) {
-                                cChance += damage.getValue();
-                                if (rChance <= cChance) {
-                                    s.setItemDamage(damage.getKey());
-                                    break;
-                                }
+                    if (o.enchantable != null) EnchantmentHelper.addRandomEnchantment(rnd, s, o.enchantable);
+                    if (o.damages != null) {
+                        int rChance = rnd.nextInt(recipe.mMaxDamageChance);
+                        int cChance = 0;
+                        for (Map.Entry<Integer, Integer> damage : o.damages.entrySet()) {
+                            cChance += damage.getValue();
+                            if (rChance <= cChance) {
+                                s.setItemDamage(damage.getKey());
+                                break;
                             }
                         }
                     }
@@ -193,14 +192,12 @@ public class MobHandlerLoader {
                     if (infernalstacks != null) {
                         ItemStack infernalstack = infernalstacks.get(rnd.nextInt(infernalstacks.size()))
                             .copy();
-                        if (enchantedAndDamaged) {
-                            // noinspection ConstantConditions
-                            EnchantmentHelper.addRandomEnchantment(
-                                rnd,
-                                infernalstack,
-                                infernalstack.getItem()
-                                    .getItemEnchantability());
-                        }
+                        // noinspection ConstantConditions
+                        EnchantmentHelper.addRandomEnchantment(
+                            rnd,
+                            infernalstack,
+                            infernalstack.getItem()
+                                .getItemEnchantability());
                         stacks.add(infernalstack);
                         MTE.lEUt *= 8L;
                         MTE.mMaxProgresstime *= mods * InfernalMobsCore.instance()
