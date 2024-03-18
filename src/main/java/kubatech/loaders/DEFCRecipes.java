@@ -268,6 +268,48 @@ public class DEFCRecipes {
             .addTo(fusionCraftingRecipes)
             .forEach(DEFCRecipes::addOldHiddenRecipe);
 
+        // Chaos Shards
+
+        GT_Values.RA.stdBuilder()
+            .itemInputs(
+                GT_ModHandler.getModItem("AWWayofTime", "energyBazookaThirdTier", 0),
+                new ItemStack(Blocks.dragon_egg, 8),
+                GT_ModHandler.getModItem("Avaritia", "Resource", 64, 8),
+                GT_ModHandler.getModItem("HardcoreEnderExpansion", "transference_gem", 1),
+                GT_ModHandler.getModItem("Thaumcraft", "blockCrystal", 8, 7),
+                GT_ModHandler.getModItem("GalacticraftAmunRa", "item.baseItem", 32, 26),
+                GT_ModHandler.getModItem("gregtech", "gt.metaitem.02", 16, 30209),
+                GT_ModHandler.getModItem("harvestcraft", "chaoscookieItem", 9),
+                GT_ModHandler.getModItem("EnderIO", "bucketVapor_of_levity", 1))
+            .fluidInputs(MaterialsUEVplus.SpaceTime.getMolten(20737))
+            .itemOutputs(GT_ModHandler.getModItem("DraconicEvolution", "chaosShard", 1))
+            .fluidOutputs(new FluidStack(FluidRegistry.getFluid("molten.iron"), 432))
+            .eut(24_000_000)
+            .duration(3200)
+            .specialValue(5)
+            .addTo(fusionCraftingRecipes)
+            .forEach(DEFCRecipes::addOldHiddenRecipe);
+
+        GT_Values.RA.stdBuilder()
+            .itemInputs(
+                GT_ModHandler.getModItem("witchery", "infinityegg", 0),
+                GT_ModHandler.getModItem("gadomancy", "ItemElement", 1, 0),
+                GT_ModHandler.getModItem("miscutils", "blockBlockDragonblood", 8),
+                GT_ModHandler.getModItem("DraconicEvolution", "draconium", 8, 1),
+                GT_ModHandler.getModItem("Botania", "laputaShard", 1, 0),
+                GT_ModHandler.getModItem("MagicBees", "propolis", 32, 6),
+                GT_ModHandler.getModItem("dreamcraft", "item.MysteriousCrystalGemExquisite", 32),
+                GT_ModHandler.getModItem("harvestcraft", "dragonfruitItem", 32),
+                GT_ModHandler.getModItem("AWWayofTime", "enhancedFillingAgent", 8))
+            .fluidInputs(MaterialsUEVplus.SpaceTime.getMolten(20737))
+            .itemOutputs(GT_ModHandler.getModItem("DraconicEvolution", "chaosFragment", 8, 0))
+            .fluidOutputs(new FluidStack(FluidRegistry.getFluid("molten.glass"), 1152))
+            .eut(24_000_000)
+            .duration(6200)
+            .specialValue(4)
+            .addTo(fusionCraftingRecipes)
+            .forEach(DEFCRecipes::addOldHiddenRecipe);
+
         // Dragon Blood
         if (LoaderReference.GTPlusPlus) {
 
