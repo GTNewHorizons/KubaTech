@@ -269,19 +269,19 @@ public class EIGTests {
 
                 // MinecraftServer.getServer()
                 // .addChatMessage(new ChatComponentText("[TEST" + i + "]Real crop drops:"));
-                for (Map.Entry<ItemStack, Integer> entry : expected.entrySet()) {
-                    // MinecraftServer.getServer()
-                    // .addChatMessage(new ChatComponentText("- " + entry.getKey().getDisplayName() + " x" +
-                    // entry.getValue()));
-                }
+                // for (Map.Entry<ItemStack, Integer> entry : expected.entrySet()) {
+                // MinecraftServer.getServer()
+                // .addChatMessage(new ChatComponentText("- " + entry.getKey().getDisplayName() + " x" +
+                // entry.getValue()));
+                // }
 
                 // MinecraftServer.getServer()
                 // .addChatMessage(new ChatComponentText("[TEST" + i + "]EIG crop drops:"));
-                for (Map.Entry<ItemStack, Integer> entry : generated.entrySet()) {
-                    // MinecraftServer.getServer()
-                    // .addChatMessage(new ChatComponentText("- " + entry.getKey().getDisplayName() + " x" +
-                    // entry.getValue()));
-                }
+                // for (Map.Entry<ItemStack, Integer> entry : generated.entrySet()) {
+                // MinecraftServer.getServer()
+                // .addChatMessage(new ChatComponentText("- " + entry.getKey().getDisplayName() + " x" +
+                // entry.getValue()));
+                // }
 
                 // we are only comparing one item from drops
                 if (stackToTest == null) {
@@ -299,39 +299,39 @@ public class EIGTests {
                 y[i] = generatedValue;
             }
 
-            double srednia_x = Arrays.stream(x)
+            double real_average = Arrays.stream(x)
                 .average()
                 .getAsDouble();
-            double srednia_y = Arrays.stream(y)
+            double eig_average = Arrays.stream(y)
                 .average()
                 .getAsDouble();
 
-            double wariancja_x = 0d;
+            double real_variance = 0d;
             double a = 0d;
             for (int i : x) {
-                a += (i - srednia_x) * (i - srednia_x);
+                a += (i - real_average) * (i - real_average);
             }
             a /= NUMBER_OF_TESTS_TO_DO;
-            wariancja_x = a;
+            real_variance = a;
 
-            double wariancja_y = 0d;
+            double eig_variance = 0d;
             a = 0d;
             for (int i : y) {
-                a += (i - srednia_y) * (i - srednia_y);
+                a += (i - eig_average) * (i - eig_average);
             }
             a /= NUMBER_OF_TESTS_TO_DO;
-            wariancja_y = a;
+            eig_variance = a;
 
-            double u = (srednia_x - srednia_y)
-                / Math.sqrt((wariancja_x / NUMBER_OF_TESTS_TO_DO) + (wariancja_y / NUMBER_OF_TESTS_TO_DO));
+            double u = (real_average - eig_average)
+                / Math.sqrt((real_variance / NUMBER_OF_TESTS_TO_DO) + (eig_variance / NUMBER_OF_TESTS_TO_DO));
             MinecraftServer.getServer()
                 .addChatMessage(
                     new ChatComponentText(
-                        "x srednia = " + Math
-                            .round(srednia_x) + " y srednia = " + Math.round(srednia_y) + " u = " + u));
-            double my_magic = 1.959964d;
-            boolean passed = Math.abs(u) < my_magic;
-            boolean instafail = Math.abs(u) > my_magic * 2;
+                        "real average = " + Math
+                            .round(real_average) + " eig average = " + Math.round(eig_average) + " u = " + u));
+            double test_critical_value = 1.959964d;
+            boolean passed = Math.abs(u) < test_critical_value;
+            boolean instafail = Math.abs(u) > test_critical_value * 2;
             if (passed) return;
             assertFalse(instafail);
         }
