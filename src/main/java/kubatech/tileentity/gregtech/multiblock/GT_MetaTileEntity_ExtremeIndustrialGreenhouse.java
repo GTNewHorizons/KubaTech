@@ -1311,6 +1311,12 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     if (undercrop != null) setBlock(undercrop, xyz[0], xyz[1] - 2, xyz[2], world);
                     else {
                         te.setSize((byte) (cc.maxSize() - 1));
+
+                        // Check if the crop has a chance to die in the current environment
+                        if (calcAvgGrowthRate(te, cc, 0) < 0) return;
+                        // check if the crop has a chance to grow in the current environment.
+                        if (calcAvgGrowthRate(te, cc, 6) <= 0) return;
+
                         if (!cc.canGrow(te)) {
                             // needs special block
 
@@ -1351,23 +1357,20 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     if (generations.isEmpty()) return;
                     rn = new Random();
 
-                    // CHECK GROWTH SPEED
-
+                    // CALC GROWTH RATE
+                    // TODO: double terra wart and nether wart growth speed if using the correct block since their tick override is what's responsible for accelerated growth
+                    double avgGrowthRate = calcRealAvgGrowthRate(te, cc);
+                    if (avgGrowthRate <= 0) return;
                     growthticks = 0;
-
                     for (int i = afterHarvestCropSize; i < cc.maxSize(); i++) {
                         te.setSize((byte) i);
-                        int grown = 0;
-                        do {
-                            int rate = te.calcGrowthRate();
-                            if (rate == 0) return;
-                            growthticks++;
-                            grown += rate;
-                        } while (grown < cc.growthDuration(te));
+                        int growthPointsForStage = cc.growthDuration(te);
+                        // Growth progress is not allowed to spill over to a new stage
+                        growthticks += (int) Math.ceil(growthPointsForStage / avgGrowthRate);
                     }
+                    // multiply growth ticks by the tick time of the crop sticks
+                    growthticks = Math.max(1, TileEntityCrop.tickRate * growthticks);
 
-                    growthticks *= TileEntityCrop.tickRate;
-                    if (growthticks < 1) growthticks = 1;
 
                     if (tobeused != null) tobeused.stackSize--;
 
@@ -1381,6 +1384,57 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             } else {
                 drops = new ArrayList<>();
                 addDrops(world, input.stackSize);
+            }
+        }
+
+        /**
+         * Calculates an average growth speed for crops which may roll a zero on low rng rolls.
+         *
+         * @param te The TileEntityCrop holding the crop
+         * @param cc The CropCard for the seed being plated
+         * @return The average growth rate as a floating point number
+         */
+        private static double calcRealAvgGrowthRate(TileEntityCrop te, CropCard cc) {
+            int total = 0;
+            for (int rngRoll = 0; rngRoll <= 6; rngRoll++) {
+                total += calcAvgGrowthRate(te, cc, rngRoll);
+            }
+            return total / 7.0d;
+        }
+
+        /**
+         * Calculates the average growth rate of an ic2 crop using information obtained though decompiling IC2.
+         * Calls to random functions have been either replaced with customisable values or boundary tests.
+         *
+         * @param te      The TileEntityCrop holding the crop
+         * @param cc      The CropCard for the seed being plated
+         * @param rngRoll The role for the base rng
+         * @return The amounts of growth point added to the growth progress in average every growth tick
+         */
+        private static int calcAvgGrowthRate(TileEntityCrop te, CropCard cc, int rngRoll) {
+            // the original logic uses IC2.random.nextInt(7)
+            int base = rngRoll + te.getGrowth();
+            int need = Math.max(0, (cc.tier() - 1) * 4 + te.getGrowth() + te.getGain() + te.getResistance());
+            int have = cc.weightInfluences(te, te.getHumidity(), te.getNutrients(), te.getAirQuality()) * 5;
+
+            if (have >= need) {
+                // The crop has a good enough environment to grow normally
+                return base * (100 + (have - need)) / 100;
+            } else {
+                // this only happens if we don't have enough
+                // resources to grow properly.
+                int neg = (need - have) * 4;
+
+                if (neg > 100) {
+                    // a crop with a resistance 31 will never die since the original
+                    // checks for `IC2.random.nextInt(32) > this.statResistance`
+                    // so assume that the crop will eventually die if it doesn't
+                    // have maxed out resistance stats. 0 means no growth this tick
+                    // -1 means the crop dies.
+                    return te.getResistance() >= 31 ? 0 : -1;
+                }
+                // else apply neg to base
+                return Math.max(0, base * (100 - neg) / 100);
             }
         }
 
