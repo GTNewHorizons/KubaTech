@@ -904,21 +904,24 @@ public class GT_MetaTileEntity_MegaIndustrialApiary
                 .filter(s -> s.isItemEqual(drop.getKey()))
                 .mapToInt(i -> i.stackSize)
                 .sum();
-            if (outputSize == 0) continue;
-
             ret.append(EnumChatFormatting.AQUA)
                 .append(
                     drop.getKey()
                         .getDisplayName())
                 .append(EnumChatFormatting.WHITE)
                 .append(": ");
-            ret.append(EnumChatFormatting.GOLD)
-                .append(
-                    String.format(
-                        "x%d %s(+%.2f/sec)\n",
-                        outputSize,
-                        EnumChatFormatting.WHITE,
-                        (double) outputSize / (mMaxProgresstime / 20)));
+            if (outputSize == 0) {
+                ret.append(String.format("%.2f", drop.getValue() * 100))
+                    .append("%\n");
+            } else {
+                ret.append(EnumChatFormatting.GOLD)
+                    .append(
+                        String.format(
+                            "x%d %s(+%.2f/sec)\n",
+                            outputSize,
+                            EnumChatFormatting.WHITE,
+                            (double) outputSize / (mMaxProgresstime / 20)));
+            }
         }
 
         return ret.toString();
