@@ -20,6 +20,7 @@
 
 package kubatech.tileentity.gregtech.multiblock;
 
+import com.gtnewhorizon.gtnhlib.util.map.ItemStackMap;
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.ofBlock;
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.ofChain;
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.onElementPass;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFlower;
@@ -550,13 +552,17 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             if (glasTier < (EIG_BALANCE_IC2_ACCELERATOR_TIER + 1))
                 return SimpleCheckRecipeResult.ofFailure("EIG_ic2glass");
             this.mMaxProgresstime = 100;
-            List<ItemStack> outputs = new ArrayList<>();
-            for (int i = 0; i < Math.min(mMaxSlots, mStorage.size()); i++) outputs.addAll(
-                mStorage.get(i)
-                    .getIC2Drops(
-                        this,
-                        ((double) this.mMaxProgresstime * (1 << EIG_BALANCE_IC2_ACCELERATOR_TIER)) * multiplier));
-            this.mOutputItems = outputs.toArray(new ItemStack[0]);
+            // determine the amount of time we are simulating on the seed.
+            double timeElapsed = ((double) this.mMaxProgresstime * (1 << EIG_BALANCE_IC2_ACCELERATOR_TIER)) * multiplier;
+            // Add drops to the drop tracker for each seed bucket.
+            for (int i = 0; i < Math.min(mMaxSlots, mStorage.size()); i++){
+                mStorage.get(i).addIC2Progress(timeElapsed, this.betterDropTracker);
+            }
+            // compute drops based on the drop tracker
+            ItemStack[] outputs = betterDropTracker.entrySet().parallelStream().filter(x -> x.getValue() > 1.0d).map(GT_MetaTileEntity_ExtremeIndustrialGreenhouse::computeDrops).toArray(ItemStack[]::new);
+            if (outputs.length > 0) {
+                this.mOutputItems = outputs;
+            }
         } else {
             this.mMaxProgresstime = Math.max(20, 100 / (tier - 3)); // Min 1 s
             List<ItemStack> outputs = new ArrayList<>();
@@ -570,11 +576,21 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             }
             this.mOutputItems = outputs.toArray(new ItemStack[0]);
         }
+
+
+
         this.lEUt = -(int) ((double) GT_Values.V[tier] * 0.99d);
         this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
         this.mEfficiencyIncrease = 10000;
         this.updateSlots();
         return CheckRecipeResultRegistry.SUCCESSFUL;
+    }
+
+    private static ItemStack computeDrops(Map.Entry<ItemStack, Double> entry) {
+        ItemStack copied = entry.getKey().copy();
+        copied.stackSize = (int) Math.floor(entry.getValue());
+        entry.setValue(entry.getValue() % 1);
+        return copied;
     }
 
     @Override
@@ -892,15 +908,15 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         screenElements.widget(new FakeSyncWidget.BooleanSyncer(() -> isIC2Mode, b -> isIC2Mode = b));
         screenElements.widget(new FakeSyncWidget<>(() -> {
             HashMap<ItemStack, Double> ret = new HashMap<>();
-            HashMap<String, Double> dropProgress = new HashMap<>();
+            HashMap<ItemStack, Double> dropProgress = new HashMap<>();
 
-            for (Map.Entry<String, Double> drop : dropprogress.entrySet()) {
-                dropProgress.merge(drop.getKey(), drop.getValue(), Double::sum);
+            for (Map.Entry<ItemStack, Double> drop : betterDropTracker.entrySet()) {
+                ret.merge(drop.getKey(), drop.getValue(), Double::sum);
             }
 
-            for (Map.Entry<String, Double> drop : dropProgress.entrySet()) {
-                ret.put(GreenHouseSlot.dropstacks.get(drop.getKey()), drop.getValue());
-            }
+            //for (Map.Entry<ItemStack, Double> drop : dropProgress.entrySet()) {
+            //    ret.put(GreenHouseSlot.dropstacks.get(drop.getKey()), drop.getValue());
+            //}
             return ret;
         }, h -> GUIDropProgress = h, (buffer, h) -> {
             buffer.writeVarIntToBuffer(h.size());
@@ -1016,10 +1032,11 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     }
 
     final Map<String, Double> dropprogress = new HashMap<>();
+    final ItemStackMap<Double> betterDropTracker = new ItemStackMap<>();
 
     public static class GreenHouseSlot extends InventoryCrafting {
 
-        private static final int NUMBER_OF_GENERATIONS_TO_MAKE = 10;
+        private static final int NUMBER_OF_GENERATIONS_TO_MAKE = 100;
 
         final ItemStack input;
         Block crop;
@@ -1031,7 +1048,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         boolean noHumidity;
         int growthticks;
         List<List<ItemStack>> generations;
-
+        ItemStackMap<Double> preGeneratedIC2Drops;
         Random rn;
         IRecipe recipe;
         ItemStack recipeInput;
@@ -1337,38 +1354,47 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                         }
                     }
 
-                    te.setSize((byte) cc.maxSize());
 
                     if (!cc.canBeHarvested(te)) return;
 
-                    // GENERATE DROPS
+                    // PRE GENERATE DROP CHANCES
                     generations = new ArrayList<>();
-                    int afterHarvestCropSize = 0;
-                    out: for (int i = 0; i < NUMBER_OF_GENERATIONS_TO_MAKE; i++) // get 10 generations
-                    {
-                        ItemStack[] st = te.harvest_automated(false);
-                        afterHarvestCropSize = te.getSize();
-                        te.setSize((byte) cc.maxSize());
-                        if (st == null) continue;
-                        if (st.length == 0) continue;
-                        for (ItemStack s : st) if (s == null) continue out;
-                        generations.add(new ArrayList<>(Arrays.asList(st)));
+                    preGeneratedIC2Drops = new ItemStackMap<Double>();
+                    int sizeAfterHarvestTotal = 0;
+                    double avgStackIncrease = getRealAverageDropIncrease(te, cc);
+                    double avgDropRounds = getRealAverageDropRounds(te, cc);
+                    te.setSize((byte) cc.maxSize());
+                    for (int i = 0; i < NUMBER_OF_GENERATIONS_TO_MAKE; i++) {
+                        // this is either random or constant, there is no way to know, so we average
+                        sizeAfterHarvestTotal += cc.getSizeAfterHarvest(te);
+                        ItemStack drop = cc.getGain(te);
+                        // if no drop then skip
+                        if (drop == null || drop.stackSize <= 0) continue;
+                        ItemStack key = cc.getGain(te).copy();
+                        key.stackSize = 1;
+                        preGeneratedIC2Drops.merge(key, (drop.stackSize + avgStackIncrease) / (double) NUMBER_OF_GENERATIONS_TO_MAKE * avgDropRounds, Double::sum);
                     }
-                    if (generations.isEmpty()) return;
+                    if (preGeneratedIC2Drops.isEmpty()) return;
+                    generations.add(preGeneratedIC2Drops.entrySet().stream().map((x) -> {
+                        ItemStack stack = x.getKey().copy();
+                        stack.stackSize = 1;
+                        return stack;
+                    }).collect(Collectors.toList()));
                     rn = new Random();
 
                     // CALC GROWTH RATE
-                    // TODO: double terra wart and nether wart growth speed if using the correct block since their tick override is what's responsible for accelerated growth
+                    // TODO: Double terra wart and nether wart growth speed if using the correct block since their tick override is what's responsible for accelerated growth
+                    // TODO: Make growth size after average an average value since it's random for some crops (Eg: stickreed)
                     double avgGrowthRate = calcRealAvgGrowthRate(te, cc);
                     if (avgGrowthRate <= 0) return;
                     growthticks = 0;
-                    for (int i = afterHarvestCropSize; i < cc.maxSize(); i++) {
+                    for (int i = sizeAfterHarvestTotal / NUMBER_OF_GENERATIONS_TO_MAKE; i < cc.maxSize(); i++) {
                         te.setSize((byte) i);
                         int growthPointsForStage = cc.growthDuration(te);
                         // Growth progress is not allowed to spill over to a new stage
                         growthticks += (int) Math.ceil(growthPointsForStage / avgGrowthRate);
                     }
-                    // multiply growth ticks by the tick time of the crop sticks
+                    // Multiply growth ticks by the tick time of the crop sticks
                     growthticks = Math.max(1, TileEntityCrop.tickRate * growthticks);
 
 
@@ -1388,10 +1414,37 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         }
 
         /**
+         * Calculates the average number of separate item drops to be rolled per harvest using information obtained by
+         * decompiling IC2.
+         *
+         * @see TileEntityCrop#harvest_automated(boolean)
+         * @param te The {@link TileEntityCrop} holding the crop
+         * @param cc The {@link CropCard} of the seed
+         * @return The average number of drops to computer per harvest
+         */
+        private static double getRealAverageDropRounds(TileEntityCrop te, CropCard cc) {
+            return cc.dropGainChance() * Math.pow(1.03, te.getGain());
+        }
+
+        /**
+         * Calculates the average drop of the stack size caused by seed's gain using information obtained by
+         * decompiling IC2.
+         *
+         * @see TileEntityCrop#harvest_automated(boolean)
+         * @param te The {@link TileEntityCrop} holding the crop
+         * @param cc The {@link CropCard} of the seed
+         * @return The average number of drops to computer per harvest
+         */
+        private static double getRealAverageDropIncrease(TileEntityCrop te, CropCard cc) {
+            // yes gain has the amazing ability to sometimes add 1 to your stack size!
+            return te.getGain() / 100.0d;
+        }
+
+        /**
          * Calculates an average growth speed for crops which may roll a zero on low rng rolls.
          *
-         * @param te The TileEntityCrop holding the crop
-         * @param cc The CropCard for the seed being plated
+         * @param te The {@link TileEntityCrop} holding the crop
+         * @param cc The {@link CropCard} of the seed
          * @return The average growth rate as a floating point number
          */
         private static double calcRealAvgGrowthRate(TileEntityCrop te, CropCard cc) {
@@ -1406,8 +1459,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
          * Calculates the average growth rate of an ic2 crop using information obtained though decompiling IC2.
          * Calls to random functions have been either replaced with customisable values or boundary tests.
          *
-         * @param te      The TileEntityCrop holding the crop
-         * @param cc      The CropCard for the seed being plated
+         * @param te      The {@link TileEntityCrop} holding the crop
+         * @param cc      The {@link CropCard} of the seed
          * @param rngRoll The role for the base rng
          * @return The amounts of growth point added to the growth progress in average every growth tick
          */
@@ -1444,30 +1497,46 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
         static final Map<String, ItemStack> dropstacks = new HashMap<>();
 
-        public List<ItemStack> getIC2Drops(GT_MetaTileEntity_ExtremeIndustrialGreenhouse tileEntity,
-            double timeelapsed) {
+        public void addIC2Progress(double timeElapsed, ItemStackMap<Double> output) {
+            double growthPercent = (timeElapsed / (double) growthticks);
+            if (this.preGeneratedIC2Drops != null) {
+                // The green house should handle detecting when to drop items, not the slot.
+                for (Map.Entry<ItemStack, Double> entry : this.preGeneratedIC2Drops.entrySet()) {
+                    output.merge(entry.getKey(), growthPercent * entry.getValue(), Double::sum);
+                }
+            }
+        };
+
+        public List<ItemStack> getIC2Drops(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse,
+            double timeElapsed) {
+            double growthPercent = (timeElapsed / (double) growthticks);
+
+            if (this.preGeneratedIC2Drops != null) {
+                // The green house should handle detecting when to drop items, not the slot.
+                preGeneratedIC2Drops.forEach((drop, amount) -> {
+                    greenhouse.betterDropTracker.merge(drop, growthPercent * amount, Double::sum);
+                });
+            }
+
+
             int r = rn.nextInt(NUMBER_OF_GENERATIONS_TO_MAKE);
             if (generations.size() <= r) return new ArrayList<>();
-            double growthPercent = (timeelapsed / (double) growthticks);
             List<ItemStack> generation = generations.get(r);
             List<ItemStack> copied = new ArrayList<>();
             for (ItemStack g : generation) copied.add(g.copy());
             for (ItemStack s : copied) {
                 double pro = ((double) s.stackSize * growthPercent);
                 s.stackSize = 1;
-                tileEntity.dropprogress.merge(s.toString(), pro, Double::sum);
+                greenhouse.dropprogress.merge(s.toString(), pro, Double::sum);
                 if (!dropstacks.containsKey(s.toString())) dropstacks.put(s.toString(), s.copy());
             }
             copied.clear();
-            for (Map.Entry<String, Double> entry : tileEntity.dropprogress.entrySet()) if (entry.getValue() >= 1d) {
-                copied.add(
-                    dropstacks.get(entry.getKey())
-                        .copy());
-                copied.get(copied.size() - 1).stackSize = entry.getValue()
-                    .intValue();
-                entry.setValue(
-                    entry.getValue() - (double) entry.getValue()
-                        .intValue());
+            for (Map.Entry<String, Double> entry : greenhouse.dropprogress.entrySet()) {
+                if (entry.getValue() >= 1d) {
+                    copied.add(dropstacks.get(entry.getKey()).copy());
+                    copied.get(copied.size() - 1).stackSize = entry.getValue().intValue();
+                    entry.setValue(entry.getValue() - (double) entry.getValue().intValue());
+                }
             }
             return copied;
         }
