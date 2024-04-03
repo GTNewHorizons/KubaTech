@@ -20,7 +20,6 @@
 
 package kubatech.tileentity.gregtech.multiblock;
 
-import com.gtnewhorizon.gtnhlib.util.map.ItemStackMap;
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.ofBlock;
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.ofChain;
 import static com.gtnewhorizon.structurelib.structure.StructureUtility.onElementPass;
@@ -37,17 +36,10 @@ import static kubatech.api.utils.ItemUtils.writeItemStackToNBT;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import kubatech.api.eig.EIGDropTable;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFlower;
 import net.minecraft.block.BlockStem;
@@ -78,6 +70,7 @@ import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.NotNull;
 
 import com.github.bartimaeusnek.bartworks.API.BorosilicateGlass;
+import com.gtnewhorizon.gtnhlib.util.map.ItemStackMap;
 import com.gtnewhorizon.structurelib.alignment.IAlignmentLimits;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
@@ -135,6 +128,8 @@ import ic2.core.init.InternalName;
 import kubatech.Tags;
 import kubatech.api.DynamicInventory;
 import kubatech.api.LoaderReference;
+import kubatech.api.eig.EIGBucket;
+import kubatech.api.enums.EIGMode;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.client.effect.CropRenderer;
 
@@ -553,14 +548,20 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 return SimpleCheckRecipeResult.ofFailure("EIG_ic2glass");
             this.mMaxProgresstime = 100;
             // determine the amount of time we are simulating on the seed.
-            double timeElapsed = ((double) this.mMaxProgresstime * (1 << EIG_BALANCE_IC2_ACCELERATOR_TIER)) * multiplier;
+            double timeElapsed = ((double) this.mMaxProgresstime * (1 << EIG_BALANCE_IC2_ACCELERATOR_TIER))
+                * multiplier;
             // Add drops to the drop tracker for each seed bucket.
-            for (int i = 0; i < Math.min(mMaxSlots, mStorage.size()); i++){
-                mStorage.get(i).addIC2Progress(timeElapsed, this.betterDropTracker);
+            for (int i = 0; i < Math.min(mMaxSlots, mStorage.size()); i++) {
+                mStorage.get(i)
+                    .addIC2Progress(timeElapsed, this.betterDropTracker);
             }
             // compute drops based on the drop tracker
-            ItemStack[] outputs = betterDropTracker.entrySet().parallelStream().filter(x -> x.getValue() > 1.0d).map(GT_MetaTileEntity_ExtremeIndustrialGreenhouse::computeDrops).toArray(ItemStack[]::new);
-            if (outputs.length > 0) {
+            ItemStack[] outputs = betterDropTracker.entrySet()
+                .parallelStream()
+                .filter(x -> x.getValue() > 1.0d)
+                .map(GT_MetaTileEntity_ExtremeIndustrialGreenhouse::computeDrops)
+                .toArray(ItemStack[]::new);
+            if (outputs != null && outputs.length > 0) {
                 this.mOutputItems = outputs;
             }
         } else {
@@ -577,8 +578,6 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             this.mOutputItems = outputs.toArray(new ItemStack[0]);
         }
 
-
-
         this.lEUt = -(int) ((double) GT_Values.V[tier] * 0.99d);
         this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
         this.mEfficiencyIncrease = 10000;
@@ -587,7 +586,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     }
 
     private static ItemStack computeDrops(Map.Entry<ItemStack, Double> entry) {
-        ItemStack copied = entry.getKey().copy();
+        ItemStack copied = entry.getKey()
+            .copy();
         copied.stackSize = (int) Math.floor(entry.getValue());
         entry.setValue(entry.getValue() % 1);
         return copied;
@@ -924,9 +924,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 ret.merge(drop.getKey(), drop.getValue(), Double::sum);
             }
 
-            //for (Map.Entry<ItemStack, Double> drop : dropProgress.entrySet()) {
-            //    ret.put(GreenHouseSlot.dropstacks.get(drop.getKey()), drop.getValue());
-            //}
+            // for (Map.Entry<ItemStack, Double> drop : dropProgress.entrySet()) {
+            // ret.put(GreenHouseSlot.dropstacks.get(drop.getKey()), drop.getValue());
+            // }
             return ret;
         }, h -> GUIDropProgress = h, (buffer, h) -> {
             buffer.writeVarIntToBuffer(h.size());
@@ -1017,6 +1017,19 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     }
 
     private boolean addCrop(ItemStack input, int slot, boolean simulate) {
+        /*
+        EIGBucket bucket = (isIC2Mode ? EIGMode.IC2 : EIGMode.Normal).tryCreateNewBucket(this, input.copy(), 1);
+
+        if (bucket != null && bucket.isValid()) {
+            System.out.println(bucket);
+            EIGDropTable tracker = new EIGDropTable();
+            bucket.addProgress(32*100, tracker);
+            for(Map.Entry<ItemStack, Double> entry : tracker.getEntries()) {
+                System.out.println(entry.getValue() + " x " + entry.getKey().toString());
+            }
+        }
+        */
+
         if (!isIC2Mode && !simulate)
             for (GreenHouseSlot g : mStorage) if (g.input.stackSize < 64 && GT_Utility.areStacksEqual(g.input, input)) {
                 g.addAll(
@@ -1025,6 +1038,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     input);
                 if (input.stackSize == 0) return true;
             }
+
         GreenHouseSlot h = new GreenHouseSlot(this, simulate ? input.copy() : input, isIC2Mode, isNoHumidity);
         if (h.isValid) {
             if (!simulate) {
@@ -1039,6 +1053,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     private ItemStack addCrop(ItemStack input) {
         if (addCrop(input, -1, false)) return input;
         return null;
+    }
+
+    public boolean isInNoHumidityMode() {
+        return this.isNoHumidity;
     }
 
     final Map<String, Double> dropprogress = new HashMap<>();
@@ -1185,7 +1203,6 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             return null;
         }
 
-        @SuppressWarnings("EmptyMethod")
         @Override
         public void setInventorySlotContents(int par1, ItemStack par2ItemStack) {}
 
@@ -1213,6 +1230,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 customDrops = new ArrayList<>(Collections.singletonList(input.copy()));
                 customDrops.get(0).stackSize = 1;
             }
+
             if (!detectedCustomHandler) {
                 if (i instanceof IPlantable) {
                     if (i instanceof ItemSeeds) b = ((ItemSeeds) i).getPlant(world, 0, 0, 0);
@@ -1364,7 +1382,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                         }
                     }
 
-
+                    te.setSize((byte) (cc.maxSize()));
                     if (!cc.canBeHarvested(te)) return;
 
                     // PRE GENERATE DROP CHANCES
@@ -1380,21 +1398,33 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                         ItemStack drop = cc.getGain(te);
                         // if no drop then skip
                         if (drop == null || drop.stackSize <= 0) continue;
-                        ItemStack key = cc.getGain(te).copy();
+                        ItemStack key = cc.getGain(te)
+                            .copy();
                         key.stackSize = 1;
-                        preGeneratedIC2Drops.merge(key, (drop.stackSize + avgStackIncrease) / (double) NUMBER_OF_GENERATIONS_TO_MAKE * avgDropRounds, Double::sum);
+                        preGeneratedIC2Drops.merge(
+                            key,
+                            (drop.stackSize + avgStackIncrease) / (double) NUMBER_OF_GENERATIONS_TO_MAKE
+                                * avgDropRounds,
+                            Double::sum);
                     }
                     if (preGeneratedIC2Drops.isEmpty()) return;
-                    generations.add(preGeneratedIC2Drops.entrySet().stream().map((x) -> {
-                        ItemStack stack = x.getKey().copy();
-                        stack.stackSize = 1;
-                        return stack;
-                    }).collect(Collectors.toList()));
+                    generations.add(
+                        preGeneratedIC2Drops.entrySet()
+                            .stream()
+                            .map((x) -> {
+                                ItemStack stack = x.getKey()
+                                    .copy();
+                                stack.stackSize = 1;
+                                return stack;
+                            })
+                            .collect(Collectors.toList()));
                     rn = new Random();
 
                     // CALC GROWTH RATE
-                    // TODO: Double terra wart and nether wart growth speed if using the correct block since their tick override is what's responsible for accelerated growth
-                    // TODO: Make growth size after average an average value since it's random for some crops (Eg: stickreed)
+                    // TODO: Double terra wart and nether wart growth speed if using the correct block since their tick
+                    // override is what's responsible for accelerated growth
+                    // TODO: Make growth size after average an average value since it's random for some crops (Eg:
+                    // stickreed)
                     double avgGrowthRate = calcRealAvgGrowthRate(te, cc);
                     if (avgGrowthRate <= 0) return;
                     growthticks = 0;
@@ -1406,7 +1436,6 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     }
                     // Multiply growth ticks by the tick time of the crop sticks
                     growthticks = Math.max(1, TileEntityCrop.tickRate * growthticks);
-
 
                     if (tobeused != null) tobeused.stackSize--;
 
@@ -1501,6 +1530,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             }
         }
 
+        // generates loot for regular crops
         public List<ItemStack> getDrops() {
             return drops;
         }
@@ -1523,11 +1553,11 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
             if (this.preGeneratedIC2Drops != null) {
                 // The green house should handle detecting when to drop items, not the slot.
-                preGeneratedIC2Drops.forEach((drop, amount) -> {
-                    greenhouse.betterDropTracker.merge(drop, growthPercent * amount, Double::sum);
-                });
+                preGeneratedIC2Drops.forEach(
+                    (drop, amount) -> {
+                        greenhouse.betterDropTracker.merge(drop, growthPercent * amount, Double::sum);
+                    });
             }
-
 
             int r = rn.nextInt(NUMBER_OF_GENERATIONS_TO_MAKE);
             if (generations.size() <= r) return new ArrayList<>();
@@ -1543,14 +1573,20 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             copied.clear();
             for (Map.Entry<String, Double> entry : greenhouse.dropprogress.entrySet()) {
                 if (entry.getValue() >= 1d) {
-                    copied.add(dropstacks.get(entry.getKey()).copy());
-                    copied.get(copied.size() - 1).stackSize = entry.getValue().intValue();
-                    entry.setValue(entry.getValue() - (double) entry.getValue().intValue());
+                    copied.add(
+                        dropstacks.get(entry.getKey())
+                            .copy());
+                    copied.get(copied.size() - 1).stackSize = entry.getValue()
+                        .intValue();
+                    entry.setValue(
+                        entry.getValue() - (double) entry.getValue()
+                            .intValue());
                 }
             }
             return copied;
         }
 
+        // generates loot for regular crops
         public int addDrops(World world, int count) {
             if (drops == null) drops = new ArrayList<>();
             if (customDrops != null && !customDrops.isEmpty()) {
@@ -1576,11 +1612,19 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 if (crop == null) return count;
                 for (int i = 0; i < count; i++) {
                     List<ItemStack> d = crop.getDrops(world, 0, 0, 0, optimalgrowth, 0);
-                    for (ItemStack x : drops) for (ItemStack y : d) if (GT_Utility.areStacksEqual(x, y)) {
-                        x.stackSize += y.stackSize;
-                        y.stackSize = 0;
+                    for (ItemStack x : drops) {
+                        for (ItemStack y : d) {
+                            if (GT_Utility.areStacksEqual(x, y)) {
+                                x.stackSize += y.stackSize;
+                                y.stackSize = 0;
+                            }
+                        }
                     }
-                    for (ItemStack x : d) if (x.stackSize > 0) drops.add(x.copy());
+                    for (ItemStack x : d) {
+                        if (x.stackSize > 0) {
+                            drops.add(x.copy());
+                        }
+                    }
                 }
             }
             if (!needsreplanting) return 0;
@@ -1633,13 +1677,13 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
         @Override
         public int getBlockMetadata(int aX, int aY, int aZ) {
-            if (aX == x && aY == y && aZ == z) return 7;
+            if (aX == this.x && aY == this.y && aZ == this.z) return 7;
             return 0;
         }
 
         @Override
         public Block getBlock(int aX, int aY, int aZ) {
-            if (aY == y - 1) return Blocks.farmland;
+            if (aY == this.y - 1) return Blocks.farmland;
             return Blocks.air;
         }
 
@@ -1652,8 +1696,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         public boolean setBlock(int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {
             if (aBlock == Blocks.air) return false;
             if (aX == x && aY == y && aZ == z) return false;
-            block = aBlock;
-            meta = aMeta;
+            this.block = aBlock;
+            this.meta = aMeta;
             return true;
         }
     }
