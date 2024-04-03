@@ -191,7 +191,8 @@ public abstract class EIGBucket extends InventoryCrafting {
     public abstract void addProgress(double timeDelta, EIGDropTable tracker);
 
     /**
-     * Attempts to revalidate a seed bucket. If it returns false, attempt to seed and support items and delete the bucket.
+     * Attempts to revalidate a seed bucket. If it returns false, attempt to seed and support items and delete the
+     * bucket.
      *
      * @param greenhouse The greenhouse that contains the bucket.
      * @return True if the bucket was successfully validated. {@link EIGBucket#isValid()} should also return true.

@@ -6,17 +6,15 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockStem;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemSeedFood;
-import net.minecraft.item.ItemSeeds;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.common.IPlantable;
 
 import kubatech.api.IBlockStemAccesor;
 import kubatech.api.eig.EIGBucket;
 import kubatech.api.eig.EIGDropTable;
 import kubatech.api.eig.IEIGBucketFactory;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialGreenhouse;
-import net.minecraftforge.common.IPlantable;
 
 public class EIGStemBucket extends EIGBucket {
 
@@ -34,11 +32,16 @@ public class EIGStemBucket extends EIGBucket {
 
         @Override
         public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-                                         int maxConsume) {
+            int maxConsume) {
             // Check if input is a flower, reed or cacti. They all drop their source item multiplied by their seed count
             Item item = input.getItem();
             if (!(item instanceof IPlantable)) return null;
-            Block block = ((IPlantable) item).getPlant(greenhouse.getBaseMetaTileEntity().getWorld(), 0, 0, 0);
+            Block block = ((IPlantable) item).getPlant(
+                greenhouse.getBaseMetaTileEntity()
+                    .getWorld(),
+                0,
+                0,
+                0);
             if (!(block instanceof BlockStem)) return null;
             EIGBucket bucket = new EIGStemBucket(greenhouse, input, maxConsume);
             if (!bucket.isValid()) return null;
@@ -107,7 +110,12 @@ public class EIGStemBucket extends EIGBucket {
         this.isValid = false;
         Item item = this.seed.getItem();
         if (!(item instanceof IPlantable)) return;
-        Block stemBlock = ((IPlantable) item).getPlant(greenhouse.getBaseMetaTileEntity().getWorld(), 0, 0, 0);
+        Block stemBlock = ((IPlantable) item).getPlant(
+            greenhouse.getBaseMetaTileEntity()
+                .getWorld(),
+            0,
+            0,
+            0);
         if (!(stemBlock instanceof BlockStem)) return;
         Block cropBlock = ((IBlockStemAccesor) stemBlock).getCropBlock();
         if (cropBlock == null || cropBlock == Blocks.air) return;

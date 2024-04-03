@@ -39,7 +39,6 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import kubatech.api.eig.EIGDropTable;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFlower;
 import net.minecraft.block.BlockStem;
@@ -128,8 +127,6 @@ import ic2.core.init.InternalName;
 import kubatech.Tags;
 import kubatech.api.DynamicInventory;
 import kubatech.api.LoaderReference;
-import kubatech.api.eig.EIGBucket;
-import kubatech.api.enums.EIGMode;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.client.effect.CropRenderer;
 
@@ -1018,17 +1015,16 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
     private boolean addCrop(ItemStack input, int slot, boolean simulate) {
         /*
-        EIGBucket bucket = (isIC2Mode ? EIGMode.IC2 : EIGMode.Normal).tryCreateNewBucket(this, input.copy(), 1);
-
-        if (bucket != null && bucket.isValid()) {
-            System.out.println(bucket);
-            EIGDropTable tracker = new EIGDropTable();
-            bucket.addProgress(32*100, tracker);
-            for(Map.Entry<ItemStack, Double> entry : tracker.getEntries()) {
-                System.out.println(entry.getValue() + " x " + entry.getKey().toString());
-            }
-        }
-        */
+         * EIGBucket bucket = (isIC2Mode ? EIGMode.IC2 : EIGMode.Normal).tryCreateNewBucket(this, input.copy(), 1);
+         * if (bucket != null && bucket.isValid()) {
+         * System.out.println(bucket);
+         * EIGDropTable tracker = new EIGDropTable();
+         * bucket.addProgress(32*100, tracker);
+         * for(Map.Entry<ItemStack, Double> entry : tracker.getEntries()) {
+         * System.out.println(entry.getValue() + " x " + entry.getKey().toString());
+         * }
+         * }
+         */
 
         if (!isIC2Mode && !simulate)
             for (GreenHouseSlot g : mStorage) if (g.input.stackSize < 64 && GT_Utility.areStacksEqual(g.input, input)) {

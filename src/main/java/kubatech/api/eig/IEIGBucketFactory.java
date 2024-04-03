@@ -10,7 +10,7 @@ public interface IEIGBucketFactory {
     String getNBTIdentifier();
 
     EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack stack,
-                              int maxConsume);
+        int maxConsume);
 
     EIGBucket restore(NBTTagCompound nbt);
 }

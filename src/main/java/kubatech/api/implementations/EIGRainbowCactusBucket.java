@@ -31,7 +31,7 @@ public class EIGRainbowCactusBucket extends EIGBucket {
 
         @Override
         public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-                                         int maxConsume) {
+            int maxConsume) {
             // check if input is rainbow cacti;
             if (!(Block.getBlockFromItem(input.getItem()) instanceof BlockRainbowCactus)) return null;
             EIGBucket bucket = new EIGRainbowCactusBucket(input, maxConsume);

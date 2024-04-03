@@ -75,7 +75,7 @@ public class EIGIC2Bucket extends EIGBucket {
 
         @Override
         public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-                                         int maxConsume) {
+            int maxConsume) {
             // Check if input is a seed.
             if (!ItemList.IC2_Crop_Seeds.isStackEqual(input, true, true)) return null;
             if (!input.hasTagCompound()) return null;

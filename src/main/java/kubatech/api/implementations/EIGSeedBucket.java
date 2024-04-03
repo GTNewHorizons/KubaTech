@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Random;
 
-import gregtech.api.util.GT_Utility;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
@@ -16,6 +15,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.IPlantable;
 
 import cpw.mods.fml.common.registry.GameRegistry;
+import gregtech.api.util.GT_Utility;
 import gregtech.common.GT_DummyWorld;
 import kubatech.api.eig.EIGBucket;
 import kubatech.api.eig.EIGDropTable;
@@ -40,7 +40,7 @@ public class EIGSeedBucket extends EIGBucket {
 
         @Override
         public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-                                         int maxConsume) {
+            int maxConsume) {
             EIGBucket bucket = new EIGSeedBucket(greenhouse, input);
             if (!bucket.isValid()) return null;
             bucket.tryAddSeed(greenhouse, input, maxConsume - 1);

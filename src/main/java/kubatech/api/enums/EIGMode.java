@@ -83,7 +83,7 @@ public enum EIGMode {
      * @return Null if no bucket could be created from the item.
      */
     public EIGBucket tryCreateNewBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-                                        int maxConsume) {
+        int maxConsume) {
         // Validate inputs
         if (input == null) return null;
         maxConsume = Math.min(input.stackSize, maxConsume);

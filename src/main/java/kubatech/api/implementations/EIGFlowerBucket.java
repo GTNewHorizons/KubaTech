@@ -28,7 +28,7 @@ public class EIGFlowerBucket extends EIGBucket {
 
         @Override
         public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-                                         int maxConsume) {
+            int maxConsume) {
             // Check if input is a flower, reed or cacti. They all drop their source item multiplied by their seed count
             Item item = input.getItem();
             Block block = Block.getBlockFromItem(item);
