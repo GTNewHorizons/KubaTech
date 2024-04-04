@@ -279,7 +279,7 @@ public class DEFCRecipes {
                 GT_ModHandler.getModItem("Thaumcraft", "blockCrystal", 8, 7),
                 GT_ModHandler.getModItem("GalacticraftAmunRa", "item.baseItem", 32, 26),
                 GT_ModHandler.getModItem("gregtech", "gt.metaitem.02", 16, 30209),
-                GT_ModHandler.getModItem("harvestcraft", "chaoscookieItem", 9),
+                GT_ModHandler.getModItem("HardcoreEnderExpansion", "curse", 9, 262),
                 GT_ModHandler.getModItem("EnderIO", "bucketVapor_of_levity", 1))
             .fluidInputs(MaterialsUEVplus.SpaceTime.getMolten(20737))
             .itemOutputs(GT_ModHandler.getModItem("DraconicEvolution", "chaosShard", 1))
@@ -299,12 +299,12 @@ public class DEFCRecipes {
                 GT_ModHandler.getModItem("Botania", "laputaShard", 1, 0),
                 GT_ModHandler.getModItem("MagicBees", "propolis", 32, 6),
                 GT_ModHandler.getModItem("dreamcraft", "item.MysteriousCrystalGemExquisite", 32),
-                GT_ModHandler.getModItem("harvestcraft", "dragonfruitItem", 32),
+                GT_ModHandler.getModItem("eternalsingularity", "combined_singularity", 7, 1),
                 GT_ModHandler.getModItem("AWWayofTime", "enhancedFillingAgent", 8))
-            .fluidInputs(MaterialsUEVplus.SpaceTime.getMolten(20737))
-            .itemOutputs(GT_ModHandler.getModItem("DraconicEvolution", "chaosFragment", 8, 0))
+            .fluidInputs(MaterialsUEVplus.MagnetohydrodynamicallyConstrainedStarMatter.getMolten(20737))
+            .itemOutputs(GT_ModHandler.getModItem("DraconicEvolution", "chaosFragment", 7, 0))
             .fluidOutputs(new FluidStack(FluidRegistry.getFluid("molten.glass"), 1152))
-            .eut(24_000_000)
+            .eut(536_870_912)
             .duration(6200)
             .specialValue(4)
             .addTo(fusionCraftingRecipes)
