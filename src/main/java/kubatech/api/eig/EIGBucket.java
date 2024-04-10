@@ -5,7 +5,6 @@ import static kubatech.api.utils.ItemUtils.writeItemStackToNBT;
 
 import java.util.LinkedList;
 
-import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -13,26 +12,20 @@ import net.minecraft.nbt.NBTTagList;
 import gregtech.api.util.GT_Utility;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialGreenhouse;
 
-public abstract class EIGBucket extends InventoryCrafting {
+public abstract class EIGBucket {
 
     protected ItemStack seed;
     protected int seedCount;
     protected ItemStack[] supportItems;
 
-    private EIGBucket() {
-        super(null, 3, 3);
-    }
-
     public EIGBucket(ItemStack seed, int seedCount, ItemStack[] supportItem) {
-        this();
         this.seed = seed.copy();
-        seed.stackSize = 1;
+        this.seed.stackSize = 1;
         this.seedCount = seedCount;
         this.supportItems = supportItem;
     }
 
     public EIGBucket(NBTTagCompound nbt) {
-        this();
         this.seed = readItemStackFromNBT(nbt.getCompoundTag("seed"));
         this.seedCount = nbt.getInteger("count");
 
@@ -93,14 +86,25 @@ public abstract class EIGBucket extends InventoryCrafting {
     }
 
     /**
+     * Gets the display name of the seed in this bucket
+     *
+     * @return The display name of the seed.
+     */
+    public String getDisplayName() {
+        return this.seed.getDisplayName();
+    }
+
+    /**
      * Attempts to add seeds to tbe bucket if the input is compatible
      *
      * @param input      A stack of an item that may be able to be added to our current bucket.
      * @param maxConsume The maximum amount of seeds to add to this bucket.
+     * @param simulate   True if you want to see if you can add more seeds (useful for support item checks)
      * @return number of seeds consumed, 0 for wrong item, -1 if it missed the support items, -2 if you tried to consume
      *         0 or less items;
      */
-    public int tryAddSeed(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input, int maxConsume) {
+    public int tryAddSeed(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input, int maxConsume,
+        boolean simulate) {
         // Abort is input if empty
         if (input == null || input.stackSize <= 0) return -2;
         // Cap max to input count
@@ -110,15 +114,15 @@ public abstract class EIGBucket extends InventoryCrafting {
 
         // no support items, consume and exit early.
         if (this.supportItems == null || this.supportItems.length <= 0) {
-            input.stackSize -= maxConsume;
+            if (!simulate) {
+                input.stackSize -= maxConsume;
+                this.seedCount += maxConsume;
+            }
             return maxConsume;
         }
 
-        // register item as valid
-        LinkedList<ItemStack> toConsumeFrom = new LinkedList<>();
-        toConsumeFrom.addLast(input);
-
         // Check if the item is found
+        LinkedList<ItemStack> toConsumeFrom = new LinkedList<>();
         supportLoop: for (ItemStack supportItem : this.supportItems) {
             for (ItemStack otherInput : greenhouse.getStoredInputs()) {
                 // filter usable inputs
@@ -134,9 +138,12 @@ public abstract class EIGBucket extends InventoryCrafting {
         }
 
         // consume items
-        input.stackSize -= maxConsume;
-        for (ItemStack stack : toConsumeFrom) {
-            stack.stackSize -= maxConsume;
+        if (!simulate) {
+            input.stackSize -= maxConsume;
+            for (ItemStack stack : toConsumeFrom) {
+                stack.stackSize -= maxConsume;
+            }
+            this.seedCount += maxConsume;
         }
         return maxConsume;
     }
@@ -167,6 +174,26 @@ public abstract class EIGBucket extends InventoryCrafting {
     }
 
     /**
+     * Sets the seed count to 0 and returns item stacks representing every item in this bucket.
+     *
+     * @return The contents of the bucket
+     */
+    public ItemStack[] emptyBucket() {
+        if (this.seedCount <= 0) return null;
+        ItemStack[] ret = new ItemStack[1 + (this.supportItems == null ? 0 : this.supportItems.length)];
+        ret[0] = this.seed.copy();
+        ret[0].stackSize = this.seedCount;
+        if (this.supportItems != null) {
+            for (int i = 0; i < this.supportItems.length; i++) {
+                ret[i + 1] = this.supportItems[i].copy();
+                ret[i + 1].stackSize = this.seedCount;
+            }
+        }
+        this.seedCount = 0;
+        return ret;
+    }
+
+    /**
      * Returns true if the bucket can output items.
      *
      * @return true if the bucket is valid.
@@ -185,10 +212,10 @@ public abstract class EIGBucket extends InventoryCrafting {
     /**
      * Adds item drops to the item tracker.
      *
-     * @param timeDelta The amount of ticks since the last harvest
-     * @param tracker   The item drop tracker
+     * @param multiplier A multiplier to apply to the output.
+     * @param tracker    The item drop tracker
      */
-    public abstract void addProgress(double timeDelta, EIGDropTable tracker);
+    public abstract void addProgress(double multiplier, EIGDropTable tracker);
 
     /**
      * Attempts to revalidate a seed bucket. If it returns false, attempt to seed and support items and delete the
@@ -199,26 +226,4 @@ public abstract class EIGBucket extends InventoryCrafting {
      */
     public abstract boolean revalidate(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse);
 
-    // region InventoryCrafting
-
-    @Override
-    public ItemStack getStackInSlot(int p_70301_1_) {
-        if (p_70301_1_ == 0) return this.getSeedStack();
-        return null;
-    }
-
-    @Override
-    public ItemStack getStackInSlotOnClosing(int par1) {
-        return null;
-    }
-
-    @Override
-    public ItemStack decrStackSize(int par1, int par2) {
-        return null;
-    }
-
-    @Override
-    public void setInventorySlotContents(int par1, ItemStack par2ItemStack) {}
-
-    // endregion InventoryCrafting
 }

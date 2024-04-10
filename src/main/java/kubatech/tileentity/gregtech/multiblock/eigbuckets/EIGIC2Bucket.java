@@ -1,7 +1,8 @@
-package kubatech.api.implementations;
+package kubatech.tileentity.gregtech.multiblock.eigbuckets;
 
-import java.util.ArrayList;
+import java.util.*;
 
+import ic2.core.crop.CropStickreed;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
@@ -43,22 +44,22 @@ public class EIGIC2Bucket extends EIGBucket {
     /**
      * The amount of water stored in the crop stick when hydration is turned on.
      */
-    private static final int WATER_STORAGE_VALUE = Math.max(0, Math.max(200, 200));
+    private static final int WATER_STORAGE_VALUE = Math.max(0, Math.min(200, 200));
     // nutrient factors
     /**
      * The number of blocks of dirt we assume are under. Subtract 1 if we have a block under our crop.
      */
-    private static final int NUMBER_OF_DIRT_BLOCKS_UNDER = Math.max(0, Math.max(3, 0));
+    private static final int NUMBER_OF_DIRT_BLOCKS_UNDER = Math.max(0, Math.min(3, 0));
     /**
      * The amount of fertilizer stored in the crop stick
      */
-    private static final int FERTILIZER_STORAGE_VALUE = Math.max(0, Math.max(200, 0));
+    private static final int FERTILIZER_STORAGE_VALUE = Math.max(0, Math.min(200, 0));
     // air quality factors
     /**
      * How many blocks in a 3x3 area centered on the crop do not contain solid blocks or other crops.
      * Max value is 8 because the crop always counts itself.
      */
-    private static final int CROP_OBSTRUCTION_VALUE = Math.max(0, Math.max(8, 9 - 4));
+    private static final int CROP_OBSTRUCTION_VALUE = Math.max(0, Math.min(8, 9 - 4));
     /**
      * Being able to see the sky gives a +2 bonus to the air quality
      */
@@ -74,8 +75,7 @@ public class EIGIC2Bucket extends EIGBucket {
         }
 
         @Override
-        public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-            int maxConsume) {
+        public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input) {
             // Check if input is a seed.
             if (!ItemList.IC2_Crop_Seeds.isStackEqual(input, true, true)) return null;
             if (!input.hasTagCompound()) return null;
@@ -85,16 +85,7 @@ public class EIGIC2Bucket extends EIGBucket {
 
             CropCard cc = IC2Crops.instance.getCropCard(input);
             if (cc == null) return null;
-
-            ItemStack singleSeed = input.copy();
-            singleSeed.stackSize = 1;
-            EIGIC2Bucket bucket = new EIGIC2Bucket(greenhouse, input);
-            if (!bucket.isValid()) return null;
-            // consume the seed
-            input.stackSize--;
-            // try adding the rest of the stack ot the bucket up to the max it can add.
-            bucket.tryAddSeed(greenhouse, input, maxConsume - 1);
-            return bucket;
+            return new EIGIC2Bucket(greenhouse, input);
         }
 
         @Override
@@ -103,19 +94,40 @@ public class EIGIC2Bucket extends EIGBucket {
         }
     }
 
-    private EIGDropTable drops;
-    private int growthTime;
+    public final boolean useNoHumidity;
+    private EIGDropTable drops = new EIGDropTable();
+    private double growthTime;
     private boolean isValid = false;
+
+    /**
+     * Used to migrate old EIG greenhouse slots to the new bucket system, needs custom handling as to not void the
+     * support blocks.
+     *
+     * @implNote DOES NOT VALIDATE THE CONTENTS OF THE BUCKET, YOU'LL HAVE TO REVALIDATE WHEN THE WORLD IS LOADED.
+     *
+     * @param seed          The item stack for the item that served as the seed before
+     * @param count         The number of seed in the bucket
+     * @param supportBlock  The block that goes under the bucket
+     * @param useNoHumidity Whether to use no humidity in growth speed calculations.
+     */
+    public EIGIC2Bucket(ItemStack seed, int count, ItemStack supportBlock, boolean useNoHumidity) {
+        super(seed, count, supportBlock == null ? null : new ItemStack[] { supportBlock });
+        this.useNoHumidity = useNoHumidity;
+        // revalidate me
+        this.isValid = false;
+    }
 
     private EIGIC2Bucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack seed) {
         super(seed, 1, null);
+        this.useNoHumidity = greenhouse.isInNoHumidityMode();
         this.recalculateDrops(greenhouse);
     }
 
     private EIGIC2Bucket(NBTTagCompound nbt) {
         super(nbt);
         this.drops = new EIGDropTable(nbt, "drops");
-        this.growthTime = nbt.getInteger("growthTime");
+        this.growthTime = nbt.getDouble("growthTime");
+        this.useNoHumidity = nbt.getBoolean("useNoHumidity");
         this.isValid = nbt.getInteger("version") == REVISION_NUMBER;
     }
 
@@ -123,7 +135,8 @@ public class EIGIC2Bucket extends EIGBucket {
     public NBTTagCompound save() {
         NBTTagCompound nbt = super.save();
         nbt.setTag("drops", this.drops.save());
-        nbt.setInteger("growthTime", this.growthTime);
+        nbt.setDouble("growthTime", this.growthTime);
+        nbt.setBoolean("useNoHumidity", this.useNoHumidity);
         nbt.setInteger("version", REVISION_NUMBER);
         return nbt;
     }
@@ -134,11 +147,11 @@ public class EIGIC2Bucket extends EIGBucket {
     }
 
     @Override
-    public void addProgress(double timeDelta, EIGDropTable tracker) {
+    public void addProgress(double multiplier, EIGDropTable tracker) {
         // abort early if slot is invalid
         if (!this.isValid) return;
         // else apply drops to tracker
-        double growthPercent = timeDelta / (double) this.growthTime;
+        double growthPercent = multiplier / this.growthTime;
         if (this.drops != null) {
             this.drops.addTo(tracker, this.seedCount * growthPercent);
         }
@@ -206,17 +219,20 @@ public class EIGIC2Bucket extends EIGBucket {
             crop.setResistance(re);
 
             // Calculate the environmental stats using info obtained though decompiling IC2.
-            crop.waterStorage = greenhouse.isInNoHumidityMode() ? 0 : WATER_STORAGE_VALUE;
-            crop.humidity = getHumidity(greenhouse);
+            crop.waterStorage = this.useNoHumidity ? 0 : WATER_STORAGE_VALUE;
+            crop.humidity = getHumidity(greenhouse, this.useNoHumidity);
             crop.nutrientStorage = FERTILIZER_STORAGE_VALUE;
             crop.nutrients = getNutrients(greenhouse);
             crop.airQuality = getAirQuality(greenhouse);
 
             // Check if we can put the current block under the soil.
-            if (this.supportItems != null && this.supportItems.length == 1
-                && this.supportItems[0] != null
-                && !setBlock(this.supportItems[0], xyz[0], xyz[1] - 2, xyz[2], world)) return;
-            else crop.nutrients = getUpdateNutrientsForBlockUnder(crop, cc);
+            if (this.supportItems != null && this.supportItems.length == 1 && this.supportItems[0] != null) {
+                if (!setBlock(this.supportItems[0], xyz[0], xyz[1] - 2, xyz[2], world)) {
+                    return;
+                }
+                // update nutrients if we need a block under.
+                crop.nutrients = getUpdateNutrientsForBlockUnder(crop, cc);
+            }
 
             // Check if we can grow
             crop.setSize((byte) (cc.maxSize() - 1));
@@ -255,24 +271,22 @@ public class EIGIC2Bucket extends EIGBucket {
                 if (!canGrow) return;
             }
 
-            crop.setSize((byte) (cc.maxSize()));
+            crop.setSize((byte) cc.maxSize());
             if (!cc.canBeHarvested(crop)) return;
 
             // PRE GENERATE DROP CHANCES
             // TODO: Create better loot table handling for crops like red wheat, stonelilies, mana beans, magic metal
             // berries, etc.
             this.drops = new EIGDropTable();
-            int sizeAfterHarvestTotal = 0;
             // Multiply drop sizes by the average number drop rounds per harvest.
             double avgDropRounds = getRealAverageDropRounds(crop, cc);
             double avgStackIncrease = getRealAverageDropIncrease(crop, cc);
+            HashMap<Integer, Integer> sizeAfterHarvestFrequencies = new HashMap<>();
             for (int i = 0; i < NUMBER_OF_DROPS_TO_SIMULATE; i++) {
-                // The size after harvest is either random or constant, there is no way to know, so we have average
-                crop.setSize((byte) cc.maxSize()); // this is JIC, it can likely be removed
-                sizeAfterHarvestTotal += cc.getSizeAfterHarvest(crop);
                 // try generating some loot drop
                 ItemStack drop = cc.getGain(crop);
                 if (drop == null || drop.stackSize <= 0) continue;
+                sizeAfterHarvestFrequencies.merge((int) cc.getSizeAfterHarvest(crop), 1, Integer::sum);
 
                 // Merge the new drop with the current loot table.
                 double avgAmount = (drop.stackSize + avgStackIncrease) * avgDropRounds;
@@ -280,22 +294,10 @@ public class EIGIC2Bucket extends EIGBucket {
             }
             if (this.drops.isEmpty()) return;
 
-            // CALC GROWTH RATE
-            // TODO: Double terra wart and nether wart growth speed if using the correct block since their tick override
-            // is what's responsible for accelerated growth
-            // TODO: Make growth size after average an a floating point value since it's random for some crops (Eg:
-            // stickreed)
-            double avgGrowthRate = calcRealAvgGrowthRate(crop, cc);
-            if (avgGrowthRate <= 0) return;
-            this.growthTime = 0;
-            for (int i = sizeAfterHarvestTotal / NUMBER_OF_DROPS_TO_SIMULATE; i < cc.maxSize(); i++) {
-                crop.setSize((byte) i);
-                int growthPointsForStage = cc.growthDuration(crop);
-                // Growth progress is not allowed to spill over to a new stage
-                this.growthTime += (int) Math.ceil(growthPointsForStage / avgGrowthRate);
-            }
-            // Multiply growth ticks by the tick time of the crop sticks
-            this.growthTime = Math.max(1, TileEntityCrop.tickRate * this.growthTime);
+            // Just doing average(ceil(stageGrowth/growthPerm)) isn't good enough it's off by as much as 20%
+            double avgGrowthCyclesToHarvest = calcRealAvgGrowthRate(crop, cc, sizeAfterHarvestFrequencies);
+            if (avgGrowthCyclesToHarvest <= 0) { return; }
+            this.growthTime = TileEntityCrop.tickRate * avgGrowthCyclesToHarvest;
 
             // Consume new under block if necessary
             if (blockInputStackToConsume != null) blockInputStackToConsume.stackSize -= this.seedCount;
@@ -310,7 +312,7 @@ public class EIGIC2Bucket extends EIGBucket {
         }
     }
 
-    // region crop simulation utils
+
 
     /**
      * Attempts to place a block in the world, used for testing crop viability and drops.
@@ -346,6 +348,8 @@ public class EIGIC2Bucket extends EIGBucket {
         return true;
     }
 
+    // region deterministic environmental calculations
+
     /**
      * Computes the number of nutrients that should be given to the crop if we need a block under based on the number of
      * dirt blocks we are simulating under the farmland/fertilized dirt.
@@ -372,9 +376,9 @@ public class EIGIC2Bucket extends EIGBucket {
      * @param greenhouse The {@link GT_MetaTileEntity_ExtremeIndustrialGreenhouse} that holds the seed.
      * @return The humidity environmental value at the controller's location.
      */
-    private byte getHumidity(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse) {
+    public static byte getHumidity(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, boolean useNoHumidity) {
         // TODO: Check if we may want to have the slot remember whether humidity is turned on or not.
-        if (greenhouse.isInNoHumidityMode()) return 0;
+        if (useNoHumidity) return 0;
         int value = Crops.instance.getHumidityBiomeBonus(
             greenhouse.getBaseMetaTileEntity()
                 .getBiome());
@@ -395,7 +399,7 @@ public class EIGIC2Bucket extends EIGBucket {
      * @param greenhouse The {@link GT_MetaTileEntity_ExtremeIndustrialGreenhouse} that holds the seed.
      * @return The nutrient environmental value at the controller's location.
      */
-    private byte getNutrients(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse) {
+    public static byte getNutrients(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse) {
         int value = Crops.instance.getNutrientBiomeBonus(
             greenhouse.getBaseMetaTileEntity()
                 .getBiome());
@@ -413,7 +417,7 @@ public class EIGIC2Bucket extends EIGBucket {
      * @param greenhouse The {@link GT_MetaTileEntity_ExtremeIndustrialGreenhouse} that holds the seed.
      * @return The air quality environmental value at the controller's location.
      */
-    private byte getAirQuality(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse) {
+    public static byte getAirQuality(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse) {
         // clamp height bonus to 0-4, use the height of the crop itself
         // TODO: check if we want to add the extra +2 for the actual height of the crop stick in the EIG.
         int value = Math.max(
@@ -429,6 +433,10 @@ public class EIGIC2Bucket extends EIGBucket {
         return (byte) value;
     }
 
+    // endregion deterministic environmental calculations
+
+    // region drop rate calculations
+
     /**
      * Calculates the average number of separate item drops to be rolled per harvest using information obtained by
      * decompiling IC2.
@@ -439,7 +447,26 @@ public class EIGIC2Bucket extends EIGBucket {
      * @return The average number of drops to computer per harvest
      */
     private static double getRealAverageDropRounds(TileEntityCrop te, CropCard cc) {
-        return cc.dropGainChance() * Math.pow(1.03, te.getGain());
+        // this should be ~99.99995%
+        double total = 0;
+        double multTotal = 0;
+        double chance = (double) cc.dropGainChance() * Math.pow(1.03, te.getGain());
+        // this range should cover ~99.8% of random values from the gaussian curve
+        // idk why having the stop at 3.2825
+        // also no idk why using a normal distribution instead of an actual gaussian formula results in higher accuracy
+        for (int y = -300; y <= 328; y += 1) {
+            double x = ((double) y / 100.0d);
+            double mult = stdNormDistr(x);
+            total += Math.max(0L, Math.round(x * chance * 0.6827D + chance)) * mult;
+            multTotal += mult;
+        }
+        return total / multTotal;
+    }
+
+    private static final double STD_NORM_DISTR_P1 = 1 / Math.sqrt(2.0d * Math.PI);
+
+    private static double stdNormDistr(double x) {
+        return STD_NORM_DISTR_P1 * Math.exp(-0.5 * (x * x));
     }
 
     /**
@@ -453,23 +480,161 @@ public class EIGIC2Bucket extends EIGBucket {
      */
     private static double getRealAverageDropIncrease(TileEntityCrop te, CropCard cc) {
         // yes gain has the amazing ability to sometimes add 1 to your stack size!
-        return te.getGain() / 100.0d;
+        return (te.getGain() + 1) / 100.0d;
     }
 
+    // endregiondrop rate calculations
+
+    // region growth time approximation
+
     /**
-     * Calculates an average growth speed for crops which may roll a zero on low rng rolls.
+     * Calculates the average number growth cycles needed for a crop to grow to maturity.
      *
      * @see EIGIC2Bucket#calcAvgGrowthRate(TileEntityCrop, CropCard, int)
      * @param te The {@link TileEntityCrop} holding the crop
      * @param cc The {@link CropCard} of the seed
      * @return The average growth rate as a floating point number
      */
-    private static double calcRealAvgGrowthRate(TileEntityCrop te, CropCard cc) {
-        int total = 0;
-        for (int rngRoll = 0; rngRoll <= 6; rngRoll++) {
-            total += calcAvgGrowthRate(te, cc, rngRoll);
+    private static double calcRealAvgGrowthRate(TileEntityCrop te, CropCard cc, HashMap<Integer, Integer> sizeAfterHarvestFrequencies) {
+        // Compute growth speeds.
+        int[] growthSpeeds = new int[7];
+        for (int i = 0; i < 7; i++) growthSpeeds[i] = calcAvgGrowthRate(te, cc, i);
+
+        // if it's stick reed, we know what the distribution should look like
+        if (cc.getClass() == CropStickreed.class) {
+            sizeAfterHarvestFrequencies.clear();
+            sizeAfterHarvestFrequencies.put(1,1);
+            sizeAfterHarvestFrequencies.put(2,1);
+            sizeAfterHarvestFrequencies.put(3,1);
         }
-        return total / 7.0d;
+
+        // Get the duration of all growth stages
+        int[] growthDurations = new int[cc.maxSize()];
+        //, index 0 is assumed to be 0 since stage 0 is usually impossible.
+        // The frequency table should prevent stage 0 from having an effect on the result.
+        growthDurations[0] = 0; // stage 0 doesn't usually exist.
+        for (byte i = 1; i < growthDurations.length; i++) {
+            te.setSize(i);
+            growthDurations[i] = cc.growthDuration(te);
+        }
+
+        return calcRealAvgGrowthRate(growthSpeeds, growthDurations, sizeAfterHarvestFrequencies);
+    }
+
+    /**
+     * Calculates the average number growth cycles needed for a crop to grow to maturity.
+     *
+     * @implNote This method is entirely self-contained and can therefore be unit tested.
+     *
+     * @param growthSpeeds        The speeds at which the crop can grow.
+     * @param stageGoals          The total to reach for each stage
+     * @param startStageFrequency How often the growth starts from a given stage
+     * @return The average growth rate as a floating point number
+     */
+    public static double calcRealAvgGrowthRate(int[] growthSpeeds, int[] stageGoals, HashMap<Integer, Integer> startStageFrequency) {
+
+        // taking out the zero rolls out of the calculation tends to make the math more accurate for lower speeds.
+        int[] nonZeroSpeeds = Arrays.stream(growthSpeeds).filter(x-> x > 0).toArray();
+        int zeroRolls = growthSpeeds.length - nonZeroSpeeds.length;
+        if (zeroRolls >= growthSpeeds.length) return -1;
+
+        // compute stage lengths and stage frequencies
+        double[] avgCyclePerStage = new double[stageGoals.length];
+        double[] normalizedStageFrequencies = new double[stageGoals.length];
+        long frequenciesSum = startStageFrequency.values().parallelStream().mapToInt(x -> x).sum();
+        for (int i = 0; i < stageGoals.length; i++) {
+            avgCyclePerStage[i] = calcAvgCyclesToGoal(nonZeroSpeeds, stageGoals[i]);
+            normalizedStageFrequencies[i] = startStageFrequency.getOrDefault(i, 0) * stageGoals.length / (double) frequenciesSum;
+        }
+
+        // Compute multipliers based on how often the growth starts at a given rate.
+        double[] frequencyMultipliers = new double[avgCyclePerStage.length];
+        Arrays.fill(frequencyMultipliers, 1.0d);
+        conv1DAndCopyToSignal(frequencyMultipliers, normalizedStageFrequencies, new double[avgCyclePerStage.length]);
+
+        // apply multipliers to length
+        for (int i = 0; i < avgCyclePerStage.length; i++) avgCyclePerStage[i] *= frequencyMultipliers[i];
+
+        // lengthen average based on number of 0 rolls.
+        double average = Arrays.stream(avgCyclePerStage).average().getAsDouble();
+        if (zeroRolls > 0) {
+            average = average / nonZeroSpeeds.length * growthSpeeds.length;
+        }
+
+        // profit
+        return average;
+    }
+
+    /**
+     * Computes the average number of rolls of an N sided fair dice with irregular number progressions needed to surpass
+     * a given total.
+     *
+     * @param speeds The speeds at which the crop grows.
+     * @param goal   The total to match or surpass.
+     * @return The average number of rolls of speeds to meet or surpass the goal.
+     */
+    private static double calcAvgCyclesToGoal(int[] speeds, int goal) {
+        // even if the goal is 0, it will always take at least 1 cycle.
+        if (goal <= 0) return 1;
+        // condition start signal
+        double[] signal = new double[goal];
+        Arrays.fill(signal, 0);
+        signal[0] = 1;
+
+        // Create kernel out of our growth speeds
+        double[] kernel = tabulate(speeds, 1.0d/speeds.length);
+        double[] convolutionTarget = new double[signal.length];
+        LinkedList<Double> P = new LinkedList<Double>();
+
+        // Perform convolutions on the signal until it's too weak to be recognised.
+        double p, avgRolls = 1;
+        do {
+            conv1DAndCopyToSignal(signal, kernel, convolutionTarget);
+            avgRolls += p = Arrays.stream(signal).sum();
+            // 1e-1 is a threshold, you can increase it for to increase the accuracy of the output.
+            // 1e-1 is already accurate enough that any value beyond that is unwarranted.
+        } while (p >= 1e-1/goal);
+        return avgRolls;
+    }
+
+    /**
+     * Creates an array that corresponds to the amount of times a number appears in a list.
+     *
+     * Ex: {1,2,3,4} -> {0,1,1,1,1}, {0,2,2,4} -> {1,0,2,0,1}
+     *
+     * @param bin        The number list to tabulate
+     * @param multiplier A multiplier to apply the output list
+     * @return The number to tabulate
+     */
+    private static double[] tabulate(int[] bin, double multiplier) {
+        double[] ret = new double[bin[bin.length - 1] + 1];
+        Arrays.fill(ret, 0);
+        for (int i : bin) ret[i] += multiplier;
+        return ret;
+    }
+
+    /**
+     * Computes a 1D convolution of a signal and stores the results in the signal array.
+     * Essentially performs `X <- convolve(X,rev(Y))[1:length(X)]` in R
+     *
+     * @param signal            The signal to apply the convolution to.
+     * @param kernel            The kernel to compute with.
+     * @param fixedLengthTarget A memory optimisation so we don't just create a ton of arrays since we overwrite it.
+     *                          Should be the same length as the signal.
+     */
+    private static void conv1DAndCopyToSignal(double[] signal, double[] kernel, double[] fixedLengthTarget) {
+        // for a 1d convolution we would usually use kMax = signal.length + kernel.length - 1
+        // but since we are directly applying our result to our signal, there is no reason to compute
+        // values where k > signal.length.
+        // we could probably run this loop in parallel.
+        for(int k = 0; k < signal.length; k++) {
+            // I needs to be a valid index of the kernel.
+            fixedLengthTarget[k] = 0;
+            for(int i = Math.max(0, k - kernel.length + 1); i <= k; i++) {
+                fixedLengthTarget[k] += signal[i] * kernel[k - i];
+            }
+        }
+        System.arraycopy(fixedLengthTarget, 0, signal, 0, signal.length);
     }
 
     /**
@@ -484,7 +649,7 @@ public class EIGIC2Bucket extends EIGBucket {
      */
     private static int calcAvgGrowthRate(TileEntityCrop te, CropCard cc, int rngRoll) {
         // the original logic uses IC2.random.nextInt(7)
-        int base = rngRoll + te.getGrowth();
+        int base = 3 + rngRoll + te.getGrowth();
         int need = Math.max(0, (cc.tier() - 1) * 4 + te.getGrowth() + te.getGain() + te.getResistance());
         int have = cc.weightInfluences(te, te.getHumidity(), te.getNutrients(), te.getAirQuality()) * 5;
 
@@ -509,5 +674,6 @@ public class EIGIC2Bucket extends EIGBucket {
         }
     }
 
-    // endregion crop simulation utils
+    // endregion growth time approximation
+
 }

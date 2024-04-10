@@ -1,4 +1,4 @@
-package kubatech.api.implementations;
+package kubatech.tileentity.gregtech.multiblock.eigbuckets;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFlower;
@@ -27,15 +27,12 @@ public class EIGFlowerBucket extends EIGBucket {
         }
 
         @Override
-        public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-            int maxConsume) {
+        public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input) {
             // Check if input is a flower, reed or cacti. They all drop their source item multiplied by their seed count
             Item item = input.getItem();
             Block block = Block.getBlockFromItem(item);
             if (item != Items.reeds && block != Blocks.cactus && !(block instanceof BlockFlower)) return null;
-            EIGBucket bucket = new EIGFlowerBucket(input, maxConsume);
-            input.stackSize -= maxConsume;
-            return bucket;
+            return new EIGFlowerBucket(input);
         }
 
         @Override
@@ -44,8 +41,8 @@ public class EIGFlowerBucket extends EIGBucket {
         }
     }
 
-    private EIGFlowerBucket(ItemStack input, int seedCount) {
-        super(input, seedCount, null);
+    private EIGFlowerBucket(ItemStack input) {
+        super(input, 1, null);
     }
 
     private EIGFlowerBucket(NBTTagCompound nbt) {
@@ -65,8 +62,8 @@ public class EIGFlowerBucket extends EIGBucket {
     }
 
     @Override
-    public void addProgress(double timeDelta, EIGDropTable tracker) {
-        tracker.addDrop(this.seed, this.seedCount);
+    public void addProgress(double multiplier, EIGDropTable tracker) {
+        tracker.addDrop(this.seed, this.seedCount * multiplier);
     }
 
     @Override

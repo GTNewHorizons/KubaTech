@@ -127,8 +127,53 @@ public class EIGDropTable {
         return this.dropTable.isEmpty();
     }
 
-    public Set<Map.Entry<ItemStack, Double>> getEntries() {
+    public Set<Map.Entry<ItemStack, Double>> entrySet() {
         return this.dropTable.entrySet();
     }
 
+    public double getItemAmount(ItemStack item) {
+        if (this.dropTable.containsKey(item)) {
+            return this.dropTable.get(item);
+        }
+        return 0;
+    }
+
+    /**
+     * Consumes drops with drop counts above 1 and returns a list of the consumed item stacks.
+     *
+     * @return The list of consumed items;
+     */
+    public ItemStack[] getDrops() {
+        return this.dropTable.entrySet()
+            .parallelStream()
+            .filter(EIGDropTable::filterCompletedDrops)
+            .map(EIGDropTable::computeDrops)
+            .toArray(ItemStack[]::new);
+    }
+
+    /**
+     * Used to filter drops in the table that have an amount above 1.
+     *
+     * @param entry The entry to check
+     * @return True if the amount is above 1
+     */
+    private static boolean filterCompletedDrops(Map.Entry<ItemStack, Double> entry) {
+        return entry.getValue() >= 1.0d;
+    }
+
+    /**
+     * Consumes the items in the entry and returns the consumed item without removing partial items.
+     * This should only be called if the value is above 1.
+     *
+     * @see EIGDropTable#filterCompletedDrops(Map.Entry)
+     * @param entry The entry to consume from
+     * @return The item tha twas removed.
+     */
+    private static ItemStack computeDrops(Map.Entry<ItemStack, Double> entry) {
+        ItemStack copied = entry.getKey()
+            .copy();
+        copied.stackSize = (int) Math.floor(entry.getValue());
+        entry.setValue(entry.getValue() % 1);
+        return copied;
+    }
 }

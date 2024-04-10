@@ -1,4 +1,4 @@
-package kubatech.api.implementations;
+package kubatech.tileentity.gregtech.multiblock.eigbuckets;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -30,13 +30,10 @@ public class EIGRainbowCactusBucket extends EIGBucket {
         }
 
         @Override
-        public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-            int maxConsume) {
+        public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input) {
             // check if input is rainbow cacti;
             if (!(Block.getBlockFromItem(input.getItem()) instanceof BlockRainbowCactus)) return null;
-            EIGBucket bucket = new EIGRainbowCactusBucket(input, maxConsume);
-            input.stackSize -= maxConsume;
-            return bucket;
+            return new EIGRainbowCactusBucket(input, 1);
         }
 
         @Override
@@ -67,13 +64,13 @@ public class EIGRainbowCactusBucket extends EIGBucket {
     }
 
     @Override
-    public void addProgress(double timeDelta, EIGDropTable tracker) {
+    public void addProgress(double multiplier, EIGDropTable tracker) {
         if (!this.isValid()) return;
         // TODO: make the bloody function static in TB.
         ArrayList<ItemStack> drops = new ArrayList<>();
         ((BlockRainbowCactus) TBBlocks.rainbowCactus).addDyeDropsToOutput(this.random, drops);
         for (ItemStack drop : drops) {
-            tracker.addDrop(drop, drop.stackSize);
+            tracker.addDrop(drop, drop.stackSize * multiplier * this.seedCount);
         }
     }
 

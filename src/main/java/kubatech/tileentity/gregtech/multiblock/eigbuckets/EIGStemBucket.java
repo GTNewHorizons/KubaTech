@@ -1,4 +1,4 @@
-package kubatech.api.implementations;
+package kubatech.tileentity.gregtech.multiblock.eigbuckets;
 
 import java.util.ArrayList;
 
@@ -31,8 +31,7 @@ public class EIGStemBucket extends EIGBucket {
         }
 
         @Override
-        public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-            int maxConsume) {
+        public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input) {
             // Check if input is a flower, reed or cacti. They all drop their source item multiplied by their seed count
             Item item = input.getItem();
             if (!(item instanceof IPlantable)) return null;
@@ -43,12 +42,7 @@ public class EIGStemBucket extends EIGBucket {
                 0,
                 0);
             if (!(block instanceof BlockStem)) return null;
-            EIGBucket bucket = new EIGStemBucket(greenhouse, input, maxConsume);
-            if (!bucket.isValid()) return null;
-            // consume if we are valid
-            input.stackSize -= maxConsume;
-            bucket.tryAddSeed(greenhouse, input, maxConsume - 1);
-            return bucket;
+            return new EIGStemBucket(greenhouse, input);
         }
 
         @Override
@@ -60,8 +54,8 @@ public class EIGStemBucket extends EIGBucket {
     private boolean isValid = false;
     private EIGDropTable drops;
 
-    private EIGStemBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input, int seedCount) {
-        super(input, seedCount, null);
+    private EIGStemBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input) {
+        super(input, 1, null);
         recalculateDrops(greenhouse);
     }
 
@@ -85,9 +79,9 @@ public class EIGStemBucket extends EIGBucket {
     }
 
     @Override
-    public void addProgress(double timeDelta, EIGDropTable tracker) {
+    public void addProgress(double multiplier, EIGDropTable tracker) {
         if (!this.isValid()) return;
-        this.drops.addTo(tracker);
+        this.drops.addTo(tracker, multiplier * this.seedCount);
     }
 
     @Override

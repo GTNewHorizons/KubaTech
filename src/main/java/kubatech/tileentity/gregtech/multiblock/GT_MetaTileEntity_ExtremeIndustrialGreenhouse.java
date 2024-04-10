@@ -32,35 +32,26 @@ import static gregtech.api.util.GT_StructureUtility.ofHatchAdder;
 import static kubatech.api.Variables.Author;
 import static kubatech.api.Variables.StructureHologram;
 import static kubatech.api.utils.ItemUtils.readItemStackFromNBT;
-import static kubatech.api.utils.ItemUtils.writeItemStackToNBT;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import kubatech.api.EIGDynamicInventory;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockFlower;
-import net.minecraft.block.BlockStem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
-import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemSeedFood;
-import net.minecraft.item.ItemSeeds;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.CraftingManager;
-import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
-import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -69,7 +60,6 @@ import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.NotNull;
 
 import com.github.bartimaeusnek.bartworks.API.BorosilicateGlass;
-import com.gtnewhorizon.gtnhlib.util.map.ItemStackMap;
 import com.gtnewhorizon.structurelib.alignment.IAlignmentLimits;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
@@ -98,7 +88,6 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import gregtech.api.GregTech_API;
 import gregtech.api.enums.GT_Values;
-import gregtech.api.enums.ItemList;
 import gregtech.api.enums.Materials;
 import gregtech.api.enums.Textures;
 import gregtech.api.gui.modularui.GT_UITextures;
@@ -114,19 +103,15 @@ import gregtech.api.recipe.check.SimpleCheckRecipeResult;
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
-import gregtech.common.GT_DummyWorld;
-import gregtech.common.blocks.GT_Block_Ores_Abstract;
-import gregtech.common.blocks.GT_Item_Ores;
-import gregtech.common.blocks.GT_TileEntity_Ores;
-import ic2.api.crops.CropCard;
-import ic2.api.crops.Crops;
 import ic2.core.Ic2Items;
-import ic2.core.crop.TileEntityCrop;
 import ic2.core.init.BlocksItems;
 import ic2.core.init.InternalName;
 import kubatech.Tags;
-import kubatech.api.DynamicInventory;
 import kubatech.api.LoaderReference;
+import kubatech.api.eig.EIGBucket;
+import kubatech.api.eig.EIGDropTable;
+import kubatech.tileentity.gregtech.multiblock.eigbuckets.EIGIC2Bucket;
+import kubatech.api.enums.EIGMode;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.client.effect.CropRenderer;
 
@@ -153,35 +138,65 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
      * (That is because accelerators are imperfectly scaled in game LV = 2x, MV = 4x, ...)
      */
     public static final int EIG_BALANCE_IC2_ACCELERATOR_TIER = 5; // IV
+    public static final int EIG_BALANCE_REGULAR_MODE_MIN_TIER = 4;
+    public static final int EIG_BALANCE_IC2_MODE_MIN_TIER = EIG_BALANCE_IC2_ACCELERATOR_TIER + 1;
 
     /***
      * All crops above this threshold will die if WEED-EX 9000 isn't supplied.
      * Consider changing this value after making changes to the EIG_BALANCE_IC2_ACCELERATOR_TIER.
      */
     private static final int EIG_CROP_LIMIT_FOR_WEEDEX9000_REQUIREMENT = 1000;
+    private static final Fluid WEEDEX_FLUID = Materials.WeedEX9000.mFluid;
+    private static final Item FORESTRY_FERTILIZER_ITEM = GameRegistry.findItem("Forestry", "fertilizerCompound");
 
     private static final boolean debug = false;
 
     /***
      * Changing this variable will cause ALL EIGs in the world to regenerate their drop tables.
      */
-    private static final int EIG_MATH_VERSION = 0;
+    private static final int NBT_REVISION = 1;
     private static final int CONFIGURATION_WINDOW_ID = 999;
 
-    public final List<GreenHouseSlot> mStorage = new ArrayList<>();
-    private int oldVersion = 0;
+    public final List<EIGBucket> buckets = new LinkedList<>();
+    public final EIGDropTable dropTracker = new EIGDropTable();
+    public EIGDropTable GUIDropTracker = new EIGDropTable();
+    private HashMap<ItemStack, Double> synchedGUIDropTracker = new HashMap<>();
+    private int maxSeedTypes = 0;
+    private int maxSeedCount = 0;
+    /**
+     * The setup phase of the EIG. 0 operation. 1 input. 2 output.
+     */
+    private int setupPhase = 1;
+    /**
+     * The amount of water used per cycle.
+     */
+    private int waterUsage = 0;
+    /**
+     * The tier of the glass on the EIG.
+     */
+    private byte glassTier = 0;
+    /**
+     * The Amount of Weed-EX used per cycle.
+     */
+    private int weedEXUsage = 0;
+    /**
+     * The mode that the EIG is in.
+     */
+    private EIGMode mode = EIGMode.Normal;
+    /**
+     * Determines whether new IC2 buckets will use no humidity for their growth speed calculation.
+     */
+    private boolean useNoHumidity = false;
+
+    public boolean isInNoHumidityMode() {
+        return this.useNoHumidity;
+    }
+
+    // region structure stuff
+
     private int mCasing = 0;
-    public int mMaxSlots = 0;
-    private int setupphase = 1;
-    private boolean isIC2Mode = false;
-    private byte glasTier = 0;
-    private int waterusage = 0;
-    private int weedexusage = 0;
-    private boolean isNoHumidity = false;
     private static final int CASING_INDEX = 49;
     private static final String STRUCTURE_PIECE_MAIN = "main";
-    private static final Item forestryfertilizer = GameRegistry.findItem("Forestry", "fertilizerCompound");
-    private static final Fluid weedex = Materials.WeedEX9000.mFluid;
     private static final IStructureDefinition<GT_MetaTileEntity_ExtremeIndustrialGreenhouse> STRUCTURE_DEFINITION = StructureDefinition
         .<GT_MetaTileEntity_ExtremeIndustrialGreenhouse>builder()
         .addShape(
@@ -219,8 +234,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             'g',
             LoaderReference.Bartworks
                 ? BorosilicateGlass
-                    .ofBoroGlass((byte) 0, (byte) 1, Byte.MAX_VALUE, (te, t) -> te.glasTier = t, te -> te.glasTier)
-                : onElementPass(t -> t.glasTier = 100, ofBlock(Blocks.glass, 0)))
+                    .ofBoroGlass((byte) 0, (byte) 1, Byte.MAX_VALUE, (te, t) -> te.glassTier = t, te -> te.glassTier)
+                : onElementPass(t -> t.glassTier = 100, ofBlock(Blocks.glass, 0)))
         .addElement(
             'd',
             ofBlock(
@@ -232,74 +247,43 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             ofChain(ofBlock(Blocks.water, 0), ofBlock(BlocksItems.getFluidBlock(InternalName.fluidDistilledWater), 0)))
         .build();
 
-    public GT_MetaTileEntity_ExtremeIndustrialGreenhouse(int aID, String aName, String aNameRegional) {
-        super(aID, aName, aNameRegional);
-    }
-
-    public GT_MetaTileEntity_ExtremeIndustrialGreenhouse(String aName) {
-        super(aName);
-    }
-
-    @Override
-    public void onRemoval() {
-        super.onRemoval();
-        if (getBaseMetaTileEntity().isServerSide()) tryOutputAll(mStorage, s -> {
-            ArrayList<ItemStack> l = new ArrayList<>(2);
-            l.add(((GreenHouseSlot) s).input.copy());
-            if (((GreenHouseSlot) s).undercrop != null) l.add(((GreenHouseSlot) s).undercrop.copy());
-            return l;
-        });
-    }
-
-    @Override
-    public void onScrewdriverRightClick(ForgeDirection side, EntityPlayer aPlayer, float aX, float aY, float aZ) {
-        if (aPlayer.isSneaking()) {
-            if (this.mMaxProgresstime > 0) {
-                GT_Utility.sendChatToPlayer(aPlayer, "You can't change IC2 mode if the machine is working!");
-                return;
-            }
-            if (!mStorage.isEmpty()) {
-                GT_Utility.sendChatToPlayer(aPlayer, "You can't change IC2 mode if there are seeds inside!");
-                return;
-            }
-            this.isIC2Mode = !this.isIC2Mode;
-            GT_Utility.sendChatToPlayer(aPlayer, "IC2 mode is now " + (this.isIC2Mode ? "enabled" : "disabled."));
-        } else {
-            if (this.mMaxProgresstime > 0) {
-                GT_Utility.sendChatToPlayer(aPlayer, "You can't enable/disable setup if the machine is working!");
-                return;
-            }
-            this.setupphase++;
-            if (this.setupphase == 3) this.setupphase = 0;
-            GT_Utility.sendChatToPlayer(
-                aPlayer,
-                "EIG is now running in " + (this.setupphase == 1 ? "setup mode (input)."
-                    : (this.setupphase == 2 ? "setup mode (output)." : "normal operation.")));
-        }
-    }
-
-    @Override
-    public boolean onWireCutterRightClick(ForgeDirection side, ForgeDirection wrenchingSide, EntityPlayer aPlayer,
-        float aX, float aY, float aZ) {
-        isNoHumidity = !isNoHumidity;
-        GT_Utility.sendChatToPlayer(aPlayer, "Give incoming crops no humidity " + isNoHumidity);
-        return true;
-    }
-
-    @Override
-    public IMetaTileEntity newMetaEntity(IGregTechTileEntity iGregTechTileEntity) {
-        return new GT_MetaTileEntity_ExtremeIndustrialGreenhouse(this.mName);
-    }
-
     @Override
     public IStructureDefinition<GT_MetaTileEntity_ExtremeIndustrialGreenhouse> getStructureDefinition() {
         return STRUCTURE_DEFINITION;
     }
 
     @Override
+    public boolean checkMachine(IGregTechTileEntity iGregTechTileEntity, ItemStack itemStack) {
+        mCasing = 0;
+        glassTier = 0;
+        if (debug) glassTier = 8;
+
+        if (!checkPiece(STRUCTURE_PIECE_MAIN, 2, 5, 0)) return false;
+
+        if (this.glassTier < 8 && !this.mEnergyHatches.isEmpty())
+            for (GT_MetaTileEntity_Hatch_Energy hatchEnergy : this.mEnergyHatches)
+                if (this.glassTier < hatchEnergy.mTier) return false;
+
+        boolean valid = this.mMaintenanceHatches.size() == 1 && !this.mEnergyHatches.isEmpty() && this.mCasing >= 70;
+
+        if (valid) this.updateSeedLimits();
+
+        return valid;
+    }
+
+    @Override
+    public void construct(ItemStack itemStack, boolean b) {
+        buildPiece(STRUCTURE_PIECE_MAIN, itemStack, b, 2, 5, 0);
+    }
+
+    @Override
     protected IAlignmentLimits getInitialAlignmentLimits() {
         return (d, r, f) -> d.offsetY == 0 && r.isNotRotated() && f.isNotFlipped();
     }
+
+    // endregion structure stuff
+
+    // region tooltip
 
     @Override
     protected GT_Multiblock_Tooltip_Builder createTooltip() {
@@ -345,6 +329,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             .addInfo("Process time: 5 sec")
             .addInfo("All crops are accelerated by x" + (1 << EIG_BALANCE_IC2_ACCELERATOR_TIER) + " times")
             .addInfo("1 Fertilizer per 1 crop +10%")
+            .addInfo("Weed-EX 9000 consumption is multiplied by " + EIGMode.IC2.weedEXMultiplier)
             .addInfo(StructureHologram)
             .addSeparator()
             .beginStructureBlock(5, 6, 5, false)
@@ -372,32 +357,239 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         return info.toArray(new String[] {});
     }
 
+    // endregion tooltip
+
+    // region (de)constructor
+
+    public GT_MetaTileEntity_ExtremeIndustrialGreenhouse(int aID, String aName, String aNameRegional) {
+        super(aID, aName, aNameRegional);
+    }
+
+    public GT_MetaTileEntity_ExtremeIndustrialGreenhouse(String aName) {
+        super(aName);
+    }
+
+    @Override
+    public IMetaTileEntity newMetaEntity(IGregTechTileEntity iGregTechTileEntity) {
+        return new GT_MetaTileEntity_ExtremeIndustrialGreenhouse(this.mName);
+    }
+
+    /**
+     * Ejects all the seeds when the controller is broken.
+     */
+    @Override
+    public void onRemoval() {
+        // TODO: MAKE FORCE OUTPUTTING SEEDS BETTER
+        super.onRemoval();
+        if (getBaseMetaTileEntity().isServerSide()) tryOutputAll(buckets, bucket -> {
+            ItemStack[] outputs = bucket.emptyBucket();
+            if (outputs == null) return null;
+            return Arrays.asList(outputs);
+        });
+    }
+
+    // endregion
+
+    // region tool interactions
+
+    /**
+     * Right click = change setup phase
+     * Shift+Right Click = change EIG Mode
+     */
+    @Override
+    public void onScrewdriverRightClick(ForgeDirection side, EntityPlayer aPlayer, float aX, float aY, float aZ,
+        ItemStack aTool) {
+        if (aPlayer.isSneaking()) {
+            tryChangeMode(aPlayer);
+        } else {
+            tryChangeSetupPhase(aPlayer);
+        }
+    }
+
+    /**
+     * Right-Clicking with wire cutters toggle no hydration mode.
+     */
+    @Override
+    public boolean onWireCutterRightClick(ForgeDirection side, ForgeDirection wrenchingSide, EntityPlayer aPlayer,
+        float aX, float aY, float aZ, ItemStack aTool) {
+        this.tryChangeHumidityMode(aPlayer);
+        return true;
+    }
+
+    // endregion tool interactions
+
+    // region mode change standardisation
+
+    /**
+     * Attempts to change the setup phase of the EIG to the next mode
+     *
+     * @param aPlayer The player to notify for success and errors
+     */
+    private void tryChangeSetupPhase(EntityPlayer aPlayer) {
+        // TODO: Create l10n entries for the setup phase change messages.
+        if (this.mMaxProgresstime > 0) {
+            GT_Utility.sendChatToPlayer(aPlayer, "You can't enable/disable setup if the machine is working!");
+            return;
+        }
+        this.setupPhase++;
+        if (this.setupPhase == 3) this.setupPhase = 0;
+        String phaseChangeMessage = "EIG is now running in ";
+        switch (this.setupPhase) {
+            case 0:
+                phaseChangeMessage += "operational mode.";
+                break;
+            case 1:
+                phaseChangeMessage += "seed input mode.";
+                break;
+            case 2:
+                phaseChangeMessage += "seed output mode.";
+                break;
+            default:
+                phaseChangeMessage += "an invalid mode please send us a ticket!";
+                break;
+        }
+        this.updateSeedLimits();
+        GT_Utility.sendChatToPlayer(aPlayer, phaseChangeMessage);
+    }
+
+    /**
+     * Attempts to change the mode of the EIG to the next mode.
+     *
+     * @param aPlayer The player to notify of success and errors
+     */
+    private void tryChangeMode(EntityPlayer aPlayer) {
+        // TODO: Create l10n entries for the mode change messages.
+        if (this.mMaxProgresstime > 0) {
+            GT_Utility.sendChatToPlayer(aPlayer, "You can't change mode if the machine is working!");
+            return;
+        }
+        if (!this.buckets.isEmpty()) {
+            GT_Utility.sendChatToPlayer(aPlayer, "You can't change mode if there are seeds inside!");
+            return;
+        }
+        this.mode = this.mode.nextMode();
+        this.updateSeedLimits();
+        GT_Utility.sendChatToPlayer(aPlayer, "Changed mode to: " + this.mode.name);
+    }
+
+    /**
+     * Attempts to toggle the hydration mode of the EIG.
+     *
+     * @param aPlayer The player to notify for success and errors
+     */
+    private void tryChangeHumidityMode(EntityPlayer aPlayer) {
+        // TODO: Create l10n entries for the humidity status interactions.
+        this.useNoHumidity = !this.useNoHumidity;
+        if (this.useNoHumidity) {
+            GT_Utility.sendChatToPlayer(aPlayer, "No Humidity mode enabled.");
+        } else {
+            GT_Utility.sendChatToPlayer(aPlayer, "No Humidity mode disabled.");
+        }
+    }
+
+    // endregion mode change standardisation
+
+    // region (de)serialisations
+
     @Override
     public void saveNBTData(NBTTagCompound aNBT) {
         super.saveNBTData(aNBT);
-        aNBT.setInteger("EIG_MATH_VERSION", EIG_MATH_VERSION);
-        aNBT.setByte("glasTier", glasTier);
-        aNBT.setInteger("setupphase", setupphase);
-        aNBT.setBoolean("isIC2Mode", isIC2Mode);
-        aNBT.setBoolean("isNoHumidity", isNoHumidity);
-        aNBT.setInteger("mStorageSize", mStorage.size());
-        for (int i = 0; i < mStorage.size(); i++) aNBT.setTag(
-            "mStorage." + i,
-            mStorage.get(i)
-                .toNBTTagCompound());
+        aNBT.setInteger("version", NBT_REVISION);
+        aNBT.setByte("glassTier", this.glassTier);
+        aNBT.setInteger("setupPhase", this.setupPhase);
+        aNBT.setString("mode", this.mode.name);
+        aNBT.setBoolean("isNoHumidity", this.useNoHumidity);
+        NBTTagList bucketListNBT = new NBTTagList();
+        for (EIGBucket b : this.buckets) {
+            bucketListNBT.appendTag(b.save());
+        }
+        aNBT.setTag("buckets", bucketListNBT);
+    }
+
+    private static class EIGMigrationHolder {
+
+        public final ItemStack seed;
+        public final ItemStack supportBlock;
+        public final boolean useNoHumidity;
+        public int count;
+        public boolean isValid = false;
+
+        public EIGMigrationHolder(NBTTagCompound nbt) {
+            this.seed = readItemStackFromNBT(nbt.getCompoundTag("input"));
+            this.count = this.seed.stackSize;
+            this.seed.stackSize = 1;
+            this.supportBlock = nbt.hasKey("undercrop", 10) ? readItemStackFromNBT(nbt.getCompoundTag("undercrop"))
+                : null;
+            this.useNoHumidity = nbt.getBoolean("noHumidity");
+            this.isValid = true;
+        }
+
+        public String getKey() {
+            if (this.supportBlock == null) return seed.toString();
+            return "(" + this.seed.toString() + "," + this.supportBlock + ")";
+        }
+
     }
 
     @Override
     public void loadNBTData(NBTTagCompound aNBT) {
         super.loadNBTData(aNBT);
-        oldVersion = aNBT.hasKey("EIG_MATH_VERSION") ? aNBT.getInteger("EIG_MATH_VERSION") : -1;
-        glasTier = aNBT.getByte("glasTier");
-        setupphase = aNBT.getInteger("setupphase");
-        isIC2Mode = aNBT.getBoolean("isIC2Mode");
-        isNoHumidity = aNBT.getBoolean("isNoHumidity");
-        for (int i = 0; i < aNBT.getInteger("mStorageSize"); i++)
-            mStorage.add(new GreenHouseSlot(aNBT.getCompoundTag("mStorage." + i)));
+        int revision = aNBT.hasKey("version", 3) ? aNBT.getInteger("version") : 0;
+        if (revision <= 0) {
+            // migrate old EIG with greenhouse slots to new Bucker mode and fix variable names
+            this.glassTier = aNBT.getByte("glasTier");
+            this.setupPhase = aNBT.getInteger("setupphase");
+            boolean isIC2Mode = aNBT.getBoolean("isIC2Mode");
+            this.mode = isIC2Mode ? EIGMode.IC2 : EIGMode.Normal;
+            this.useNoHumidity = aNBT.getBoolean("isNoHumidity");
+            // aggregate all seed types
+            HashMap<String, EIGMigrationHolder> toMigrate = new HashMap<>();
+            for (int i = 0; i < aNBT.getInteger("mStorageSize"); i++) {
+                EIGMigrationHolder holder = new EIGMigrationHolder(aNBT.getCompoundTag("mStorage." + i));
+                if (toMigrate.containsKey(holder.getKey())) {
+                    toMigrate.get(holder.getKey()).count += holder.count;
+                } else {
+                    toMigrate.put(holder.getKey(), holder);
+                }
+            }
+
+            // Create the new buckets respectively.
+            if (isIC2Mode) {
+                this.mode = EIGMode.IC2;
+                for (EIGMigrationHolder holder : toMigrate.values()) {
+                    // We will have to revalidate the seeds on the next cycle.
+                    this.buckets
+                        .add(new EIGIC2Bucket(holder.seed, holder.count, holder.supportBlock, holder.useNoHumidity));
+                }
+            } else {
+                this.mode = EIGMode.Normal;
+                for (EIGMigrationHolder holder : toMigrate.values()) {
+                    holder.seed.stackSize = holder.count;
+                    EIGBucket bucket = this.mode.tryCreateNewBucket(this, holder.seed, Integer.MAX_VALUE, false);
+                    if (bucket == null) {
+                        // if we somehow can't grow the seed, try ejecting it at least.
+                        holder.seed.stackSize = holder.count;
+                        this.addOutput(holder.seed);
+                    }
+                }
+            }
+        } else {
+            this.glassTier = aNBT.getByte("glassTier");
+            this.setupPhase = aNBT.getInteger("setupPhase");
+            String modeId = aNBT.getString("mode");
+            for (EIGMode mode : EIGMode.values()) {
+                if (mode.name.equals(modeId)) {
+                    this.mode = mode;
+                }
+            }
+            this.useNoHumidity = aNBT.getBoolean("isNoHumidity");
+            this.mode.restoreBuckets(aNBT.getTagList("buckets", 10), this.buckets);
+        }
     }
+
+    // endregion
+
+    // region crop visuals rendering
 
     @SideOnly(Side.CLIENT)
     public void spawnVisualCrops(World world, int x, int y, int z, int age) {
@@ -422,45 +614,101 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         }
     }
 
-    @Override
-    public void construct(ItemStack itemStack, boolean b) {
-        buildPiece(STRUCTURE_PIECE_MAIN, itemStack, b, 2, 5, 0);
+    // endregion crop visuals rendering
+
+    /**
+     * Calculates the total amount of seeds in the EIG
+     *
+     * @return The number of seeds in the EIG.
+     */
+    private int getTotalSeedCount() {
+        return this.buckets.parallelStream()
+            .reduce(0, (b, t) -> b + t.getSeedCount(), Integer::sum);
     }
 
-    private void updateMaxSlots() {
-        int tier = getVoltageTier();
-        if (tier < (isIC2Mode ? (EIG_BALANCE_IC2_ACCELERATOR_TIER + 1) : 4)) mMaxSlots = 0;
-        else if (isIC2Mode) mMaxSlots = 4 << (2 * (tier - (EIG_BALANCE_IC2_ACCELERATOR_TIER + 1)));
-        else mMaxSlots = 1 << (tier - 4);
+    /**
+     * Updates the max seed counts of the machine
+     */
+    private void updateSeedLimits() {
+        this.maxSeedTypes = this.mode.getSlotCount(getVoltageTier());
+        this.maxSeedCount = this.mode.getSlotCount(getVoltageTier()) * this.mode.seedPerSlot;
+    }
+
+    /**
+     * Attempts to drain the multi of a given fluid, will only return true if all fluid is consumed.
+     *
+     * @param toConsume    A fluid stack of the fluid to consume.
+     * @param drainPartial True to allow partial consumption.
+     * @return True when all the fluid has been consumed.
+     */
+    private boolean tryDrain(FluidStack toConsume, boolean drainPartial) {
+        // Nothing to consume = success I guess?
+        if (toConsume == null || toConsume.amount <= 0) return true;
+        // TODO: improve fluid draining logic.
+        List<GT_MetaTileEntity_Hatch_Input> fluids = mInputHatches;
+        List<GT_MetaTileEntity_Hatch_Input> fluidsToUse = new ArrayList<>(fluids.size());
+        int remaining = toConsume.amount;
+        for (GT_MetaTileEntity_Hatch_Input i : fluids) {
+            if (!i.isValid()) continue;
+            if (i instanceof GT_MetaTileEntity_Hatch_MultiInput) {
+                int amount = ((GT_MetaTileEntity_Hatch_MultiInput) i).getFluidAmount(toConsume);
+                if (amount == 0) continue;
+                remaining -= amount;
+            } else {
+                FluidStack stack = i.getDrainableStack();
+                if (stack == null) continue;
+                if (!stack.isFluidEqual(toConsume)) continue;
+                if (stack.amount <= 0) continue;
+                remaining -= stack.amount;
+            }
+            fluidsToUse.add(i);
+            if (remaining <= 0) break;
+        }
+        if (!drainPartial && remaining > 0 && !debug) return false;
+        boolean success = remaining <= 0;
+        remaining = toConsume.amount - Math.max(0, remaining);
+        for (GT_MetaTileEntity_Hatch_Input i : fluidsToUse) {
+            int used = i.drain(remaining, true).amount;
+            remaining -= used;
+        }
+        return success;
+    }
+
+    /**
+     * Checks if a stack contains an item that can be used as fertilizer
+     *
+     * @param item A stack of item to validate
+     * @return True if the item can be consumed as fertilizer.
+     */
+    public static boolean isFertilizer(ItemStack item) {
+        if (item == null || item.stackSize <= 0) return false;
+        return (item.getItem() == Items.dye && item.getItemDamage() == 15)
+            || (FORESTRY_FERTILIZER_ITEM != null && (item.getItem() == FORESTRY_FERTILIZER_ITEM))
+            || (GT_Utility.areStacksEqual(item, Ic2Items.fertilizer));
     }
 
     @Override
     @NotNull
     public CheckRecipeResult checkProcessing() {
         int tier = getVoltageTier();
-        updateMaxSlots();
+        updateSeedLimits();
 
-        if (oldVersion != EIG_MATH_VERSION) {
-            for (GreenHouseSlot slot : mStorage) slot.recalculate(this, getBaseMetaTileEntity().getWorld());
-            oldVersion = EIG_MATH_VERSION;
-        }
-
-        if (setupphase > 0) {
-            if ((mStorage.size() >= mMaxSlots && setupphase == 1) || (mStorage.isEmpty() && setupphase == 2))
+        if (setupPhase > 0) {
+            if ((buckets.size() >= maxSeedTypes && setupPhase == 1) || (buckets.isEmpty() && setupPhase == 2))
                 return CheckRecipeResultRegistry.NO_RECIPE;
 
-            if (setupphase == 1) {
+            if (setupPhase == 1) {
                 List<ItemStack> inputs = getStoredInputs();
                 for (ItemStack input : inputs) {
                     addCrop(input);
-                    if (mStorage.size() >= mMaxSlots) break;
+                    if (buckets.size() >= maxSeedTypes) break;
                 }
-            } else if (setupphase == 2) {
-                tryOutputAll(mStorage, s -> {
-                    ArrayList<ItemStack> l = new ArrayList<>(2);
-                    l.add(((GreenHouseSlot) s).input.copy());
-                    if (((GreenHouseSlot) s).undercrop != null) l.add(((GreenHouseSlot) s).undercrop.copy());
-                    return l;
+            } else if (setupPhase == 2) {
+                // TODO: PREVENT VOIDING EXTRA SEEDS WHEN OUTPUTTING SEEDS
+                tryOutputAll(buckets, bucket -> {
+                    ItemStack[] outputs = bucket.emptyBucket();
+                    if (outputs == null) return null;
+                    return Arrays.asList(outputs);
                 });
             }
 
@@ -471,49 +719,56 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             this.mEfficiencyIncrease = 10000;
             return CheckRecipeResultRegistry.SUCCESSFUL;
         }
-        if (mStorage.size() > mMaxSlots) return SimpleCheckRecipeResult.ofFailure("EIG_slotoverflow");
-        if (mStorage.isEmpty()) return CheckRecipeResultRegistry.NO_RECIPE;
+        if (this.maxSeedTypes < this.buckets.size()) {
+            return SimpleCheckRecipeResult.ofFailure("EIG_slotoverflow");
+        }
+        int seedCount = this.getTotalSeedCount();
+        if (this.maxSeedCount < seedCount) {
+            return SimpleCheckRecipeResult.ofFailure("EIG_slotoverflow");
+        }
 
-        waterusage = 0;
-        weedexusage = 0;
-        for (GreenHouseSlot s : mStorage) waterusage += s.input.stackSize;
-        if (waterusage >= EIG_CROP_LIMIT_FOR_WEEDEX9000_REQUIREMENT) weedexusage = waterusage;
-        waterusage *= 1000;
-
-        List<GT_MetaTileEntity_Hatch_Input> fluids = mInputHatches;
-        List<GT_MetaTileEntity_Hatch_Input> fluidsToUse = new ArrayList<>(fluids.size());
-        int watercheck = waterusage;
-        FluidStack waterStack = new FluidStack(FluidRegistry.WATER, 1);
-        for (GT_MetaTileEntity_Hatch_Input i : fluids) {
-            if (!i.isValid()) continue;
-            if (i instanceof GT_MetaTileEntity_Hatch_MultiInput) {
-                int amount = ((GT_MetaTileEntity_Hatch_MultiInput) i).getFluidAmount(waterStack);
-                if (amount == 0) continue;
-                watercheck -= amount;
-            } else {
-                FluidStack stack = i.getDrainableStack();
-                if (stack == null) continue;
-                if (!stack.isFluidEqual(waterStack)) continue;
-                if (stack.amount <= 0) continue;
-                watercheck -= stack.amount;
+        // Kick out bad buckets.
+        boolean bucketsRemoved = false;
+        for (Iterator<EIGBucket> iterator = this.buckets.iterator(); iterator.hasNext();) {
+            EIGBucket bucket = iterator.next();
+            if (bucket.isValid()) continue;
+            // remove empty bucket and attempt to revalidate invalid buckets
+            if (bucket.getSeedCount() <= 0 || !bucket.revalidate(this)) {
+                seedCount -= bucket.getSeedCount();
+                iterator.remove();
             }
-            fluidsToUse.add(i);
-            if (watercheck <= 0) break;
-        }
-        if (watercheck > 0 && !debug) return SimpleCheckRecipeResult.ofFailure("EIG_missingwater");
-        watercheck = waterusage;
-        for (GT_MetaTileEntity_Hatch_Input i : fluidsToUse) {
-            int used = i.drain(watercheck, true).amount;
-            watercheck -= used;
         }
 
-        // weedex
-        if (weedexusage > 0 && !this.depleteInput(new FluidStack(weedex, isIC2Mode ? weedexusage * 5 : weedexusage))) {
+        if (this.buckets.isEmpty()) return CheckRecipeResultRegistry.NO_RECIPE;
+
+        // Compute the Weed-EX and water requirements,
+        // TODO: We only really need to update water usage and WeedEX usage when adding seeds or when loading NBT.
+        this.waterUsage = seedCount * 1000;
+        this.weedEXUsage = (seedCount >= EIG_CROP_LIMIT_FOR_WEEDEX9000_REQUIREMENT ? seedCount : 0)
+            * this.mode.weedEXMultiplier;
+
+        // Consume water, fail if we don't have enough
+        if (!this.tryDrain(new FluidStack(FluidRegistry.WATER, this.waterUsage), false)) {
+            return SimpleCheckRecipeResult.ofFailure("EIG_missingwater");
+        }
+
+        // Consume weed ex, if there isn't enough we consume what's there but don't fail
+        if (weedEXUsage > 0 && !this.tryDrain(new FluidStack(WEEDEX_FLUID, this.weedEXUsage), true)) {
             IGregTechTileEntity baseMTE = this.getBaseMetaTileEntity();
-            int toKill = baseMTE.getRandomNumber((int) ((double) weedexusage * 0.02d) + 1);
-            while (toKill > 0) {
-                GreenHouseSlot removed = mStorage.remove(baseMTE.getRandomNumber(mStorage.size()));
-                toKill -= removed.input.stackSize;
+            // Cap seed murder to the Weed EX limit, no more senseless murder of bystanders
+            int killLimit = (seedCount - EIG_CROP_LIMIT_FOR_WEEDEX9000_REQUIREMENT + 1);
+            int toKill = Math.min(killLimit, baseMTE.getRandomNumber((int) ((double) seedCount * 0.02d) + 1));
+            if (toKill > 0) {
+                for (Iterator<EIGBucket> iterator = this.buckets.iterator(); iterator.hasNext();) {
+                    EIGBucket bucket = iterator.next();
+                    ItemStack[] removed = bucket.tryRemoveSeed(toKill);
+                    if (removed == null || removed[0].stackSize <= 0) continue;
+                    toKill -= removed[0].stackSize;
+                    // if bucket is empty, yeet it out.
+                    if (bucket.getSeedCount() <= 0) iterator.remove();
+                    // if we are out of crops to kill we can just leave
+                    if (toKill <= 0) break;
+                }
             }
         }
 
@@ -522,91 +777,53 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         // IC2 +10% per fertilizer per crop per operation
         // NORMAL +200% per fertilizer per crop per operation
 
-        int boost = 0;
-        int maxboost = 0;
-        for (GreenHouseSlot s : mStorage) maxboost += s.input.stackSize * (isIC2Mode ? 40 : 2);
+        int consumedFertilizer = 0;
+        int maxFertilizerToConsume = 0;
+        for (EIGBucket bucket : this.buckets)
+            maxFertilizerToConsume += bucket.getSeedCount() * this.mode.fertilizerUsagePerSeed;
 
         ArrayList<ItemStack> inputs = getStoredInputs();
         for (ItemStack i : inputs) {
-            if ((i.getItem() == Items.dye && i.getItemDamage() == 15)
-                || (forestryfertilizer != null && (i.getItem() == forestryfertilizer))
-                || (GT_Utility.areStacksEqual(i, Ic2Items.fertilizer))) {
-                int used = Math.min(i.stackSize, maxboost - boost);
+            if (isFertilizer(i)) {
+                int used = Math.min(i.stackSize, maxFertilizerToConsume - consumedFertilizer);
                 i.stackSize -= used;
-                boost += used;
+                consumedFertilizer += used;
             }
-            if (boost == maxboost) break;
+            if (consumedFertilizer == maxFertilizerToConsume) break;
         }
+        double multiplier = 1.d + (((double) consumedFertilizer / (double) maxFertilizerToConsume) * 4d);
 
-        double multiplier = 1.d + (((double) boost / (double) maxboost) * 4d);
-
-        if (isIC2Mode) {
-            if (glasTier < (EIG_BALANCE_IC2_ACCELERATOR_TIER + 1))
-                return SimpleCheckRecipeResult.ofFailure("EIG_ic2glass");
-            this.mMaxProgresstime = 100;
-            // determine the amount of time we are simulating on the seed.
-            double timeElapsed = ((double) this.mMaxProgresstime * (1 << EIG_BALANCE_IC2_ACCELERATOR_TIER))
-                * multiplier;
-            // Add drops to the drop tracker for each seed bucket.
-            for (int i = 0; i < Math.min(mMaxSlots, mStorage.size()); i++) {
-                mStorage.get(i)
-                    .addIC2Progress(timeElapsed, this.betterDropTracker);
-            }
-            // compute drops based on the drop tracker
-            ItemStack[] outputs = betterDropTracker.entrySet()
-                .parallelStream()
-                .filter(x -> x.getValue() > 1.0d)
-                .map(GT_MetaTileEntity_ExtremeIndustrialGreenhouse::computeDrops)
-                .toArray(ItemStack[]::new);
-            if (outputs != null && outputs.length > 0) {
-                this.mOutputItems = outputs;
-            }
-        } else {
-            this.mMaxProgresstime = Math.max(20, 100 / (tier - 3)); // Min 1 s
-            List<ItemStack> outputs = new ArrayList<>();
-            for (int i = 0; i < Math.min(mMaxSlots, mStorage.size()); i++) {
-                for (ItemStack drop : mStorage.get(i)
-                    .getDrops()) {
-                    ItemStack s = drop.copy();
-                    s.stackSize = (int) ((double) s.stackSize * multiplier);
-                    outputs.add(s);
+        // compute drops based on the drop tracker
+        this.GUIDropTracker = new EIGDropTable();
+        switch (this.mode) {
+            case IC2:
+                if (glassTier < (EIG_BALANCE_IC2_ACCELERATOR_TIER + 1))
+                    return SimpleCheckRecipeResult.ofFailure("EIG_ic2glass");
+                this.mMaxProgresstime = 100;
+                // determine the amount of time we are simulating on the seed.
+                double timeElapsed = ((double) this.mMaxProgresstime * (1 << EIG_BALANCE_IC2_ACCELERATOR_TIER));
+                // Add drops to the drop tracker for each seed bucket.
+                for (EIGBucket bucket : this.buckets) {
+                    bucket.addProgress(timeElapsed * multiplier, this.GUIDropTracker);
                 }
-            }
-            this.mOutputItems = outputs.toArray(new ItemStack[0]);
+                break;
+            case Normal:
+                this.mMaxProgresstime = Math.max(20, 100 / (tier - 3)); // Min 1 s
+                for (EIGBucket bucket : this.buckets) {
+                    bucket.addProgress(multiplier, this.GUIDropTracker);
+                }
+                break;
         }
 
-        this.lEUt = -(int) ((double) GT_Values.V[tier] * 0.99d);
+        this.GUIDropTracker.addTo(this.dropTracker, multiplier);
+        this.mOutputItems = this.dropTracker.getDrops();
+
+        // consume power
+        this.lEUt = -(long) ((double) GT_Values.V[tier] * 0.99d);
         this.mEfficiency = (10000 - (getIdealStatus() - getRepairStatus()) * 1000);
         this.mEfficiencyIncrease = 10000;
         this.updateSlots();
         return CheckRecipeResultRegistry.SUCCESSFUL;
-    }
-
-    private static ItemStack computeDrops(Map.Entry<ItemStack, Double> entry) {
-        ItemStack copied = entry.getKey()
-            .copy();
-        copied.stackSize = (int) Math.floor(entry.getValue());
-        entry.setValue(entry.getValue() % 1);
-        return copied;
-    }
-
-    @Override
-    public boolean checkMachine(IGregTechTileEntity iGregTechTileEntity, ItemStack itemStack) {
-        mCasing = 0;
-        glasTier = 0;
-        if (debug) glasTier = 8;
-
-        if (!checkPiece(STRUCTURE_PIECE_MAIN, 2, 5, 0)) return false;
-
-        if (this.glasTier < 8 && !this.mEnergyHatches.isEmpty())
-            for (GT_MetaTileEntity_Hatch_Energy hatchEnergy : this.mEnergyHatches)
-                if (this.glasTier < hatchEnergy.mTier) return false;
-
-        boolean valid = this.mMaintenanceHatches.size() == 1 && !this.mEnergyHatches.isEmpty() && this.mCasing >= 70;
-
-        if (valid) updateMaxSlots();
-
-        return valid;
     }
 
     private static final UIInfo<?, ?> GreenhouseUI = createKTMetaTileEntityUI(
@@ -644,7 +861,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             if (aStack == null) return super.transferStackInSlot(aPlayer, aSlotIndex);
             GT_MetaTileEntity_ExtremeIndustrialGreenhouse mte = parent.get();
             if (mte == null) return super.transferStackInSlot(aPlayer, aSlotIndex);
-            if (mte.mStorage.size() >= mte.mMaxSlots) return super.transferStackInSlot(aPlayer, aSlotIndex);
+            if (mte.buckets.size() >= mte.maxSeedTypes) return super.transferStackInSlot(aPlayer, aSlotIndex);
             if (mte.mMaxProgresstime > 0) {
                 GT_Utility.sendChatToPlayer(aPlayer, EnumChatFormatting.RED + "Can't insert while running !");
                 return super.transferStackInSlot(aPlayer, aSlotIndex);
@@ -674,38 +891,29 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 .setSize(16, 16));
     }
 
-    DynamicInventory<GreenHouseSlot> dynamicInventory = new DynamicInventory<>(
+    EIGDynamicInventory<EIGBucket> dynamicInventory = new EIGDynamicInventory<>(
         128,
         60,
-        () -> mMaxSlots,
-        mStorage,
-        s -> s.input).allowInventoryInjection(this::addCrop)
-            .allowInventoryExtraction(mStorage::remove)
-            .allowInventoryReplace((i, stack) -> {
-                if (!isIC2Mode) {
-                    GreenHouseSlot slot = mStorage.get(i);
-                    if (GT_Utility.areStacksEqual(stack, slot.input)) {
-                        if (slot.input.stackSize < 64) {
-                            slot.addAll(
-                                this.getBaseMetaTileEntity()
-                                    .getWorld(),
-                                stack);
-                            return stack;
-                        }
-                        return null;
-                    }
-                    if (!addCrop(stack, i, true)) return null;
-                    slot = mStorage.remove(i);
-                    addCrop(stack, i, false);
-                    return slot.input;
-                } else {
-                    if (stack.stackSize != 1) return null;
-                    if (!addCrop(stack, i, true)) return null;
-                    GreenHouseSlot slot = mStorage.remove(i);
-                    addCrop(stack, i, false);
-                    return slot.input;
+        () -> maxSeedTypes,
+        this.buckets,
+        EIGBucket::getSeedStack).allowInventoryInjection(this::addCrop)
+            .allowInventoryExtraction((bucket, player) -> {
+                if (bucket == null) return null;
+                int maxRemove = bucket.getSeedStack()
+                    .getMaxStackSize();
+                ItemStack[] outputs = bucket.tryRemoveSeed(maxRemove);
+                if (outputs == null || outputs.length <= 0) return null;
+                ItemStack ret = outputs[0];
+                for (int i = 1; i < outputs.length; i++) {
+                    ItemStack suppertItem = outputs[i];
+                    if (!player.inventory.addItemStackToInventory(suppertItem)) {
+                        player.entityDropItem(suppertItem, 0.f);
+                    } ;
                 }
+                if (bucket.getSeedCount() <= 0) this.buckets.remove(bucket);
+                return ret;
             })
+            // TODO: re-add allow inventory replace
             .setEnabled(() -> this.mMaxProgresstime == 0);
 
     @Override
@@ -768,20 +976,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             .widget(
                 new Column().widget(
                     new CycleButtonWidget().setLength(3)
-                        .setGetter(() -> setupphase)
+                        .setGetter(() -> this.setupPhase)
                         .setSetter(val -> {
                             if (!(player instanceof EntityPlayerMP)) return;
-                            if (this.mMaxProgresstime > 0) {
-                                GT_Utility.sendChatToPlayer(
-                                    player,
-                                    "You can't enable/disable setup if the machine is working!");
-                                return;
-                            }
-                            this.setupphase = val;
-                            GT_Utility.sendChatToPlayer(
-                                player,
-                                "EIG is now running in " + (this.setupphase == 1 ? "setup mode (input)."
-                                    : (this.setupphase == 2 ? "setup mode (output)." : "normal operation.")));
+                            tryChangeSetupPhase(player);
                         })
                         .addTooltip(0, new Text("Operating").color(Color.GREEN.dark(3)))
                         .addTooltip(1, new Text("Input").color(Color.YELLOW.dark(3)))
@@ -800,25 +998,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                         .addTooltip("Setup mode"))
                     .widget(
                         new CycleButtonWidget().setLength(2)
-                            .setGetter(() -> isIC2Mode ? 1 : 0)
+                            .setGetter(() -> this.mode.id)
                             .setSetter(val -> {
                                 if (!(player instanceof EntityPlayerMP)) return;
-                                if (this.mMaxProgresstime > 0) {
-                                    GT_Utility.sendChatToPlayer(
-                                        player,
-                                        "You can't change IC2 mode if the machine is working!");
-                                    return;
-                                }
-                                if (!mStorage.isEmpty()) {
-                                    GT_Utility.sendChatToPlayer(
-                                        player,
-                                        "You can't change IC2 mode if there are seeds inside!");
-                                    return;
-                                }
-                                this.isIC2Mode = val == 1;
-                                GT_Utility.sendChatToPlayer(
-                                    player,
-                                    "IC2 mode is now " + (this.isIC2Mode ? "enabled" : "disabled."));
+                                tryChangeMode(player);
                             })
                             .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
                             .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
@@ -834,11 +1017,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                             .addTooltip("IC2 mode"))
                     .widget(
                         new CycleButtonWidget().setLength(2)
-                            .setGetter(() -> isNoHumidity ? 1 : 0)
+                            .setGetter(() -> useNoHumidity ? 1 : 0)
                             .setSetter(val -> {
                                 if (!(player instanceof EntityPlayerMP)) return;
-                                isNoHumidity = val == 1;
-                                GT_Utility.sendChatToPlayer(player, "Give incoming crops no humidity " + isNoHumidity);
+                                this.tryChangeHumidityMode(player);
                             })
                             .addTooltip(0, new Text("Disabled").color(Color.RED.dark(3)))
                             .addTooltip(1, new Text("Enabled").color(Color.GREEN.dark(3)))
@@ -869,63 +1051,70 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         return builder.build();
     }
 
-    private HashMap<ItemStack, Double> GUIDropProgress = new HashMap<>();
-
     @Override
     protected String generateCurrentRecipeInfoString() {
-        if (!isIC2Mode) return super.generateCurrentRecipeInfoString();
-        StringBuilder ret = new StringBuilder(EnumChatFormatting.WHITE + "Progress: ")
-            .append(String.format("%,.2f", (double) mProgresstime / 20))
-            .append("s / ")
-            .append(String.format("%,.2f", (double) mMaxProgresstime / 20))
-            .append("s (")
-            .append(String.format("%,.1f", (double) mProgresstime / mMaxProgresstime * 100))
-            .append("%)\n");
+        switch (this.mode) {
+            case IC2:
+                StringBuilder ret = new StringBuilder(EnumChatFormatting.WHITE + "Progress: ")
+                    .append(String.format("%,.2f", (double) this.mProgresstime / 20))
+                    .append("s / ")
+                    .append(String.format("%,.2f", (double) this.mMaxProgresstime / 20))
+                    .append("s (")
+                    .append(String.format("%,.1f", (double) this.mProgresstime / this.mMaxProgresstime * 100))
+                    .append("%)\n");
 
-        for (Map.Entry<ItemStack, Double> drop : GUIDropProgress.entrySet()) {
-            int outputSize = Arrays.stream(mOutputItems)
-                .filter(s -> s.isItemEqual(drop.getKey()))
-                .mapToInt(i -> i.stackSize)
-                .sum();
-            ret.append(EnumChatFormatting.AQUA)
-                .append(
-                    drop.getKey()
-                        .getDisplayName())
-                .append(EnumChatFormatting.WHITE)
-                .append(": ");
-            if (outputSize == 0) {
-                ret.append(String.format("%.2f", drop.getValue() * 100))
-                    .append("%\n");
-            } else {
-                ret.append(EnumChatFormatting.GOLD)
-                    .append(
-                        String.format(
-                            "x%d %s(+%.2f/sec)\n",
-                            outputSize,
-                            EnumChatFormatting.WHITE,
-                            (double) outputSize / (mMaxProgresstime / 20)));
-            }
+                for (Map.Entry<ItemStack, Double> drop : this.synchedGUIDropTracker.entrySet()
+                    .stream()
+                    .sorted(
+                        Comparator.comparing(
+                            a -> a.getKey()
+                                .getDisplayName()))
+                    .collect(Collectors.toList())) {
+                    int outputSize = Arrays.stream(this.mOutputItems)
+                        .filter(s -> s.isItemEqual(drop.getKey()))
+                        .mapToInt(i -> i.stackSize)
+                        .sum();
+                    ret.append(EnumChatFormatting.AQUA)
+                        .append(
+                            drop.getKey()
+                                .getDisplayName())
+                        .append(EnumChatFormatting.WHITE)
+                        .append(": ");
+                    if (outputSize == 0) {
+                        ret.append(String.format("%.2f", drop.getValue() * 100))
+                            .append("%\n");
+                    } else {
+                        ret.append(EnumChatFormatting.GOLD)
+                            .append(
+                                String.format(
+                                    "x%d %s(+%.2f/sec)\n",
+                                    outputSize,
+                                    EnumChatFormatting.WHITE,
+                                    (double) outputSize / (mMaxProgresstime / 20)));
+                    }
+                }
+                return ret.toString();
+            default:
+                return super.generateCurrentRecipeInfoString();
         }
-
-        return ret.toString();
     }
 
     @Override
     protected void drawTexts(DynamicPositionedColumn screenElements, SlotWidget inventorySlot) {
-        screenElements.widget(new FakeSyncWidget.BooleanSyncer(() -> isIC2Mode, b -> isIC2Mode = b));
+        screenElements.widget(
+            new FakeSyncWidget.BooleanSyncer(
+                () -> this.mode == EIGMode.IC2,
+                b -> this.mode = b ? EIGMode.IC2 : EIGMode.Normal));
         screenElements.widget(new FakeSyncWidget<>(() -> {
             HashMap<ItemStack, Double> ret = new HashMap<>();
             HashMap<ItemStack, Double> dropProgress = new HashMap<>();
 
-            for (Map.Entry<ItemStack, Double> drop : betterDropTracker.entrySet()) {
+            for (Map.Entry<ItemStack, Double> drop : this.GUIDropTracker.entrySet()) {
                 ret.merge(drop.getKey(), drop.getValue(), Double::sum);
             }
 
-            // for (Map.Entry<ItemStack, Double> drop : dropProgress.entrySet()) {
-            // ret.put(GreenHouseSlot.dropstacks.get(drop.getKey()), drop.getValue());
-            // }
             return ret;
-        }, h -> GUIDropProgress = h, (buffer, h) -> {
+        }, h -> synchedGUIDropTracker = h, (buffer, h) -> {
             buffer.writeVarIntToBuffer(h.size());
             for (Map.Entry<ItemStack, Double> itemStackDoubleEntry : h.entrySet()) {
                 try {
@@ -955,33 +1144,39 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         List<String> info = new ArrayList<>(
             Arrays.asList(
                 "Running in mode: " + EnumChatFormatting.GREEN
-                    + (setupphase == 0 ? (isIC2Mode ? "IC2 crops" : "Normal crops")
-                        : ("Setup mode " + (setupphase == 1 ? "(input)" : "(output)")))
+                    + (this.setupPhase == 0 ? this.mode.name
+                        : ("Setup mode " + (this.setupPhase == 1 ? "(input)" : "(output)")))
                     + EnumChatFormatting.RESET,
-                "Uses " + waterusage + "L/operation of water",
-                "Uses " + weedexusage + "L/second of Weed-EX 9000",
-                "Max slots: " + EnumChatFormatting.GREEN + this.mMaxSlots + EnumChatFormatting.RESET,
-                "Used slots: " + ((mStorage.size() > mMaxSlots) ? EnumChatFormatting.RED : EnumChatFormatting.GREEN)
-                    + this.mStorage.size()
+                "Uses " + waterUsage + "L/operation of water",
+                "Uses " + weedEXUsage + "L/second of Weed-EX 9000",
+                "Max slots: " + EnumChatFormatting.GREEN + this.maxSeedTypes + EnumChatFormatting.RESET,
+                "Used slots: "
+                    + ((this.buckets.size() > maxSeedTypes) ? EnumChatFormatting.RED : EnumChatFormatting.GREEN)
+                    + this.buckets.size()
                     + EnumChatFormatting.RESET));
-        HashMap<String, Integer> storageList = new HashMap<>();
-        for (GreenHouseSlot greenHouseSlot : mStorage) {
-            if (!greenHouseSlot.isValid) continue;
-            StringBuilder a = new StringBuilder(
-                EnumChatFormatting.GREEN + "x"
-                    + greenHouseSlot.input.stackSize
-                    + " "
-                    + greenHouseSlot.input.getDisplayName());
-            if (this.isIC2Mode) {
-                a.append(" | Humidity: ")
-                    .append(greenHouseSlot.noHumidity ? 0 : 12);
+        for (EIGBucket bucket : buckets) {
+            StringBuilder a = new StringBuilder();
+            // display invalid buckets, we don't want people to think they lost their seeds or something.
+            a.append(bucket.isValid() ? EnumChatFormatting.GREEN : EnumChatFormatting.RED);
+            a.append("x");
+            a.append(bucket.getSeedCount());
+            a.append(" ");
+            a.append(bucket.getDisplayName());
+            if (bucket instanceof EIGIC2Bucket) {
+                a.append(" | Humidity: ");
+                boolean isNotUsingHumidity = ((EIGIC2Bucket) bucket).useNoHumidity;
+                if (isNotUsingHumidity) {
+                    a.append(EnumChatFormatting.RED);
+                }
+                a.append(isNotUsingHumidity ? "Off" : "On");
             }
             a.append(EnumChatFormatting.RESET);
-            storageList.merge(a.toString(), 1, Integer::sum);
+            info.add(a.toString());
         }
-        storageList.forEach((k, v) -> info.add("x" + v + " " + k));
-        if (mStorage.size() > mMaxSlots) info
-            .add(EnumChatFormatting.DARK_RED + "There are too many crops inside to run !" + EnumChatFormatting.RESET);
+        if (this.buckets.size() > this.maxSeedTypes) {
+            info.add(
+                EnumChatFormatting.DARK_RED + "There are too many crops inside to run !" + EnumChatFormatting.RESET);
+        }
         info.addAll(Arrays.asList(super.getInfoData()));
         return info.toArray(new String[0]);
     }
@@ -1013,698 +1208,45 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         return new ITexture[] { Textures.BlockIcons.getCasingTextureForId(CASING_INDEX) };
     }
 
-    private boolean addCrop(ItemStack input, int slot, boolean simulate) {
-        /*
-         * EIGBucket bucket = (isIC2Mode ? EIGMode.IC2 : EIGMode.Normal).tryCreateNewBucket(this, input.copy(), 1);
-         * if (bucket != null && bucket.isValid()) {
-         * System.out.println(bucket);
-         * EIGDropTable tracker = new EIGDropTable();
-         * bucket.addProgress(32*100, tracker);
-         * for(Map.Entry<ItemStack, Double> entry : tracker.getEntries()) {
-         * System.out.println(entry.getValue() + " x " + entry.getKey().toString());
-         * }
-         * }
-         */
-
-        if (!isIC2Mode && !simulate)
-            for (GreenHouseSlot g : mStorage) if (g.input.stackSize < 64 && GT_Utility.areStacksEqual(g.input, input)) {
-                g.addAll(
-                    this.getBaseMetaTileEntity()
-                        .getWorld(),
-                    input);
-                if (input.stackSize == 0) return true;
-            }
-
-        GreenHouseSlot h = new GreenHouseSlot(this, simulate ? input.copy() : input, isIC2Mode, isNoHumidity);
-        if (h.isValid) {
-            if (!simulate) {
-                if (slot == -1) mStorage.add(h);
-                else mStorage.add(slot, h);
-            }
-            return true;
-        }
-        return false;
-    }
-
     private ItemStack addCrop(ItemStack input) {
-        if (addCrop(input, -1, false)) return input;
-        return null;
+        return addCrop(input, false) ? input : null;
     }
 
-    public boolean isInNoHumidityMode() {
-        return this.isNoHumidity;
+    /**
+     * Adds a seed to the EIG
+     *
+     * @param input    The item to add to the EIG.
+     * @param simulate Set to true to not actually consume any input.
+     * @return True if all items were consumed
+     */
+    private boolean addCrop(ItemStack input, boolean simulate) {
+        // Nothing to add = success since technically nothing should have changed?
+        if (input == null || input.stackSize <= 0) return true;
+
+        // For safety's sake copy the input if we are simulating to make sure we aren't modifying it
+        if (simulate) input = input.copy();
+
+        // Cap input count to current seed max
+        int addCap = Math.min(input.stackSize, this.maxSeedCount - this.getTotalSeedCount());
+        if (addCap <= 0) return false;
+
+        // Attempt to find a compatible bucket that already exists
+        for (EIGBucket bucket : this.buckets) {
+            int consumed = bucket.tryAddSeed(this, input, addCap, simulate);
+            if (consumed <= 0) continue;
+            return input.stackSize <= 0;
+        }
+
+        // Check if we have space for a new bucket
+        if (this.maxSeedTypes <= this.buckets.size()) {
+            return false;
+        }
+
+        // try creating a new bucket, this only returns valid buckets.
+        EIGBucket bucket = this.mode.tryCreateNewBucket(this, input, addCap, simulate);
+        if (bucket == null) return false;
+        this.buckets.add(bucket);
+        return input.stackSize <= 0;
     }
 
-    final Map<String, Double> dropprogress = new HashMap<>();
-    final ItemStackMap<Double> betterDropTracker = new ItemStackMap<>();
-
-    public static class GreenHouseSlot extends InventoryCrafting {
-
-        private static final int NUMBER_OF_GENERATIONS_TO_MAKE = 100;
-
-        final ItemStack input;
-        Block crop;
-        ArrayList<ItemStack> customDrops = null;
-        ItemStack undercrop = null;
-        List<ItemStack> drops;
-        public boolean isValid;
-        boolean isIC2Crop;
-        boolean noHumidity;
-        int growthticks;
-        List<List<ItemStack>> generations;
-        ItemStackMap<Double> preGeneratedIC2Drops;
-        Random rn;
-        IRecipe recipe;
-        ItemStack recipeInput;
-
-        int optimalgrowth = 7;
-
-        boolean needsreplanting = true;
-
-        static final GreenHouseWorld fakeworld = new GreenHouseWorld(5, 5, 5);
-
-        public NBTTagCompound toNBTTagCompound() {
-            NBTTagCompound aNBT = new NBTTagCompound();
-            aNBT.setTag("input", writeItemStackToNBT(input));
-            aNBT.setBoolean("isValid", isValid);
-            aNBT.setBoolean("isIC2Crop", isIC2Crop);
-            if (!isIC2Crop) {
-                aNBT.setInteger("crop", Block.getIdFromBlock(crop));
-                if (customDrops != null && customDrops.size() > 0) {
-                    aNBT.setInteger("customDropsCount", customDrops.size());
-                    for (int i = 0; i < customDrops.size(); i++)
-                        aNBT.setTag("customDrop." + i, writeItemStackToNBT(customDrops.get(i)));
-                }
-                aNBT.setInteger("dropscount", drops.size());
-                for (int i = 0; i < drops.size(); i++) aNBT.setTag("drop." + i, writeItemStackToNBT(drops.get(i)));
-                aNBT.setInteger("optimalgrowth", optimalgrowth);
-                aNBT.setBoolean("needsreplanting", needsreplanting);
-            } else {
-                if (undercrop != null) aNBT.setTag("undercrop", writeItemStackToNBT(undercrop));
-                aNBT.setInteger("generationscount", generations.size());
-                for (int i = 0; i < generations.size(); i++) {
-                    aNBT.setInteger(
-                        "generation." + i + ".count",
-                        generations.get(i)
-                            .size());
-                    for (int j = 0; j < generations.get(i)
-                        .size(); j++)
-                        aNBT.setTag(
-                            "generation." + i + "." + j,
-                            writeItemStackToNBT(
-                                generations.get(i)
-                                    .get(j)));
-                }
-                aNBT.setInteger("growthticks", growthticks);
-                aNBT.setBoolean("noHumidity", noHumidity);
-            }
-            return aNBT;
-        }
-
-        public GreenHouseSlot(NBTTagCompound aNBT) {
-            super(null, 3, 3);
-            isIC2Crop = aNBT.getBoolean("isIC2Crop");
-            isValid = aNBT.getBoolean("isValid");
-            input = readItemStackFromNBT(aNBT.getCompoundTag("input"));
-            if (!isIC2Crop) {
-                crop = Block.getBlockById(aNBT.getInteger("crop"));
-                if (aNBT.hasKey("customDropsCount")) {
-                    int imax = aNBT.getInteger("customDropsCount");
-                    customDrops = new ArrayList<>(imax);
-                    for (int i = 0; i < imax; i++)
-                        customDrops.add(readItemStackFromNBT(aNBT.getCompoundTag("customDrop." + i)));
-                }
-                drops = new ArrayList<>();
-                for (int i = 0; i < aNBT.getInteger("dropscount"); i++)
-                    drops.add(readItemStackFromNBT(aNBT.getCompoundTag("drop." + i)));
-                optimalgrowth = aNBT.getInteger("optimalgrowth");
-                if (optimalgrowth == 0) optimalgrowth = 7;
-                if (aNBT.hasKey("needsreplanting")) needsreplanting = aNBT.getBoolean("needsreplanting");
-            } else {
-                if (aNBT.hasKey("undercrop")) undercrop = readItemStackFromNBT(aNBT.getCompoundTag("undercrop"));
-                generations = new ArrayList<>();
-                for (int i = 0; i < aNBT.getInteger("generationscount"); i++) {
-                    generations.add(new ArrayList<>());
-                    for (int j = 0; j < aNBT.getInteger("generation." + i + ".count"); j++) generations.get(i)
-                        .add(readItemStackFromNBT(aNBT.getCompoundTag("generation." + i + "." + j)));
-                }
-                growthticks = aNBT.getInteger("growthticks");
-                noHumidity = aNBT.getBoolean("noHumidity");
-                rn = new Random();
-            }
-        }
-
-        public boolean addAll(World world, ItemStack input) {
-            if (!GT_Utility.areStacksEqual(this.input, input)) return false;
-            if (this.input.stackSize == 64) return false;
-            int toconsume = Math.min(64 - this.input.stackSize, input.stackSize);
-            int left = addDrops(world, toconsume);
-            input.stackSize -= toconsume - left;
-            this.input.stackSize += toconsume - left;
-            return left == 0;
-        }
-
-        public boolean findCropRecipe(World world) {
-            if (recipe != null) return true;
-            out: for (ItemStack drop : drops) {
-                recipeInput = drop;
-                for (int j = 0; j < CraftingManager.getInstance()
-                    .getRecipeList()
-                    .size(); j++) {
-                    recipe = (IRecipe) CraftingManager.getInstance()
-                        .getRecipeList()
-                        .get(j);
-                    if (recipe.matches(this, world)
-                        && GT_Utility.areStacksEqual(recipe.getCraftingResult(this), input)) {
-                        break out;
-                    } else recipe = null;
-                }
-            }
-            return recipe != null;
-        }
-
-        @Override
-        public ItemStack getStackInSlot(int p_70301_1_) {
-            if (p_70301_1_ == 0) return recipeInput.copy();
-            return null;
-        }
-
-        @Override
-        public ItemStack getStackInSlotOnClosing(int par1) {
-            return null;
-        }
-
-        @Override
-        public ItemStack decrStackSize(int par1, int par2) {
-            return null;
-        }
-
-        @Override
-        public void setInventorySlotContents(int par1, ItemStack par2ItemStack) {}
-
-        public GreenHouseSlot(GT_MetaTileEntity_ExtremeIndustrialGreenhouse tileEntity, ItemStack input, boolean IC2,
-            boolean noHumidity) {
-            super(null, 3, 3);
-            World world = tileEntity.getBaseMetaTileEntity()
-                .getWorld();
-            this.input = input.copy();
-            this.isValid = false;
-            if (IC2) {
-                GreenHouseSlotIC2(tileEntity, world, input, noHumidity);
-                return;
-            }
-            Item i = input.getItem();
-            Block b = null;
-            boolean detectedCustomHandler = false;
-            // Custom handlers
-            // FLOWERS //
-            Block bb = Block.getBlockFromItem(i);
-            if (bb == Blocks.air) bb = null;
-            if (bb instanceof BlockFlower) {
-                detectedCustomHandler = true;
-                needsreplanting = false;
-                customDrops = new ArrayList<>(Collections.singletonList(input.copy()));
-                customDrops.get(0).stackSize = 1;
-            }
-
-            if (!detectedCustomHandler) {
-                if (i instanceof IPlantable) {
-                    if (i instanceof ItemSeeds) b = ((ItemSeeds) i).getPlant(world, 0, 0, 0);
-                    else if (i instanceof ItemSeedFood) b = ((ItemSeedFood) i).getPlant(world, 0, 0, 0);
-                } else {
-                    if (i == Items.reeds) b = Blocks.reeds;
-                    else {
-                        b = Block.getBlockFromItem(i);
-                        if (b != Blocks.cactus) return;
-                    }
-                    needsreplanting = false;
-                }
-                if (!(b instanceof IPlantable)) return;
-                GameRegistry.UniqueIdentifier u = GameRegistry.findUniqueIdentifierFor(i);
-                if (u != null && Objects.equals(u.modId, "Natura")) optimalgrowth = 8;
-
-                if (b instanceof BlockStem) {
-                    fakeworld.block = null;
-                    try {
-                        b.updateTick(fakeworld, 5, 5, 5, fakeworld.rand);
-                    } catch (Exception e) {
-                        e.printStackTrace(System.err);
-                    }
-                    if (fakeworld.block == null) return;
-                    b = fakeworld.block;
-                    needsreplanting = false;
-                }
-            }
-            crop = b;
-            isIC2Crop = false;
-            int toUse = Math.min(64, input.stackSize);
-            if (addDrops(world, toUse) == 0 && !drops.isEmpty()) {
-                input.stackSize -= toUse;
-                this.input.stackSize = toUse;
-                this.isValid = true;
-            }
-        }
-
-        public void GreenHouseSlotIC2(GT_MetaTileEntity_ExtremeIndustrialGreenhouse tileEntity, World world,
-            ItemStack input, boolean noHumidity) {
-            if (!ItemList.IC2_Crop_Seeds.isStackEqual(input, true, true)) return;
-            this.isIC2Crop = true;
-            this.noHumidity = noHumidity;
-            recalculate(tileEntity, world);
-            if (this.isValid) input.stackSize--;
-        }
-
-        private boolean setBlock(ItemStack a, int x, int y, int z, World world) {
-            Item item = a.getItem();
-            Block b = Block.getBlockFromItem(item);
-            if (b == Blocks.air || !(item instanceof ItemBlock)) return false;
-            short tDamage = (short) item.getDamage(a);
-            if (item instanceof GT_Item_Ores && tDamage > 0) {
-                if (!world.setBlock(
-                    x,
-                    y,
-                    z,
-                    b,
-                    GT_TileEntity_Ores.getHarvestData(
-                        tDamage,
-                        ((GT_Block_Ores_Abstract) b).getBaseBlockHarvestLevel(tDamage % 16000 / 1000)),
-                    0)) {
-                    return false;
-                }
-                GT_TileEntity_Ores tTileEntity = (GT_TileEntity_Ores) world.getTileEntity(x, y, z);
-                tTileEntity.mMetaData = tDamage;
-                tTileEntity.mNatural = false;
-            } else world.setBlock(x, y, z, b, tDamage, 0);
-            return true;
-        }
-
-        public void recalculate(GT_MetaTileEntity_ExtremeIndustrialGreenhouse tileEntity, World world) {
-            if (isIC2Crop) {
-                CropCard cc = Crops.instance.getCropCard(input);
-                this.input.stackSize = 1;
-                NBTTagCompound nbt = input.getTagCompound();
-                byte gr = nbt.getByte("growth");
-                byte ga = nbt.getByte("gain");
-                byte re = nbt.getByte("resistance");
-                int[] abc = new int[] { 0, -2, 3 };
-                int[] xyz = new int[] { 0, 0, 0 };
-                tileEntity.getExtendedFacing()
-                    .getWorldOffset(abc, xyz);
-                xyz[0] += tileEntity.getBaseMetaTileEntity()
-                    .getXCoord();
-                xyz[1] += tileEntity.getBaseMetaTileEntity()
-                    .getYCoord();
-                xyz[2] += tileEntity.getBaseMetaTileEntity()
-                    .getZCoord();
-                boolean cheating = false;
-                try {
-                    if (world.getBlock(xyz[0], xyz[1] - 2, xyz[2]) != GregTech_API.sBlockCasings4
-                        || world.getBlockMetadata(xyz[0], xyz[1] - 2, xyz[2]) != 1) {
-                        // no
-                        cheating = true;
-                        return;
-                    }
-
-                    world.setBlock(xyz[0], xyz[1], xyz[2], Block.getBlockFromItem(Ic2Items.crop.getItem()), 0, 0);
-                    TileEntity wte = world.getTileEntity(xyz[0], xyz[1], xyz[2]);
-                    if (!(wte instanceof TileEntityCrop)) {
-                        // should not be even possible
-                        return;
-                    }
-                    TileEntityCrop te = (TileEntityCrop) wte;
-                    te.ticker = 1; // don't even think about ticking once
-                    te.setCrop(cc);
-
-                    te.setGrowth(gr);
-                    te.setGain(ga);
-                    te.setResistance(re);
-
-                    if (noHumidity) te.humidity = 0;
-                    else {
-                        te.waterStorage = 200;
-                        te.humidity = te.updateHumidity();
-                    }
-                    te.airQuality = te.updateAirQuality();
-                    te.nutrients = te.updateNutrients();
-
-                    ItemStack tobeused = null;
-
-                    if (undercrop != null) setBlock(undercrop, xyz[0], xyz[1] - 2, xyz[2], world);
-                    else {
-                        te.setSize((byte) (cc.maxSize() - 1));
-
-                        // Check if the crop has a chance to die in the current environment
-                        if (calcAvgGrowthRate(te, cc, 0) < 0) return;
-                        // check if the crop has a chance to grow in the current environment.
-                        if (calcAvgGrowthRate(te, cc, 6) <= 0) return;
-
-                        if (!cc.canGrow(te)) {
-                            // needs special block
-
-                            boolean cangrow = false;
-                            ArrayList<ItemStack> inputs = tileEntity.getStoredInputs();
-                            for (ItemStack a : inputs) {
-                                if (a.stackSize <= 0) continue;
-                                if (!setBlock(a, xyz[0], xyz[1] - 2, xyz[2], world)) continue;
-                                if (!cc.canGrow(te)) continue;
-                                cangrow = true;
-                                undercrop = a.copy();
-                                undercrop.stackSize = 1;
-                                tobeused = a;
-                                break;
-                            }
-
-                            if (!cangrow) return;
-                        }
-                    }
-
-                    te.setSize((byte) (cc.maxSize()));
-                    if (!cc.canBeHarvested(te)) return;
-
-                    // PRE GENERATE DROP CHANCES
-                    generations = new ArrayList<>();
-                    preGeneratedIC2Drops = new ItemStackMap<Double>();
-                    int sizeAfterHarvestTotal = 0;
-                    double avgStackIncrease = getRealAverageDropIncrease(te, cc);
-                    double avgDropRounds = getRealAverageDropRounds(te, cc);
-                    te.setSize((byte) cc.maxSize());
-                    for (int i = 0; i < NUMBER_OF_GENERATIONS_TO_MAKE; i++) {
-                        // this is either random or constant, there is no way to know, so we average
-                        sizeAfterHarvestTotal += cc.getSizeAfterHarvest(te);
-                        ItemStack drop = cc.getGain(te);
-                        // if no drop then skip
-                        if (drop == null || drop.stackSize <= 0) continue;
-                        ItemStack key = cc.getGain(te)
-                            .copy();
-                        key.stackSize = 1;
-                        preGeneratedIC2Drops.merge(
-                            key,
-                            (drop.stackSize + avgStackIncrease) / (double) NUMBER_OF_GENERATIONS_TO_MAKE
-                                * avgDropRounds,
-                            Double::sum);
-                    }
-                    if (preGeneratedIC2Drops.isEmpty()) return;
-                    generations.add(
-                        preGeneratedIC2Drops.entrySet()
-                            .stream()
-                            .map((x) -> {
-                                ItemStack stack = x.getKey()
-                                    .copy();
-                                stack.stackSize = 1;
-                                return stack;
-                            })
-                            .collect(Collectors.toList()));
-                    rn = new Random();
-
-                    // CALC GROWTH RATE
-                    // TODO: Double terra wart and nether wart growth speed if using the correct block since their tick
-                    // override is what's responsible for accelerated growth
-                    // TODO: Make growth size after average an average value since it's random for some crops (Eg:
-                    // stickreed)
-                    double avgGrowthRate = calcRealAvgGrowthRate(te, cc);
-                    if (avgGrowthRate <= 0) return;
-                    growthticks = 0;
-                    for (int i = sizeAfterHarvestTotal / NUMBER_OF_GENERATIONS_TO_MAKE; i < cc.maxSize(); i++) {
-                        te.setSize((byte) i);
-                        int growthPointsForStage = cc.growthDuration(te);
-                        // Growth progress is not allowed to spill over to a new stage
-                        growthticks += (int) Math.ceil(growthPointsForStage / avgGrowthRate);
-                    }
-                    // Multiply growth ticks by the tick time of the crop sticks
-                    growthticks = Math.max(1, TileEntityCrop.tickRate * growthticks);
-
-                    if (tobeused != null) tobeused.stackSize--;
-
-                    this.isValid = true;
-                } catch (Exception e) {
-                    e.printStackTrace(System.err);
-                } finally {
-                    if (!cheating) world.setBlock(xyz[0], xyz[1] - 2, xyz[2], GregTech_API.sBlockCasings4, 1, 0);
-                    world.setBlockToAir(xyz[0], xyz[1], xyz[2]);
-                }
-            } else {
-                drops = new ArrayList<>();
-                addDrops(world, input.stackSize);
-            }
-        }
-
-        /**
-         * Calculates the average number of separate item drops to be rolled per harvest using information obtained by
-         * decompiling IC2.
-         *
-         * @see TileEntityCrop#harvest_automated(boolean)
-         * @param te The {@link TileEntityCrop} holding the crop
-         * @param cc The {@link CropCard} of the seed
-         * @return The average number of drops to computer per harvest
-         */
-        private static double getRealAverageDropRounds(TileEntityCrop te, CropCard cc) {
-            return cc.dropGainChance() * Math.pow(1.03, te.getGain());
-        }
-
-        /**
-         * Calculates the average drop of the stack size caused by seed's gain using information obtained by
-         * decompiling IC2.
-         *
-         * @see TileEntityCrop#harvest_automated(boolean)
-         * @param te The {@link TileEntityCrop} holding the crop
-         * @param cc The {@link CropCard} of the seed
-         * @return The average number of drops to computer per harvest
-         */
-        private static double getRealAverageDropIncrease(TileEntityCrop te, CropCard cc) {
-            // yes gain has the amazing ability to sometimes add 1 to your stack size!
-            return te.getGain() / 100.0d;
-        }
-
-        /**
-         * Calculates an average growth speed for crops which may roll a zero on low rng rolls.
-         *
-         * @param te The {@link TileEntityCrop} holding the crop
-         * @param cc The {@link CropCard} of the seed
-         * @return The average growth rate as a floating point number
-         */
-        private static double calcRealAvgGrowthRate(TileEntityCrop te, CropCard cc) {
-            int total = 0;
-            for (int rngRoll = 0; rngRoll <= 6; rngRoll++) {
-                total += calcAvgGrowthRate(te, cc, rngRoll);
-            }
-            return total / 7.0d;
-        }
-
-        /**
-         * Calculates the average growth rate of an ic2 crop using information obtained though decompiling IC2.
-         * Calls to random functions have been either replaced with customisable values or boundary tests.
-         *
-         * @param te      The {@link TileEntityCrop} holding the crop
-         * @param cc      The {@link CropCard} of the seed
-         * @param rngRoll The role for the base rng
-         * @return The amounts of growth point added to the growth progress in average every growth tick
-         */
-        private static int calcAvgGrowthRate(TileEntityCrop te, CropCard cc, int rngRoll) {
-            // the original logic uses IC2.random.nextInt(7)
-            int base = rngRoll + te.getGrowth();
-            int need = Math.max(0, (cc.tier() - 1) * 4 + te.getGrowth() + te.getGain() + te.getResistance());
-            int have = cc.weightInfluences(te, te.getHumidity(), te.getNutrients(), te.getAirQuality()) * 5;
-
-            if (have >= need) {
-                // The crop has a good enough environment to grow normally
-                return base * (100 + (have - need)) / 100;
-            } else {
-                // this only happens if we don't have enough
-                // resources to grow properly.
-                int neg = (need - have) * 4;
-
-                if (neg > 100) {
-                    // a crop with a resistance 31 will never die since the original
-                    // checks for `IC2.random.nextInt(32) > this.statResistance`
-                    // so assume that the crop will eventually die if it doesn't
-                    // have maxed out resistance stats. 0 means no growth this tick
-                    // -1 means the crop dies.
-                    return te.getResistance() >= 31 ? 0 : -1;
-                }
-                // else apply neg to base
-                return Math.max(0, base * (100 - neg) / 100);
-            }
-        }
-
-        // generates loot for regular crops
-        public List<ItemStack> getDrops() {
-            return drops;
-        }
-
-        static final Map<String, ItemStack> dropstacks = new HashMap<>();
-
-        public void addIC2Progress(double timeElapsed, ItemStackMap<Double> output) {
-            double growthPercent = (timeElapsed / (double) growthticks);
-            if (this.preGeneratedIC2Drops != null) {
-                // The green house should handle detecting when to drop items, not the slot.
-                for (Map.Entry<ItemStack, Double> entry : this.preGeneratedIC2Drops.entrySet()) {
-                    output.merge(entry.getKey(), growthPercent * entry.getValue(), Double::sum);
-                }
-            }
-        };
-
-        public List<ItemStack> getIC2Drops(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse,
-            double timeElapsed) {
-            double growthPercent = (timeElapsed / (double) growthticks);
-
-            if (this.preGeneratedIC2Drops != null) {
-                // The green house should handle detecting when to drop items, not the slot.
-                preGeneratedIC2Drops.forEach(
-                    (drop, amount) -> {
-                        greenhouse.betterDropTracker.merge(drop, growthPercent * amount, Double::sum);
-                    });
-            }
-
-            int r = rn.nextInt(NUMBER_OF_GENERATIONS_TO_MAKE);
-            if (generations.size() <= r) return new ArrayList<>();
-            List<ItemStack> generation = generations.get(r);
-            List<ItemStack> copied = new ArrayList<>();
-            for (ItemStack g : generation) copied.add(g.copy());
-            for (ItemStack s : copied) {
-                double pro = ((double) s.stackSize * growthPercent);
-                s.stackSize = 1;
-                greenhouse.dropprogress.merge(s.toString(), pro, Double::sum);
-                if (!dropstacks.containsKey(s.toString())) dropstacks.put(s.toString(), s.copy());
-            }
-            copied.clear();
-            for (Map.Entry<String, Double> entry : greenhouse.dropprogress.entrySet()) {
-                if (entry.getValue() >= 1d) {
-                    copied.add(
-                        dropstacks.get(entry.getKey())
-                            .copy());
-                    copied.get(copied.size() - 1).stackSize = entry.getValue()
-                        .intValue();
-                    entry.setValue(
-                        entry.getValue() - (double) entry.getValue()
-                            .intValue());
-                }
-            }
-            return copied;
-        }
-
-        // generates loot for regular crops
-        public int addDrops(World world, int count) {
-            if (drops == null) drops = new ArrayList<>();
-            if (customDrops != null && !customDrops.isEmpty()) {
-                @SuppressWarnings("unchecked")
-                ArrayList<ItemStack> d = (ArrayList<ItemStack>) customDrops.clone();
-                for (ItemStack x : drops) {
-                    for (Iterator<ItemStack> iterator = d.iterator(); iterator.hasNext();) {
-                        ItemStack y = iterator.next();
-                        if (GT_Utility.areStacksEqual(x, y)) {
-                            x.stackSize += y.stackSize * count;
-                            iterator.remove();
-                        }
-                    }
-                }
-                final int finalCount = count;
-                d.forEach(stack -> {
-                    ItemStack i = stack.copy();
-                    i.stackSize *= finalCount;
-                    drops.add(i);
-                });
-                return 0;
-            } else {
-                if (crop == null) return count;
-                for (int i = 0; i < count; i++) {
-                    List<ItemStack> d = crop.getDrops(world, 0, 0, 0, optimalgrowth, 0);
-                    for (ItemStack x : drops) {
-                        for (ItemStack y : d) {
-                            if (GT_Utility.areStacksEqual(x, y)) {
-                                x.stackSize += y.stackSize;
-                                y.stackSize = 0;
-                            }
-                        }
-                    }
-                    for (ItemStack x : d) {
-                        if (x.stackSize > 0) {
-                            drops.add(x.copy());
-                        }
-                    }
-                }
-            }
-            if (!needsreplanting) return 0;
-            for (int i = 0; i < drops.size(); i++) {
-                if (GT_Utility.areStacksEqual(drops.get(i), input)) {
-                    int took = Math.min(drops.get(i).stackSize, count);
-                    drops.get(i).stackSize -= took;
-                    count -= took;
-                    if (drops.get(i).stackSize == 0) {
-                        drops.remove(i);
-                        i--;
-                    }
-                    if (count == 0) {
-                        return 0;
-                    }
-                }
-            }
-            if (!findCropRecipe(world)) return count;
-            int totake = count / recipe.getCraftingResult(this).stackSize + 1;
-            for (int i = 0; i < drops.size(); i++) {
-                if (GT_Utility.areStacksEqual(drops.get(i), recipeInput)) {
-                    int took = Math.min(drops.get(i).stackSize, totake);
-                    drops.get(i).stackSize -= took;
-                    totake -= took;
-                    if (drops.get(i).stackSize == 0) {
-                        drops.remove(i);
-                        i--;
-                    }
-                    if (totake == 0) {
-                        return 0;
-                    }
-                }
-            }
-            return count;
-        }
-    }
-
-    private static class GreenHouseWorld extends GT_DummyWorld {
-
-        public int x, y, z, meta = 0;
-        public Block block;
-
-        GreenHouseWorld(int x, int y, int z) {
-            super();
-            this.x = x;
-            this.y = y;
-            this.z = z;
-            this.rand = new GreenHouseRandom();
-        }
-
-        @Override
-        public int getBlockMetadata(int aX, int aY, int aZ) {
-            if (aX == this.x && aY == this.y && aZ == this.z) return 7;
-            return 0;
-        }
-
-        @Override
-        public Block getBlock(int aX, int aY, int aZ) {
-            if (aY == this.y - 1) return Blocks.farmland;
-            return Blocks.air;
-        }
-
-        @Override
-        public int getBlockLightValue(int p_72957_1_, int p_72957_2_, int p_72957_3_) {
-            return 10;
-        }
-
-        @Override
-        public boolean setBlock(int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {
-            if (aBlock == Blocks.air) return false;
-            if (aX == x && aY == y && aZ == z) return false;
-            this.block = aBlock;
-            this.meta = aMeta;
-            return true;
-        }
-    }
-
-    private static class GreenHouseRandom extends Random {
-
-        private static final long serialVersionUID = -387271808935248890L;
-
-        @Override
-        public int nextInt(int bound) {
-            return 0;
-        }
-    }
 }

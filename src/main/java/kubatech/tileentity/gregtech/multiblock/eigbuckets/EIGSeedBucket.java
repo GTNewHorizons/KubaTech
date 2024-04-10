@@ -1,4 +1,4 @@
-package kubatech.api.implementations;
+package kubatech.tileentity.gregtech.multiblock.eigbuckets;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -39,12 +39,8 @@ public class EIGSeedBucket extends EIGBucket {
         }
 
         @Override
-        public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-            int maxConsume) {
-            EIGBucket bucket = new EIGSeedBucket(greenhouse, input);
-            if (!bucket.isValid()) return null;
-            bucket.tryAddSeed(greenhouse, input, maxConsume - 1);
-            return bucket;
+        public EIGBucket tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input) {
+            return new EIGSeedBucket(greenhouse, input);
         }
 
         @Override
@@ -80,9 +76,9 @@ public class EIGSeedBucket extends EIGBucket {
     }
 
     @Override
-    public void addProgress(double timeDelta, EIGDropTable tracker) {
+    public void addProgress(double multiplier, EIGDropTable tracker) {
         if (!this.isValid()) return;
-        this.drops.addTo(tracker);
+        this.drops.addTo(tracker, multiplier * this.seedCount);
     }
 
     @Override
