@@ -1,19 +1,16 @@
 package kubatech.api.gui;
 
 import java.util.Collections;
-import java.util.function.Supplier;
-
-import javax.annotation.Nullable;
 
 import com.gtnewhorizons.modularui.api.NumberFormatMUI;
 import com.gtnewhorizons.modularui.api.drawable.IDrawable;
 import com.gtnewhorizons.modularui.api.drawable.TextRenderer;
-
 import com.gtnewhorizons.modularui.api.math.Alignment;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.common.internal.Theme;
 
 public class AutoScalingStackSizeText implements IDrawable {
+
     private static final TextRenderer measuringRenderer = new TextRenderer();
     private static final NumberFormatMUI muiNumberFormat = new NumberFormatMUI();
     private static final TextRenderer renderer = new TextRenderer();
@@ -48,6 +45,7 @@ public class AutoScalingStackSizeText implements IDrawable {
         this.alignment = alignment;
         return this;
     }
+
     public AutoScalingStackSizeText measure() {
         this.simWidth = measuringRenderer.getMaxWidth(Collections.singletonList(this.text));
         return this;
@@ -56,7 +54,6 @@ public class AutoScalingStackSizeText implements IDrawable {
     public boolean hasColor() {
         return Color.getAlpha(color) > 0;
     }
-
 
     @Override
     public void applyThemeColor(int color) {

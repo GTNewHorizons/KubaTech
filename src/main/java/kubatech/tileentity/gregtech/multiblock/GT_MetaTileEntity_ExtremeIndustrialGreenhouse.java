@@ -38,9 +38,6 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.gtnewhorizons.modularui.api.widget.Widget;
-import gregtech.common.tileentities.machines.GT_MetaTileEntity_Hatch_Input_ME;
-import kubatech.api.EIGDynamicInventory;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
@@ -67,7 +64,6 @@ import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.Text;
-import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
 import com.gtnewhorizons.modularui.api.math.Color;
 import com.gtnewhorizons.modularui.api.math.MainAxisAlignment;
 import com.gtnewhorizons.modularui.api.screen.ModularUIContext;
@@ -97,8 +93,6 @@ import gregtech.api.interfaces.ITexture;
 import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energy;
-import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Input;
-import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_MultiInput;
 import gregtech.api.recipe.check.CheckRecipeResult;
 import gregtech.api.recipe.check.CheckRecipeResultRegistry;
 import gregtech.api.recipe.check.SimpleCheckRecipeResult;
@@ -109,13 +103,14 @@ import ic2.core.Ic2Items;
 import ic2.core.init.BlocksItems;
 import ic2.core.init.InternalName;
 import kubatech.Tags;
+import kubatech.api.EIGDynamicInventory;
 import kubatech.api.LoaderReference;
 import kubatech.api.eig.EIGBucket;
 import kubatech.api.eig.EIGDropTable;
-import kubatech.tileentity.gregtech.multiblock.eigbuckets.EIGIC2Bucket;
 import kubatech.api.enums.EIGMode;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.client.effect.CropRenderer;
+import kubatech.tileentity.gregtech.multiblock.eigbuckets.EIGIC2Bucket;
 
 @SuppressWarnings("unused")
 public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
@@ -855,7 +850,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             if (aStack == null) return super.transferStackInSlot(aPlayer, aSlotIndex);
             GT_MetaTileEntity_ExtremeIndustrialGreenhouse mte = parent.get();
             if (mte == null) return super.transferStackInSlot(aPlayer, aSlotIndex);
-           // if (mte.buckets.size() >= mte.maxSeedTypes) return super.transferStackInSlot(aPlayer, aSlotIndex);
+            // if (mte.buckets.size() >= mte.maxSeedTypes) return super.transferStackInSlot(aPlayer, aSlotIndex);
             if (mte.mMaxProgresstime > 0) {
                 GT_Utility.sendChatToPlayer(aPlayer, EnumChatFormatting.RED + "Can't insert while running !");
                 return super.transferStackInSlot(aPlayer, aSlotIndex);
@@ -927,9 +922,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 .setPos(4, 4)
                 .setSize(190, 85)
                 .setEnabled(w -> !isInInventory));
-        builder.widget(dynamicInventory.asWidget(builder, buildContext)
-            .setPos(10, 16)
-            .setEnabled(w -> isInInventory));
+        builder.widget(
+            dynamicInventory.asWidget(builder, buildContext)
+                .setPos(10, 16)
+                .setEnabled(w -> isInInventory));
 
         builder.widget(
             new CycleButtonWidget().setToggle(() -> isInInventory, i -> isInInventory = i)
@@ -1063,7 +1059,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     .sorted(
                         Comparator.comparing(
                             a -> a.getKey()
-                                .toString().toLowerCase()))
+                                .toString()
+                                .toLowerCase()))
                     .collect(Collectors.toList())) {
                     int outputSize = Arrays.stream(this.mOutputItems)
                         .filter(s -> s.isItemEqual(drop.getKey()))

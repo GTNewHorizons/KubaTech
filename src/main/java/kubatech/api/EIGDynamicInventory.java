@@ -2,12 +2,8 @@ package kubatech.api;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
-import gregtech.api.enums.GT_Values;
-import kubatech.api.gui.AutoScalingStackSizeText;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
@@ -19,7 +15,6 @@ import com.gtnewhorizons.modularui.api.GlStateManager;
 import com.gtnewhorizons.modularui.api.ModularUITextures;
 import com.gtnewhorizons.modularui.api.drawable.IDrawable;
 import com.gtnewhorizons.modularui.api.drawable.ItemDrawable;
-import com.gtnewhorizons.modularui.api.drawable.Text;
 import com.gtnewhorizons.modularui.api.drawable.UITexture;
 import com.gtnewhorizons.modularui.api.math.Alignment;
 import com.gtnewhorizons.modularui.api.math.Color;
@@ -35,10 +30,12 @@ import com.gtnewhorizons.modularui.common.widget.FakeSyncWidget;
 import com.gtnewhorizons.modularui.common.widget.Scrollable;
 import com.kuba6000.mobsinfo.api.utils.ItemID;
 
+import kubatech.api.gui.AutoScalingStackSizeText;
 import kubatech.api.helpers.GTHelper;
 import kubatech.api.utils.ModUtils;
 
 public class EIGDynamicInventory<T> {
+
     int width, height;
     Supplier<Integer> maxSeedCountGetter;
     Supplier<Integer> maxSeedTypeGetter;
@@ -56,8 +53,9 @@ public class EIGDynamicInventory<T> {
     Supplier<Boolean> isEnabledGetter = null;
     boolean isEnabled = true;
 
-    public EIGDynamicInventory(int width, int height, Supplier<Integer> maxSeedTypeGetter, Supplier<Integer> maxSeedCountGetter, Supplier<Integer> usedSeedTypesGetter, Supplier<Integer> usedSeedCountGetter, List<T> inventory,
-                               TInventoryGetter<T> inventoryGetter) {
+    public EIGDynamicInventory(int width, int height, Supplier<Integer> maxSeedTypeGetter,
+        Supplier<Integer> maxSeedCountGetter, Supplier<Integer> usedSeedTypesGetter,
+        Supplier<Integer> usedSeedCountGetter, List<T> inventory, TInventoryGetter<T> inventoryGetter) {
         this.width = width;
         this.height = height;
         this.maxSeedTypeGetter = maxSeedTypeGetter;
@@ -92,7 +90,6 @@ public class EIGDynamicInventory<T> {
         return ModularUITextures.ITEM_SLOT;
     }
 
-
     @SuppressWarnings("UnstableApiUsage")
     public Widget asWidget(ModularWindow.Builder builder, UIBuildContext buildContext) {
         ChangeableWidget container = new ChangeableWidget(() -> createWidget(buildContext.getPlayer()));
@@ -100,77 +97,61 @@ public class EIGDynamicInventory<T> {
 
         container
             // max seed types
-            .attachSyncer(
-                new FakeSyncWidget.IntegerSyncer(
-                    () -> {
-                        int i = this.maxSeedTypeGetter.get();
-                        if (this.maxSeedTypes != i) {
-                            this.maxSeedTypes = i;
-                            container.notifyChangeNoSync();
-                        }
-                        return i;
-                    },
-                    i -> {
-                        if (this.maxSeedTypes != i) {
-                            this.maxSeedTypes = i;
-                            container.notifyChangeNoSync();
-                        }
-                    }
-                ), builder)
+            .attachSyncer(new FakeSyncWidget.IntegerSyncer(() -> {
+                int i = this.maxSeedTypeGetter.get();
+                if (this.maxSeedTypes != i) {
+                    this.maxSeedTypes = i;
+                    container.notifyChangeNoSync();
+                }
+                return i;
+            }, i -> {
+                if (this.maxSeedTypes != i) {
+                    this.maxSeedTypes = i;
+                    container.notifyChangeNoSync();
+                }
+            }), builder)
             // used seed types
-            .attachSyncer(
-                new FakeSyncWidget.IntegerSyncer(
-                    () -> {
-                        int i = this.usedSeedTypesGetter.get();
-                        if (this.usedSeedTypes != i) {
-                            this.usedSeedTypes = i;
-                            container.notifyChangeNoSync();
-                        }
-                        return i;
-                    },
-                    i -> {
-                        if (this.usedSeedTypes != i) {
-                            this.usedSeedTypes = i;
-                            container.notifyChangeNoSync();
-                        }
-                    }
-                ), builder)
+            .attachSyncer(new FakeSyncWidget.IntegerSyncer(() -> {
+                int i = this.usedSeedTypesGetter.get();
+                if (this.usedSeedTypes != i) {
+                    this.usedSeedTypes = i;
+                    container.notifyChangeNoSync();
+                }
+                return i;
+            }, i -> {
+                if (this.usedSeedTypes != i) {
+                    this.usedSeedTypes = i;
+                    container.notifyChangeNoSync();
+                }
+            }), builder)
             // max seed count
-            .attachSyncer(
-                new FakeSyncWidget.IntegerSyncer(
-                    () -> {
-                        int i = this.maxSeedCountGetter.get();
-                        if (this.maxSeedCount != i) {
-                            this.maxSeedCount = i;
-                            container.notifyChangeNoSync();
-                        }
-                        return i;
-                    },
-                    i -> {
-                        if (this.maxSeedCount != i) {
-                            this.maxSeedCount = i;
-                            container.notifyChangeNoSync();
-                        }
-                    }
-                ), builder)
+            .attachSyncer(new FakeSyncWidget.IntegerSyncer(() -> {
+                int i = this.maxSeedCountGetter.get();
+                if (this.maxSeedCount != i) {
+                    this.maxSeedCount = i;
+                    container.notifyChangeNoSync();
+                }
+                return i;
+            }, i -> {
+                if (this.maxSeedCount != i) {
+                    this.maxSeedCount = i;
+                    container.notifyChangeNoSync();
+                }
+            }), builder)
             // used seed count
-            .attachSyncer(
-                new FakeSyncWidget.IntegerSyncer(
-                    () -> {
-                        int i = this.usedSeedCountGetter.get();
-                        if (this.usedSeedCount != i) {
-                            this.usedSeedCount = i;
-                            container.notifyChangeNoSync();
-                        }
-                        return i;
-                    },
-                    i -> {
-                        if (this.usedSeedCount != i) {
-                            this.usedSeedCount = i;
-                            container.notifyChangeNoSync();
-                        }
-                    }
-                ), builder)
+            .attachSyncer(new FakeSyncWidget.IntegerSyncer(() -> {
+                int i = this.usedSeedCountGetter.get();
+                if (this.usedSeedCount != i) {
+                    this.usedSeedCount = i;
+                    container.notifyChangeNoSync();
+                }
+                return i;
+            }, i -> {
+                if (this.usedSeedCount != i) {
+                    this.usedSeedCount = i;
+                    container.notifyChangeNoSync();
+                }
+            }), builder)
 
             .attachSyncer(new FakeSyncWidget.ListSyncer<>(() -> {
                 HashMap<ItemID, Integer> itemMap = new HashMap<>();
@@ -294,8 +275,7 @@ public class EIGDynamicInventory<T> {
                             ((EntityPlayerMP) player).updateHeldItem();
                             return;
                         }
-                    }
-                    else if (clickData.shift) {
+                    } else if (clickData.shift) {
                         if (inventoryExtractor == null) return;
                         if (drawables.size() <= finalID) return;
                         int realID = drawables.get(finalID).realSlots.get(0);
@@ -307,8 +287,7 @@ public class EIGDynamicInventory<T> {
                             else player.entityDropItem(removed, 0.f);
                             return;
                         }
-                    }
-                    else {
+                    } else {
                         ItemStack input = player.inventory.getItemStack();
                         if (input != null) {
                             if (inventoryInjector == null) return;
@@ -357,13 +336,12 @@ public class EIGDynamicInventory<T> {
                     ItemStack stack = drawables.get(finalID).stack;
                     float slotSize = 16.0f;
                     IDrawable itemDrawable = new ItemDrawable(stack).withFixedSize(slotSize, slotSize, 1, 1);
-                    IDrawable stackSizeText = new AutoScalingStackSizeText(stack.stackSize)
-                        .color(Color.WHITE.normal)
+                    IDrawable stackSizeText = new AutoScalingStackSizeText(stack.stackSize).color(Color.WHITE.normal)
                         .shadow()
                         .alignment(Alignment.BottomRight)
                         .measure();
 
-                    return new IDrawable[] { getItemSlot(), itemDrawable, stackSizeText};
+                    return new IDrawable[] { getItemSlot(), itemDrawable, stackSizeText };
                 })
                 .dynamicTooltip(() -> {
                     if (drawables.size() > finalID) {
@@ -400,13 +378,13 @@ public class EIGDynamicInventory<T> {
                     // Copied from SlotWidget#draw
                     else if (isHovering() && !getContext().getCursor()
                         .hasDraggable()) {
-                        GL11.glDisable(GL11.GL_LIGHTING);
-                        GL11.glEnable(GL11.GL_BLEND);
-                        GlStateManager.colorMask(true, true, true, false);
-                        ModularGui.drawSolidRect(1, 1, 16, 16, Theme.INSTANCE.getSlotHighlight());
-                        GlStateManager.colorMask(true, true, true, true);
-                        GL11.glDisable(GL11.GL_BLEND);
-                    }
+                            GL11.glDisable(GL11.GL_LIGHTING);
+                            GL11.glEnable(GL11.GL_BLEND);
+                            GlStateManager.colorMask(true, true, true, false);
+                            ModularGui.drawSolidRect(1, 1, 16, 16, Theme.INSTANCE.getSlotHighlight());
+                            GlStateManager.colorMask(true, true, true, true);
+                            GL11.glDisable(GL11.GL_BLEND);
+                        }
                 }
             }.setPlayClickSound(false)
                 .setOnClick((clickData, widget) -> {
@@ -452,18 +430,21 @@ public class EIGDynamicInventory<T> {
                         .alignment(Alignment.BottomRight)
                         .measure();
 
-                    return new IDrawable[] {itemSlot, stackSizeText};
+                    return new IDrawable[] { itemSlot, stackSizeText };
                 })
                 .dynamicTooltip(() -> {
                     // TODO: all l10n for insertion slot tooltip.
                     List<String> tip = new ArrayList<>(Collections.singleton(EnumChatFormatting.GRAY + "Empty slot"));
-                    tip.add(EnumChatFormatting.DARK_PURPLE + "Remaining slots: " + (this.maxSeedTypes - this.usedSeedTypes));
-                    tip.add(EnumChatFormatting.DARK_GREEN + "Remaining seed capacity: " + (this.maxSeedCount - this.usedSeedCount));
+                    tip.add(
+                        EnumChatFormatting.DARK_PURPLE + "Remaining slots: "
+                            + (this.maxSeedTypes - this.usedSeedTypes));
+                    tip.add(
+                        EnumChatFormatting.DARK_GREEN + "Remaining seed capacity: "
+                            + (this.maxSeedCount - this.usedSeedCount));
                     return tip;
                 })
                 .setSize(18, 18));
         }
-
 
         final int perRow = width / 18;
         for (int i = 0, imax = ((buttons.size() - 1) / perRow); i <= imax; i++) {
@@ -494,6 +475,7 @@ public class EIGDynamicInventory<T> {
 
     @FunctionalInterface
     public interface TInventoryInjector {
+
         /**
          * Allows to insert an item to the dynamic inventory
          *

@@ -13,10 +13,6 @@ import net.minecraft.nbt.NBTTagList;
 
 import kubatech.api.eig.EIGBucket;
 import kubatech.api.eig.IEIGBucketFactory;
-import kubatech.tileentity.gregtech.multiblock.eigbuckets.EIGFlowerBucket;
-import kubatech.tileentity.gregtech.multiblock.eigbuckets.EIGIC2Bucket;
-import kubatech.tileentity.gregtech.multiblock.eigbuckets.EIGSeedBucket;
-import kubatech.tileentity.gregtech.multiblock.eigbuckets.EIGStemBucket;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialGreenhouse;
 
 // TODO: Make this into instance classes

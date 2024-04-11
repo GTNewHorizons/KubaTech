@@ -2,7 +2,6 @@ package kubatech.tileentity.gregtech.multiblock.eigbuckets;
 
 import java.util.*;
 
-import ic2.core.crop.CropStickreed;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
@@ -20,6 +19,7 @@ import gregtech.common.blocks.GT_TileEntity_Ores;
 import ic2.api.crops.CropCard;
 import ic2.api.crops.Crops;
 import ic2.core.Ic2Items;
+import ic2.core.crop.CropStickreed;
 import ic2.core.crop.IC2Crops;
 import ic2.core.crop.TileEntityCrop;
 import kubatech.api.eig.EIGBucket;
@@ -296,7 +296,9 @@ public class EIGIC2Bucket extends EIGBucket {
 
             // Just doing average(ceil(stageGrowth/growthPerm)) isn't good enough it's off by as much as 20%
             double avgGrowthCyclesToHarvest = calcRealAvgGrowthRate(crop, cc, sizeAfterHarvestFrequencies);
-            if (avgGrowthCyclesToHarvest <= 0) { return; }
+            if (avgGrowthCyclesToHarvest <= 0) {
+                return;
+            }
             this.growthTime = TileEntityCrop.tickRate * avgGrowthCyclesToHarvest;
 
             // Consume new under block if necessary
@@ -311,8 +313,6 @@ public class EIGIC2Bucket extends EIGBucket {
             world.setBlockToAir(xyz[0], xyz[1], xyz[2]);
         }
     }
-
-
 
     /**
      * Attempts to place a block in the world, used for testing crop viability and drops.
@@ -495,7 +495,8 @@ public class EIGIC2Bucket extends EIGBucket {
      * @param cc The {@link CropCard} of the seed
      * @return The average growth rate as a floating point number
      */
-    private static double calcRealAvgGrowthRate(TileEntityCrop te, CropCard cc, HashMap<Integer, Integer> sizeAfterHarvestFrequencies) {
+    private static double calcRealAvgGrowthRate(TileEntityCrop te, CropCard cc,
+        HashMap<Integer, Integer> sizeAfterHarvestFrequencies) {
         // Compute growth speeds.
         int[] growthSpeeds = new int[7];
         for (int i = 0; i < 7; i++) growthSpeeds[i] = calcAvgGrowthRate(te, cc, i);
@@ -503,14 +504,14 @@ public class EIGIC2Bucket extends EIGBucket {
         // if it's stick reed, we know what the distribution should look like
         if (cc.getClass() == CropStickreed.class) {
             sizeAfterHarvestFrequencies.clear();
-            sizeAfterHarvestFrequencies.put(1,1);
-            sizeAfterHarvestFrequencies.put(2,1);
-            sizeAfterHarvestFrequencies.put(3,1);
+            sizeAfterHarvestFrequencies.put(1, 1);
+            sizeAfterHarvestFrequencies.put(2, 1);
+            sizeAfterHarvestFrequencies.put(3, 1);
         }
 
         // Get the duration of all growth stages
         int[] growthDurations = new int[cc.maxSize()];
-        //, index 0 is assumed to be 0 since stage 0 is usually impossible.
+        // , index 0 is assumed to be 0 since stage 0 is usually impossible.
         // The frequency table should prevent stage 0 from having an effect on the result.
         growthDurations[0] = 0; // stage 0 doesn't usually exist.
         for (byte i = 1; i < growthDurations.length; i++) {
@@ -531,20 +532,27 @@ public class EIGIC2Bucket extends EIGBucket {
      * @param startStageFrequency How often the growth starts from a given stage
      * @return The average growth rate as a floating point number
      */
-    public static double calcRealAvgGrowthRate(int[] growthSpeeds, int[] stageGoals, HashMap<Integer, Integer> startStageFrequency) {
+    public static double calcRealAvgGrowthRate(int[] growthSpeeds, int[] stageGoals,
+        HashMap<Integer, Integer> startStageFrequency) {
 
         // taking out the zero rolls out of the calculation tends to make the math more accurate for lower speeds.
-        int[] nonZeroSpeeds = Arrays.stream(growthSpeeds).filter(x-> x > 0).toArray();
+        int[] nonZeroSpeeds = Arrays.stream(growthSpeeds)
+            .filter(x -> x > 0)
+            .toArray();
         int zeroRolls = growthSpeeds.length - nonZeroSpeeds.length;
         if (zeroRolls >= growthSpeeds.length) return -1;
 
         // compute stage lengths and stage frequencies
         double[] avgCyclePerStage = new double[stageGoals.length];
         double[] normalizedStageFrequencies = new double[stageGoals.length];
-        long frequenciesSum = startStageFrequency.values().parallelStream().mapToInt(x -> x).sum();
+        long frequenciesSum = startStageFrequency.values()
+            .parallelStream()
+            .mapToInt(x -> x)
+            .sum();
         for (int i = 0; i < stageGoals.length; i++) {
             avgCyclePerStage[i] = calcAvgCyclesToGoal(nonZeroSpeeds, stageGoals[i]);
-            normalizedStageFrequencies[i] = startStageFrequency.getOrDefault(i, 0) * stageGoals.length / (double) frequenciesSum;
+            normalizedStageFrequencies[i] = startStageFrequency.getOrDefault(i, 0) * stageGoals.length
+                / (double) frequenciesSum;
         }
 
         // Compute multipliers based on how often the growth starts at a given rate.
@@ -556,7 +564,9 @@ public class EIGIC2Bucket extends EIGBucket {
         for (int i = 0; i < avgCyclePerStage.length; i++) avgCyclePerStage[i] *= frequencyMultipliers[i];
 
         // lengthen average based on number of 0 rolls.
-        double average = Arrays.stream(avgCyclePerStage).average().getAsDouble();
+        double average = Arrays.stream(avgCyclePerStage)
+            .average()
+            .getAsDouble();
         if (zeroRolls > 0) {
             average = average / nonZeroSpeeds.length * growthSpeeds.length;
         }
@@ -582,7 +592,7 @@ public class EIGIC2Bucket extends EIGBucket {
         signal[0] = 1;
 
         // Create kernel out of our growth speeds
-        double[] kernel = tabulate(speeds, 1.0d/speeds.length);
+        double[] kernel = tabulate(speeds, 1.0d / speeds.length);
         double[] convolutionTarget = new double[signal.length];
         LinkedList<Double> P = new LinkedList<Double>();
 
@@ -590,10 +600,11 @@ public class EIGIC2Bucket extends EIGBucket {
         double p, avgRolls = 1;
         do {
             conv1DAndCopyToSignal(signal, kernel, convolutionTarget);
-            avgRolls += p = Arrays.stream(signal).sum();
+            avgRolls += p = Arrays.stream(signal)
+                .sum();
             // 1e-1 is a threshold, you can increase it for to increase the accuracy of the output.
             // 1e-1 is already accurate enough that any value beyond that is unwarranted.
-        } while (p >= 1e-1/goal);
+        } while (p >= 1e-1 / goal);
         return avgRolls;
     }
 
@@ -627,10 +638,10 @@ public class EIGIC2Bucket extends EIGBucket {
         // but since we are directly applying our result to our signal, there is no reason to compute
         // values where k > signal.length.
         // we could probably run this loop in parallel.
-        for(int k = 0; k < signal.length; k++) {
+        for (int k = 0; k < signal.length; k++) {
             // I needs to be a valid index of the kernel.
             fixedLengthTarget[k] = 0;
-            for(int i = Math.max(0, k - kernel.length + 1); i <= k; i++) {
+            for (int i = Math.max(0, k - kernel.length + 1); i <= k; i++) {
                 fixedLengthTarget[k] += signal[i] * kernel[k - i];
             }
         }

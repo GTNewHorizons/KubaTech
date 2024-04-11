@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.File;
 import java.util.Map;
 
-import ic2.core.item.ItemCropSeed;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
@@ -56,9 +55,10 @@ import ic2.api.crops.CropCard;
 import ic2.api.crops.Crops;
 import ic2.core.Ic2Items;
 import ic2.core.crop.TileEntityCrop;
+import ic2.core.item.ItemCropSeed;
 import kubatech.api.eig.EIGDropTable;
-import kubatech.tileentity.gregtech.multiblock.eigbuckets.EIGIC2Bucket;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialGreenhouse;
+import kubatech.tileentity.gregtech.multiblock.eigbuckets.EIGIC2Bucket;
 
 public class EIGTests {
 
@@ -149,7 +149,6 @@ public class EIGTests {
             };
         }
     }
-
 
     EIGDropTable getRealDrops(TileEntityCrop cropTile, CropCard cc, int growth, int gain, int resistance) {
         cropTile.setCrop(cc);
