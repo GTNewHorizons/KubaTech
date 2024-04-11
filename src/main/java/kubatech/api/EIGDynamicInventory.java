@@ -2,11 +2,12 @@ package kubatech.api;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.GameSettings;
+import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
+import gregtech.api.enums.GT_Values;
+import kubatech.api.gui.AutoScalingStackSizeText;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
@@ -38,11 +39,15 @@ import kubatech.api.helpers.GTHelper;
 import kubatech.api.utils.ModUtils;
 
 public class EIGDynamicInventory<T> {
-
     int width, height;
-    Supplier<Integer> slotsGetter;
-    private int slots = 0;
-    private int usedSlots = 0;
+    Supplier<Integer> maxSeedCountGetter;
+    Supplier<Integer> maxSeedTypeGetter;
+    Supplier<Integer> usedSeedCountGetter;
+    Supplier<Integer> usedSeedTypesGetter;
+    private int maxSeedTypes = 0;
+    private int maxSeedCount = 0;
+    private int usedSeedTypes = 0;
+    private int usedSeedCount = 0;
     List<T> inventory;
     TInventoryGetter<T> inventoryGetter;
     TInventoryInjector inventoryInjector = null;
@@ -51,11 +56,14 @@ public class EIGDynamicInventory<T> {
     Supplier<Boolean> isEnabledGetter = null;
     boolean isEnabled = true;
 
-    public EIGDynamicInventory(int width, int height, Supplier<Integer> slotsGetter, List<T> inventory,
+    public EIGDynamicInventory(int width, int height, Supplier<Integer> maxSeedTypeGetter, Supplier<Integer> maxSeedCountGetter, Supplier<Integer> usedSeedTypesGetter, Supplier<Integer> usedSeedCountGetter, List<T> inventory,
                                TInventoryGetter<T> inventoryGetter) {
         this.width = width;
         this.height = height;
-        this.slotsGetter = slotsGetter;
+        this.maxSeedTypeGetter = maxSeedTypeGetter;
+        this.maxSeedCountGetter = maxSeedCountGetter;
+        this.usedSeedTypesGetter = usedSeedTypesGetter;
+        this.usedSeedCountGetter = usedSeedCountGetter;
         this.inventory = inventory;
         this.inventoryGetter = inventoryGetter;
     }
@@ -84,36 +92,86 @@ public class EIGDynamicInventory<T> {
         return ModularUITextures.ITEM_SLOT;
     }
 
+
     @SuppressWarnings("UnstableApiUsage")
     public Widget asWidget(ModularWindow.Builder builder, UIBuildContext buildContext) {
         ChangeableWidget container = new ChangeableWidget(() -> createWidget(buildContext.getPlayer()));
-
         // TODO: Only reset the widget when there are more slot stacks, otherwise just refresh them somehow
 
-        container.attachSyncer(new FakeSyncWidget.IntegerSyncer(() -> {
-            if (slots != slotsGetter.get()) {
-                slots = slotsGetter.get();
-                container.notifyChangeNoSync();
-            }
-            return slots;
-        }, i -> {
-            if (slots != i) {
-                slots = i;
-                container.notifyChangeNoSync();
-            }
-        }), builder)
-            .attachSyncer(new FakeSyncWidget.IntegerSyncer(() -> {
-                if (usedSlots != inventory.size()) {
-                    usedSlots = inventory.size();
-                    container.notifyChangeNoSync();
-                }
-                return usedSlots;
-            }, i -> {
-                if (usedSlots != i) {
-                    usedSlots = i;
-                    container.notifyChangeNoSync();
-                }
-            }), builder)
+        container
+            // max seed types
+            .attachSyncer(
+                new FakeSyncWidget.IntegerSyncer(
+                    () -> {
+                        int i = this.maxSeedTypeGetter.get();
+                        if (this.maxSeedTypes != i) {
+                            this.maxSeedTypes = i;
+                            container.notifyChangeNoSync();
+                        }
+                        return i;
+                    },
+                    i -> {
+                        if (this.maxSeedTypes != i) {
+                            this.maxSeedTypes = i;
+                            container.notifyChangeNoSync();
+                        }
+                    }
+                ), builder)
+            // used seed types
+            .attachSyncer(
+                new FakeSyncWidget.IntegerSyncer(
+                    () -> {
+                        int i = this.usedSeedTypesGetter.get();
+                        if (this.usedSeedTypes != i) {
+                            this.usedSeedTypes = i;
+                            container.notifyChangeNoSync();
+                        }
+                        return i;
+                    },
+                    i -> {
+                        if (this.usedSeedTypes != i) {
+                            this.usedSeedTypes = i;
+                            container.notifyChangeNoSync();
+                        }
+                    }
+                ), builder)
+            // max seed count
+            .attachSyncer(
+                new FakeSyncWidget.IntegerSyncer(
+                    () -> {
+                        int i = this.maxSeedCountGetter.get();
+                        if (this.maxSeedCount != i) {
+                            this.maxSeedCount = i;
+                            container.notifyChangeNoSync();
+                        }
+                        return i;
+                    },
+                    i -> {
+                        if (this.maxSeedCount != i) {
+                            this.maxSeedCount = i;
+                            container.notifyChangeNoSync();
+                        }
+                    }
+                ), builder)
+            // used seed count
+            .attachSyncer(
+                new FakeSyncWidget.IntegerSyncer(
+                    () -> {
+                        int i = this.usedSeedCountGetter.get();
+                        if (this.usedSeedCount != i) {
+                            this.usedSeedCount = i;
+                            container.notifyChangeNoSync();
+                        }
+                        return i;
+                    },
+                    i -> {
+                        if (this.usedSeedCount != i) {
+                            this.usedSeedCount = i;
+                            container.notifyChangeNoSync();
+                        }
+                    }
+                ), builder)
+
             .attachSyncer(new FakeSyncWidget.ListSyncer<>(() -> {
                 HashMap<ItemID, Integer> itemMap = new HashMap<>();
                 HashMap<ItemID, ItemStack> stackMap = new HashMap<>();
@@ -257,19 +315,22 @@ public class EIGDynamicInventory<T> {
                             if (clickData.mouseButton == 1) {
                                 ItemStack copy = input.copy();
                                 copy.stackSize = 1;
-                                ItemStack leftover = inventoryInjector.inject(copy);
-                                if (leftover == null) return;
+                                inventoryInjector.inject(copy);
+                                if (copy.stackSize == 1) return;
                                 input.stackSize--;
                                 if (input.stackSize > 0) {
-                                    ((EntityPlayerMP) player).isChangingQuantityOnly = true;
+                                    player.inventory.setItemStack(null);
+                                    ((EntityPlayerMP) player).updateHeldItem();
+                                    player.inventory.setItemStack(input);
                                     ((EntityPlayerMP) player).updateHeldItem();
                                     return;
                                 } else player.inventory.setItemStack(null);
                             } else {
-                                ItemStack leftover = inventoryInjector.inject(input);
-                                if (leftover == null) return;
+                                inventoryInjector.inject(input);
                                 if (input.stackSize > 0) {
-                                    ((EntityPlayerMP) player).isChangingQuantityOnly = true;
+                                    player.inventory.setItemStack(null);
+                                    ((EntityPlayerMP) player).updateHeldItem();
+                                    player.inventory.setItemStack(input);
                                     ((EntityPlayerMP) player).updateHeldItem();
                                     return;
                                 } else player.inventory.setItemStack(null);
@@ -292,15 +353,18 @@ public class EIGDynamicInventory<T> {
                         }
                     }
                 })
-                .setBackground(
-                    () -> new IDrawable[] { getItemSlot(),
-                        new ItemDrawable(drawables.get(finalID).stack).withFixedSize(16, 16, 1, 1),
-                        new Text(
-                            (drawables.size() > finalID && drawables.get(finalID).stack.stackSize > 1)
-                                ? String.valueOf(drawables.get(finalID).stack.stackSize)
-                                : "").color(Color.WHITE.normal)
-                                    .shadow()
-                                    .alignment(Alignment.BottomRight) })
+                .setBackground(() -> {
+                    ItemStack stack = drawables.get(finalID).stack;
+                    float slotSize = 16.0f;
+                    IDrawable itemDrawable = new ItemDrawable(stack).withFixedSize(slotSize, slotSize, 1, 1);
+                    IDrawable stackSizeText = new AutoScalingStackSizeText(stack.stackSize)
+                        .color(Color.WHITE.normal)
+                        .shadow()
+                        .alignment(Alignment.BottomRight)
+                        .measure();
+
+                    return new IDrawable[] { getItemSlot(), itemDrawable, stackSizeText};
+                })
                 .dynamicTooltip(() -> {
                     if (drawables.size() > finalID) {
                         ItemStack stack = drawables.get(finalID).stack;
@@ -318,22 +382,24 @@ public class EIGDynamicInventory<T> {
                 .setSize(18, 18));
         }
 
-        buttons.add(new ButtonWidget() {
+        // only add the extra slot if we are still able to insert
+        if (this.usedSeedCount < this.maxSeedCount) {
+            buttons.add(new ButtonWidget() {
 
-            @Override
-            public void drawBackground(float partialTicks) {
-                super.drawBackground(partialTicks);
-                if (!isEnabled) {
-                    GL11.glDisable(GL11.GL_LIGHTING);
-                    GL11.glEnable(GL11.GL_BLEND);
-                    GlStateManager.colorMask(true, true, true, false);
-                    ModularGui.drawSolidRect(1, 1, 16, 16, Color.withAlpha(Color.BLACK.normal, 0x80));
-                    GlStateManager.colorMask(true, true, true, true);
-                    GL11.glDisable(GL11.GL_BLEND);
-                }
-                // Copied from SlotWidget#draw
-                else if (isHovering() && !getContext().getCursor()
-                    .hasDraggable()) {
+                @Override
+                public void drawBackground(float partialTicks) {
+                    super.drawBackground(partialTicks);
+                    if (!isEnabled) {
+                        GL11.glDisable(GL11.GL_LIGHTING);
+                        GL11.glEnable(GL11.GL_BLEND);
+                        GlStateManager.colorMask(true, true, true, false);
+                        ModularGui.drawSolidRect(1, 1, 16, 16, Color.withAlpha(Color.BLACK.normal, 0x80));
+                        GlStateManager.colorMask(true, true, true, true);
+                        GL11.glDisable(GL11.GL_BLEND);
+                    }
+                    // Copied from SlotWidget#draw
+                    else if (isHovering() && !getContext().getCursor()
+                        .hasDraggable()) {
                         GL11.glDisable(GL11.GL_LIGHTING);
                         GL11.glEnable(GL11.GL_BLEND);
                         GlStateManager.colorMask(true, true, true, false);
@@ -341,53 +407,63 @@ public class EIGDynamicInventory<T> {
                         GlStateManager.colorMask(true, true, true, true);
                         GL11.glDisable(GL11.GL_BLEND);
                     }
-            }
-        }.setPlayClickSound(false)
-            .setOnClick((clickData, widget) -> {
-                if (!(player instanceof EntityPlayerMP)) return;
-                if (!isEnabledGetter.get()) return;
-                ItemStack input = player.inventory.getItemStack();
-                if (input != null) {
-                    if (clickData.mouseButton == 1) {
-                        ItemStack copy = input.copy();
-                        copy.stackSize = 1;
-                        ItemStack leftover = inventoryInjector.inject(copy);
-                        if (leftover == null) return;
-                        input.stackSize--;
-                        if (input.stackSize > 0) {
-                            ((EntityPlayerMP) player).isChangingQuantityOnly = true;
-                            ((EntityPlayerMP) player).updateHeldItem();
-                            return;
-                        } else player.inventory.setItemStack(null);
-                    } else {
-                        ItemStack leftover = inventoryInjector.inject(input);
-                        if (leftover == null) return;
-                        if (input.stackSize > 0) {
-                            ((EntityPlayerMP) player).isChangingQuantityOnly = true;
-                            ((EntityPlayerMP) player).updateHeldItem();
-                            return;
-                        } else player.inventory.setItemStack(null);
-                    }
-                    ((EntityPlayerMP) player).isChangingQuantityOnly = false;
-                    ((EntityPlayerMP) player).updateHeldItem();
-                    return;
                 }
-            })
-            .setBackground(
-                () -> new IDrawable[] { getItemSlot(),
-                    new Text(
-                        (slots - usedSlots) <= 1 ? ""
-                            : ((slots - usedSlots) > 99 ? "+99" : String.valueOf((slots - usedSlots))))
-                                .color(Color.WHITE.normal)
-                                .alignment(Alignment.TopLeft)
-                                .withOffset(1, 1) })
-            .dynamicTooltip(() -> {
-                List<String> tip = new ArrayList<>(Collections.singleton(EnumChatFormatting.GRAY + "Empty slot"));
-                if (slots - usedSlots > 1)
-                    tip.add(EnumChatFormatting.DARK_PURPLE + "There are " + (slots - usedSlots) + " identical slots");
-                return tip;
-            })
-            .setSize(18, 18));
+            }.setPlayClickSound(false)
+                .setOnClick((clickData, widget) -> {
+                    if (!(player instanceof EntityPlayerMP)) return;
+                    if (!isEnabledGetter.get()) return;
+                    ItemStack input = player.inventory.getItemStack();
+                    if (input != null) {
+                        if (clickData.mouseButton == 1) {
+                            ItemStack copy = input.copy();
+                            copy.stackSize = 1;
+                            inventoryInjector.inject(copy);
+                            if (copy.stackSize == 1) return;
+
+                            input.stackSize--;
+                            if (input.stackSize > 0) {
+                                player.inventory.setItemStack(null);
+                                ((EntityPlayerMP) player).updateHeldItem();
+                                player.inventory.setItemStack(input);
+                                ((EntityPlayerMP) player).updateHeldItem();
+                                return;
+                            } else player.inventory.setItemStack(null);
+                        } else {
+                            inventoryInjector.inject(input);
+                            if (input.stackSize > 0) {
+                                player.inventory.setItemStack(null);
+                                ((EntityPlayerMP) player).updateHeldItem();
+                                player.inventory.setItemStack(input);
+                                ((EntityPlayerMP) player).updateHeldItem();
+                                return;
+                            } else player.inventory.setItemStack(null);
+                        }
+                        ((EntityPlayerMP) player).isChangingQuantityOnly = false;
+                        ((EntityPlayerMP) player).updateHeldItem();
+                        return;
+                    }
+                })
+                .setBackground(() -> {
+                    IDrawable itemSlot = getItemSlot();
+
+                    IDrawable stackSizeText = new AutoScalingStackSizeText(this.maxSeedCount - this.usedSeedCount)
+                        .color(Color.WHITE.normal)
+                        .shadow()
+                        .alignment(Alignment.BottomRight)
+                        .measure();
+
+                    return new IDrawable[] {itemSlot, stackSizeText};
+                })
+                .dynamicTooltip(() -> {
+                    // TODO: all l10n for insertion slot tooltip.
+                    List<String> tip = new ArrayList<>(Collections.singleton(EnumChatFormatting.GRAY + "Empty slot"));
+                    tip.add(EnumChatFormatting.DARK_PURPLE + "Remaining slots: " + (this.maxSeedTypes - this.usedSeedTypes));
+                    tip.add(EnumChatFormatting.DARK_GREEN + "Remaining seed capacity: " + (this.maxSeedCount - this.usedSeedCount));
+                    return tip;
+                })
+                .setSize(18, 18));
+        }
+
 
         final int perRow = width / 18;
         for (int i = 0, imax = ((buttons.size() - 1) / perRow); i <= imax; i++) {
@@ -400,8 +476,8 @@ public class EIGDynamicInventory<T> {
             }
             dynamicInventoryWidget.widget(row.setPos(0, i * 18));
         }
-
-        return dynamicInventoryWidget.setSize(width, height);
+        dynamicInventoryWidget.setSize(width, height);
+        return dynamicInventoryWidget;
     }
 
     @FunctionalInterface
@@ -418,7 +494,6 @@ public class EIGDynamicInventory<T> {
 
     @FunctionalInterface
     public interface TInventoryInjector {
-
         /**
          * Allows to insert an item to the dynamic inventory
          *

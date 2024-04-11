@@ -38,6 +38,8 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.gtnewhorizons.modularui.api.widget.Widget;
+import gregtech.common.tileentities.machines.GT_MetaTileEntity_Hatch_Input_ME;
 import kubatech.api.EIGDynamicInventory;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -645,30 +647,22 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         // Nothing to consume = success I guess?
         if (toConsume == null || toConsume.amount <= 0) return true;
         // TODO: improve fluid draining logic.
-        List<GT_MetaTileEntity_Hatch_Input> fluids = mInputHatches;
-        List<GT_MetaTileEntity_Hatch_Input> fluidsToUse = new ArrayList<>(fluids.size());
+        List<FluidStack> fluids = this.getStoredFluids();
+        List<FluidStack> fluidsToUse = new ArrayList<>(fluids.size());
         int remaining = toConsume.amount;
-        for (GT_MetaTileEntity_Hatch_Input i : fluids) {
-            if (!i.isValid()) continue;
-            if (i instanceof GT_MetaTileEntity_Hatch_MultiInput) {
-                int amount = ((GT_MetaTileEntity_Hatch_MultiInput) i).getFluidAmount(toConsume);
-                if (amount == 0) continue;
-                remaining -= amount;
-            } else {
-                FluidStack stack = i.getDrainableStack();
-                if (stack == null) continue;
-                if (!stack.isFluidEqual(toConsume)) continue;
-                if (stack.amount <= 0) continue;
-                remaining -= stack.amount;
+        for (FluidStack fluid : fluids) {
+            if (fluid.isFluidEqual(toConsume)) {
+                remaining -= fluid.amount;
             }
-            fluidsToUse.add(i);
+            fluidsToUse.add(fluid);
             if (remaining <= 0) break;
         }
         if (!drainPartial && remaining > 0 && !debug) return false;
         boolean success = remaining <= 0;
         remaining = toConsume.amount - Math.max(0, remaining);
-        for (GT_MetaTileEntity_Hatch_Input i : fluidsToUse) {
-            int used = i.drain(remaining, true).amount;
+        for (FluidStack fluid : fluidsToUse) {
+            int used = Math.min(remaining, fluid.amount);
+            fluid.amount -= used;
             remaining -= used;
         }
         return success;
@@ -861,18 +855,17 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             if (aStack == null) return super.transferStackInSlot(aPlayer, aSlotIndex);
             GT_MetaTileEntity_ExtremeIndustrialGreenhouse mte = parent.get();
             if (mte == null) return super.transferStackInSlot(aPlayer, aSlotIndex);
-            if (mte.buckets.size() >= mte.maxSeedTypes) return super.transferStackInSlot(aPlayer, aSlotIndex);
+           // if (mte.buckets.size() >= mte.maxSeedTypes) return super.transferStackInSlot(aPlayer, aSlotIndex);
             if (mte.mMaxProgresstime > 0) {
                 GT_Utility.sendChatToPlayer(aPlayer, EnumChatFormatting.RED + "Can't insert while running !");
                 return super.transferStackInSlot(aPlayer, aSlotIndex);
             }
-            if (mte.addCrop(aStack) != null) {
-                if (aStack.stackSize == 0) s.putStack(null);
-                else s.putStack(aStack);
-                detectAndSendChanges();
-                return null;
-            }
-            return super.transferStackInSlot(aPlayer, aSlotIndex);
+
+            mte.addCrop(aStack);
+            if (aStack.stackSize <= 0) s.putStack(null);
+            else s.putStack(aStack);
+            detectAndSendChanges();
+            return null;
         }
     }
 
@@ -894,7 +887,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     EIGDynamicInventory<EIGBucket> dynamicInventory = new EIGDynamicInventory<>(
         128,
         60,
-        () -> maxSeedTypes,
+        () -> this.maxSeedTypes,
+        () -> this.maxSeedCount,
+        this.buckets::size,
+        this::getTotalSeedCount,
         this.buckets,
         EIGBucket::getSeedStack).allowInventoryInjection(this::addCrop)
             .allowInventoryExtraction((bucket, player) -> {
@@ -913,7 +909,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 if (bucket.getSeedCount() <= 0) this.buckets.remove(bucket);
                 return ret;
             })
-            // TODO: re-add allow inventory replace
+            // TODO: re-add allow inventory replace?
             .setEnabled(() -> this.mMaxProgresstime == 0);
 
     @Override
@@ -931,11 +927,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 .setPos(4, 4)
                 .setSize(190, 85)
                 .setEnabled(w -> !isInInventory));
-        builder.widget(
-            dynamicInventory.asWidget(builder, buildContext)
-                .setPos(10, 16)
-                .setBackground(new Rectangle().setColor(Color.rgb(163, 163, 198)))
-                .setEnabled(w -> isInInventory));
+        builder.widget(dynamicInventory.asWidget(builder, buildContext)
+            .setPos(10, 16)
+            .setEnabled(w -> isInInventory));
+
         builder.widget(
             new CycleButtonWidget().setToggle(() -> isInInventory, i -> isInInventory = i)
                 .setTextureGetter(i -> i == 0 ? new Text("Inventory") : new Text("Status"))
@@ -1068,7 +1063,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     .sorted(
                         Comparator.comparing(
                             a -> a.getKey()
-                                .getDisplayName()))
+                                .toString().toLowerCase()))
                     .collect(Collectors.toList())) {
                     int outputSize = Arrays.stream(this.mOutputItems)
                         .filter(s -> s.isItemEqual(drop.getKey()))
