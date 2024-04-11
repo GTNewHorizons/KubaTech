@@ -29,17 +29,23 @@ import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_DISTILLATION_
 import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_DISTILLATION_TOWER_ACTIVE_GLOW;
 import static gregtech.api.enums.Textures.BlockIcons.OVERLAY_FRONT_DISTILLATION_TOWER_GLOW;
 import static gregtech.api.util.GT_StructureUtility.ofHatchAdder;
+import static gregtech.api.util.GT_Utility.filterValidMTEs;
 import static kubatech.api.Variables.Author;
 import static kubatech.api.Variables.StructureHologram;
 import static kubatech.api.utils.ItemUtils.readItemStackFromNBT;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_OutputBus;
+import gregtech.api.util.VoidProtectionHelper;
+import gregtech.common.tileentities.machines.GT_MetaTileEntity_Hatch_OutputBus_ME;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
@@ -156,7 +162,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
     public final List<EIGBucket> buckets = new LinkedList<>();
     public final EIGDropTable dropTracker = new EIGDropTable();
-    public EIGDropTable GUIDropTracker = new EIGDropTable();
+    public Collection<EIGMigrationHolder> toMigrate;
+    public EIGDropTable guiDropTracker = new EIGDropTable();
     private HashMap<ItemStack, Double> synchedGUIDropTracker = new HashMap<>();
     private int maxSeedTypes = 0;
     private int maxSeedCount = 0;
@@ -371,18 +378,54 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         return new GT_MetaTileEntity_ExtremeIndustrialGreenhouse(this.mName);
     }
 
+    @Override
+    public void onFirstTick(IGregTechTileEntity aBaseMetaTileEntity) {
+        super.onFirstTick(aBaseMetaTileEntity);
+        if (this.toMigrate != null) {
+            // Create the new buckets respectively.
+            if (this.mode == EIGMode.IC2) {
+                for (EIGMigrationHolder holder : toMigrate) {
+                    // We will have to revalidate the seeds on the next cycle.
+                    this.buckets
+                        .add(new EIGIC2Bucket(holder.seed, holder.count, holder.supportBlock, holder.useNoHumidity));
+                }
+            } else {
+                this.mode = EIGMode.Normal;
+                for (EIGMigrationHolder holder : toMigrate) {
+                    holder.seed.stackSize = holder.count;
+                    EIGBucket bucket = this.mode.tryCreateNewBucket(this, holder.seed, Integer.MAX_VALUE, false);
+                    if (bucket == null) {
+                        // if we somehow can't grow the seed, try ejecting it at least.
+                        holder.seed.stackSize = holder.count;
+                        this.addOutput(holder.seed);
+                        continue;
+                    }
+                    this.buckets.add(bucket);
+                }
+            }
+        }
+    }
+
     /**
      * Ejects all the seeds when the controller is broken.
      */
     @Override
     public void onRemoval() {
-        // TODO: MAKE FORCE OUTPUTTING SEEDS BETTER
         super.onRemoval();
-        if (getBaseMetaTileEntity().isServerSide()) tryOutputAll(buckets, bucket -> {
-            ItemStack[] outputs = bucket.emptyBucket();
-            if (outputs == null) return null;
-            return Arrays.asList(outputs);
-        });
+
+        // attempt to empty all buckets
+        buckets.removeIf(this::tryEmptyBucket);
+        if (buckets.isEmpty()) return;
+
+        // attempt to drop non outputted items into the world.
+        IGregTechTileEntity mte = this.getBaseMetaTileEntity();
+        for (EIGBucket bucket : this.buckets) {
+            for (ItemStack stack : bucket.tryRemoveSeed(bucket.getSeedCount(), false)) {
+                EntityItem entityitem = new EntityItem(mte.getWorld(), mte.getXCoord(), mte.getYCoord(), mte.getZCoord(), stack);
+                entityitem.delayBeforeCanPickup = 10;
+                mte.getWorld().spawnEntityInWorld(entityitem);
+            }
+        }
     }
 
     // endregion
@@ -500,6 +543,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         for (EIGBucket b : this.buckets) {
             bucketListNBT.appendTag(b.save());
         }
+        aNBT.setTag("progress", this.dropTracker.intersect(this.guiDropTracker).save());
         aNBT.setTag("buckets", bucketListNBT);
     }
 
@@ -536,8 +580,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             // migrate old EIG with greenhouse slots to new Bucker mode and fix variable names
             this.glassTier = aNBT.getByte("glasTier");
             this.setupPhase = aNBT.getInteger("setupphase");
-            boolean isIC2Mode = aNBT.getBoolean("isIC2Mode");
-            this.mode = isIC2Mode ? EIGMode.IC2 : EIGMode.Normal;
+            this.mode = aNBT.getBoolean("isIC2Mode") ? EIGMode.IC2 : EIGMode.Normal;
             this.useNoHumidity = aNBT.getBoolean("isNoHumidity");
             // aggregate all seed types
             HashMap<String, EIGMigrationHolder> toMigrate = new HashMap<>();
@@ -550,26 +593,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 }
             }
 
-            // Create the new buckets respectively.
-            if (isIC2Mode) {
-                this.mode = EIGMode.IC2;
-                for (EIGMigrationHolder holder : toMigrate.values()) {
-                    // We will have to revalidate the seeds on the next cycle.
-                    this.buckets
-                        .add(new EIGIC2Bucket(holder.seed, holder.count, holder.supportBlock, holder.useNoHumidity));
-                }
-            } else {
-                this.mode = EIGMode.Normal;
-                for (EIGMigrationHolder holder : toMigrate.values()) {
-                    holder.seed.stackSize = holder.count;
-                    EIGBucket bucket = this.mode.tryCreateNewBucket(this, holder.seed, Integer.MAX_VALUE, false);
-                    if (bucket == null) {
-                        // if we somehow can't grow the seed, try ejecting it at least.
-                        holder.seed.stackSize = holder.count;
-                        this.addOutput(holder.seed);
-                    }
-                }
-            }
+            this.toMigrate = toMigrate.values();
         } else {
             this.glassTier = aNBT.getByte("glassTier");
             this.setupPhase = aNBT.getInteger("setupPhase");
@@ -581,6 +605,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             }
             this.useNoHumidity = aNBT.getBoolean("isNoHumidity");
             this.mode.restoreBuckets(aNBT.getTagList("buckets", 10), this.buckets);
+            new EIGDropTable(aNBT.getTagList("progress", 10)).addTo(this.dropTracker);
         }
     }
 
@@ -676,6 +701,36 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             || (GT_Utility.areStacksEqual(item, Ic2Items.fertilizer));
     }
 
+    private boolean tryEmptyBucket(EIGBucket bucket) {
+        // check if it's already empty
+        if (bucket.getSeedCount() <= 0) return true;
+
+        // check if we have an ME output bus to output to.
+        for (GT_MetaTileEntity_Hatch_OutputBus tHatch : filterValidMTEs(mOutputBusses)) {
+            if (!(tHatch instanceof GT_MetaTileEntity_Hatch_OutputBus_ME)) continue;
+            for (ItemStack stack : bucket.tryRemoveSeed(bucket.getSeedCount(), false)) {
+                ((GT_MetaTileEntity_Hatch_OutputBus_ME) tHatch).store(stack);
+            }
+            return true;
+        }
+
+        // Else attempt to empty the bucket while not voiding anything.
+        ItemStack[] simulated = bucket.tryRemoveSeed(1, true);
+        VoidProtectionHelper helper = new VoidProtectionHelper()
+            .setMachine(this, true, false)
+            .setItemOutputs(simulated)
+            .setMaxParallel(bucket.getSeedCount())
+            .build();
+        if (helper.getMaxParallel() > 0) {
+            for (ItemStack toOutput : bucket.tryRemoveSeed(helper.getMaxParallel(), false)) {
+                for (GT_MetaTileEntity_Hatch_OutputBus tHatch : filterValidMTEs(mOutputBusses)) {
+                    if (tHatch.storeAll(toOutput)) break;
+                }
+            }
+        }
+        return bucket.getSeedCount() <= 0;
+    }
+
     @Override
     @NotNull
     public CheckRecipeResult checkProcessing() {
@@ -693,12 +748,16 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     if (buckets.size() >= maxSeedTypes) break;
                 }
             } else if (setupPhase == 2) {
-                // TODO: PREVENT VOIDING EXTRA SEEDS WHEN OUTPUTTING SEEDS
-                tryOutputAll(buckets, bucket -> {
-                    ItemStack[] outputs = bucket.emptyBucket();
-                    if (outputs == null) return null;
-                    return Arrays.asList(outputs);
-                });
+                for (Iterator<EIGBucket> iterator = this.buckets.iterator(); iterator.hasNext();) {
+                    EIGBucket bucket = iterator.next();
+                    if (tryEmptyBucket(bucket)){
+                        iterator.remove();
+                    } else {
+                        this.mMaxProgresstime = 20;
+                        this.lEUt = 0;
+                        return CheckRecipeResultRegistry.ITEM_OUTPUT_FULL;
+                    }
+                }
             }
 
             this.updateSlots();
@@ -717,13 +776,13 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         }
 
         // Kick out bad buckets.
-        boolean bucketsRemoved = false;
         for (Iterator<EIGBucket> iterator = this.buckets.iterator(); iterator.hasNext();) {
             EIGBucket bucket = iterator.next();
-            if (bucket.isValid()) continue;
+            if (bucket.isValid() || bucket.revalidate(this)) continue;
+            // attempt to empty the bucket
+            tryEmptyBucket(bucket);
             // remove empty bucket and attempt to revalidate invalid buckets
-            if (bucket.getSeedCount() <= 0 || !bucket.revalidate(this)) {
-                seedCount -= bucket.getSeedCount();
+            if (bucket.getSeedCount() <= 0) {
                 iterator.remove();
             }
         }
@@ -750,7 +809,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             if (toKill > 0) {
                 for (Iterator<EIGBucket> iterator = this.buckets.iterator(); iterator.hasNext();) {
                     EIGBucket bucket = iterator.next();
-                    ItemStack[] removed = bucket.tryRemoveSeed(toKill);
+                    ItemStack[] removed = bucket.tryRemoveSeed(toKill, false);
                     if (removed == null || removed[0].stackSize <= 0) continue;
                     toKill -= removed[0].stackSize;
                     // if bucket is empty, yeet it out.
@@ -783,7 +842,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         double multiplier = 1.d + (((double) consumedFertilizer / (double) maxFertilizerToConsume) * 4d);
 
         // compute drops based on the drop tracker
-        this.GUIDropTracker = new EIGDropTable();
+        this.guiDropTracker = new EIGDropTable();
         switch (this.mode) {
             case IC2:
                 if (glassTier < (EIG_BALANCE_IC2_ACCELERATOR_TIER + 1))
@@ -793,18 +852,18 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 double timeElapsed = ((double) this.mMaxProgresstime * (1 << EIG_BALANCE_IC2_ACCELERATOR_TIER));
                 // Add drops to the drop tracker for each seed bucket.
                 for (EIGBucket bucket : this.buckets) {
-                    bucket.addProgress(timeElapsed * multiplier, this.GUIDropTracker);
+                    bucket.addProgress(timeElapsed * multiplier, this.guiDropTracker);
                 }
                 break;
             case Normal:
                 this.mMaxProgresstime = Math.max(20, 100 / (tier - 3)); // Min 1 s
                 for (EIGBucket bucket : this.buckets) {
-                    bucket.addProgress(multiplier, this.GUIDropTracker);
+                    bucket.addProgress(multiplier, this.guiDropTracker);
                 }
                 break;
         }
 
-        this.GUIDropTracker.addTo(this.dropTracker, multiplier);
+        this.guiDropTracker.addTo(this.dropTracker, multiplier);
         this.mOutputItems = this.dropTracker.getDrops();
 
         // consume power
@@ -892,7 +951,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 if (bucket == null) return null;
                 int maxRemove = bucket.getSeedStack()
                     .getMaxStackSize();
-                ItemStack[] outputs = bucket.tryRemoveSeed(maxRemove);
+                ItemStack[] outputs = bucket.tryRemoveSeed(maxRemove, false);
                 if (outputs == null || outputs.length <= 0) return null;
                 ItemStack ret = outputs[0];
                 for (int i = 1; i < outputs.length; i++) {
@@ -1101,7 +1160,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             HashMap<ItemStack, Double> ret = new HashMap<>();
             HashMap<ItemStack, Double> dropProgress = new HashMap<>();
 
-            for (Map.Entry<ItemStack, Double> drop : this.GUIDropTracker.entrySet()) {
+            for (Map.Entry<ItemStack, Double> drop : this.guiDropTracker.entrySet()) {
                 ret.merge(drop.getKey(), drop.getValue(), Double::sum);
             }
 

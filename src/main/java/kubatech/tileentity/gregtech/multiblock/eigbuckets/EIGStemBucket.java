@@ -2,6 +2,7 @@ package kubatech.tileentity.gregtech.multiblock.eigbuckets;
 
 import java.util.ArrayList;
 
+import gregtech.common.GT_DummyWorld;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockStem;
 import net.minecraft.init.Blocks;
@@ -117,6 +118,7 @@ public class EIGStemBucket extends EIGBucket {
         int metadata = 0;
 
         this.drops = new EIGDropTable();
+
         for (int i = 0; i < NUMBER_OF_DROPS_TO_SIMULATE; i++) {
             // simulate 1 round of drops
             ArrayList<ItemStack> drops = cropBlock.getDrops(

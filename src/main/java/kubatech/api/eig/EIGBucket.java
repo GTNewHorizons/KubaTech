@@ -154,7 +154,7 @@ public abstract class EIGBucket {
      * @param toRemove The maximum amount of items to remove.
      * @return The items that were removed from the bucket. Null if the bucket is empty.
      */
-    public ItemStack[] tryRemoveSeed(int toRemove) {
+    public ItemStack[] tryRemoveSeed(int toRemove, boolean simulate) {
         // validate inputs
         toRemove = Math.min(this.seedCount, toRemove);
         if (toRemove <= 0) return null;
@@ -169,7 +169,9 @@ public abstract class EIGBucket {
                 ret[i + 1].stackSize = toRemove;
             }
         }
-        this.seedCount -= toRemove;
+        if (!simulate) {
+            this.seedCount -= toRemove;
+        }
         return ret;
     }
 

@@ -155,17 +155,23 @@ public class EIGTests {
         cropTile.setGrowth((byte) growth);
         cropTile.setGain((byte) gain);
         cropTile.setResistance((byte) resistance);
-        // should mirror the stats from the EIG
-        cropTile.humidity = 12;
-        cropTile.nutrients = 10;
-        cropTile.airQuality = 3;
         EIGDropTable expected = new EIGDropTable();
-
+        byte startingHumidity = cropTile.humidity;
+        byte startingNutrients = cropTile.nutrients;
+        byte startingAirQuality = cropTile.airQuality;
+        int startingNutrientStorage = cropTile.nutrientStorage;
+        int startingWaterStorage = cropTile.waterStorage;
         // reset the crop to it's stage after harvest
         cropTile.setSize((byte) cc.maxSize());
         cropTile.setSize(cc.getSizeAfterHarvest(cropTile));
         for (int timeElapsed = 0; timeElapsed < EIG_SIMULATION_TIME; timeElapsed += TileEntityCrop.tickRate) {
-
+            // force reset the stats to max because the eig shouldn't make them change.
+            // some crops check water storage in the can grow and we are ticking which consumes water.
+            cropTile.humidity = startingHumidity;
+            cropTile.nutrients = startingNutrients;
+            cropTile.airQuality = startingAirQuality;
+            cropTile.nutrientStorage = startingNutrientStorage;
+            cropTile.waterStorage = startingWaterStorage;
             // if fully grown harvest the crop
             if (cropTile.getSize() >= cc.maxSize()) {
                 ItemStack[] stacks = cropTile.harvest_automated(false);
@@ -175,7 +181,12 @@ public class EIGTests {
             }
             cropTile.tick();
         }
-
+        // ensure it leaves the same way it came in
+        cropTile.humidity = startingHumidity;
+        cropTile.nutrients = startingNutrients;
+        cropTile.airQuality = startingAirQuality;
+        cropTile.nutrientStorage = startingNutrientStorage;
+        cropTile.waterStorage = startingWaterStorage;
         return expected;
     }
 
@@ -216,7 +227,7 @@ public class EIGTests {
 
         // update stats of crop TE to those provided by the EIG
         cropTile.humidity = EIGIC2Bucket.getHumidity(EIG, false);
-        cropTile.nutrients = EIGIC2Bucket.getAirQuality(EIG);
+        cropTile.nutrients = EIGIC2Bucket.getNutrients(EIG);
         cropTile.airQuality = EIGIC2Bucket.getAirQuality(EIG);
 
         int[] abc = new int[] { 0, -2, 3 };

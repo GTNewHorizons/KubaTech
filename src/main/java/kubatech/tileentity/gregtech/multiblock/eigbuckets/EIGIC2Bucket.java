@@ -3,12 +3,12 @@ package kubatech.tileentity.gregtech.multiblock.eigbuckets;
 import java.util.*;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockLiquid;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
 import gregtech.api.GregTech_API;
@@ -26,6 +26,7 @@ import kubatech.api.eig.EIGBucket;
 import kubatech.api.eig.EIGDropTable;
 import kubatech.api.eig.IEIGBucketFactory;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialGreenhouse;
+import net.minecraftforge.oredict.OreDictionary;
 
 public class EIGIC2Bucket extends EIGBucket {
 
@@ -128,7 +129,7 @@ public class EIGIC2Bucket extends EIGBucket {
         this.drops = new EIGDropTable(nbt, "drops");
         this.growthTime = nbt.getDouble("growthTime");
         this.useNoHumidity = nbt.getBoolean("useNoHumidity");
-        this.isValid = nbt.getInteger("version") == REVISION_NUMBER;
+        this.isValid = nbt.getInteger("version") == REVISION_NUMBER && !nbt.hasKey("invalid");
     }
 
     @Override
@@ -137,7 +138,8 @@ public class EIGIC2Bucket extends EIGBucket {
         nbt.setTag("drops", this.drops.save());
         nbt.setDouble("growthTime", this.growthTime);
         nbt.setBoolean("useNoHumidity", this.useNoHumidity);
-        nbt.setInteger("version", REVISION_NUMBER);
+        nbt.setInteger("version", this.isValid() ? REVISION_NUMBER : -1);
+        if (!this.isValid()) nbt.setBoolean("invalid", true);
         return nbt;
     }
 
@@ -175,13 +177,7 @@ public class EIGIC2Bucket extends EIGBucket {
      */
     public void recalculateDrops(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse) {
         this.isValid = false;
-        World world = greenhouse.getBaseMetaTileEntity()
-            .getWorld();
-        CropCard cc = Crops.instance.getCropCard(this.seed);
-        NBTTagCompound nbt = seed.getTagCompound();
-        byte gr = nbt.getByte("growth");
-        byte ga = nbt.getByte("gain");
-        byte re = nbt.getByte("resistance");
+        World world = greenhouse.getBaseMetaTileEntity().getWorld();
         int[] abc = new int[] { 0, -2, 3 };
         int[] xyz = new int[] { 0, 0, 0 };
         greenhouse.getExtendedFacing()
@@ -193,6 +189,7 @@ public class EIGIC2Bucket extends EIGBucket {
         xyz[2] += greenhouse.getBaseMetaTileEntity()
             .getZCoord();
         boolean cheating = false;
+        FakeTileEntityCrop crop;
         try {
             if (world.getBlock(xyz[0], xyz[1] - 2, xyz[2]) != GregTech_API.sBlockCasings4
                 || world.getBlockMetadata(xyz[0], xyz[1] - 2, xyz[2]) != 1) {
@@ -201,29 +198,12 @@ public class EIGIC2Bucket extends EIGBucket {
                 return;
             }
 
-            // TODO: get rid of the need for the placing the crop block, rework already on the way, just not for now.
-            // We temporarily add a crop stick into the world to see if it grows.
-            world.setBlock(xyz[0], xyz[1], xyz[2], Block.getBlockFromItem(Ic2Items.crop.getItem()), 0, 0);
-            TileEntity wte = world.getTileEntity(xyz[0], xyz[1], xyz[2]);
-            if (!(wte instanceof TileEntityCrop)) {
-                // should not be even possible
-                return;
-            }
+            // instantiate the TE in which we grow the seed.
+            crop = new FakeTileEntityCrop(this, greenhouse, xyz);
+            if (!crop.isValid) return;
+            CropCard cc = crop.getCrop();
 
-            TileEntityCrop crop = (TileEntityCrop) wte;
-            crop.ticker = 1; // don't even think about ticking once
-            crop.setCrop(cc);
-
-            crop.setGrowth(gr);
-            crop.setGain(ga);
-            crop.setResistance(re);
-
-            // Calculate the environmental stats using info obtained though decompiling IC2.
-            crop.waterStorage = this.useNoHumidity ? 0 : WATER_STORAGE_VALUE;
-            crop.humidity = getHumidity(greenhouse, this.useNoHumidity);
-            crop.nutrientStorage = FERTILIZER_STORAGE_VALUE;
-            crop.nutrients = getNutrients(greenhouse);
-            crop.airQuality = getAirQuality(greenhouse);
+            // region can grow checks
 
             // Check if we can put the current block under the soil.
             if (this.supportItems != null && this.supportItems.length == 1 && this.supportItems[0] != null) {
@@ -231,23 +211,21 @@ public class EIGIC2Bucket extends EIGBucket {
                     return;
                 }
                 // update nutrients if we need a block under.
-                crop.nutrients = getUpdateNutrientsForBlockUnder(crop, cc);
+                crop.updateNutrientsForBlockUnder();
             }
 
-            // Check if we can grow
-            crop.setSize((byte) (cc.maxSize() - 1));
             // Check if the crop has a chance to die in the current environment
             if (calcAvgGrowthRate(crop, cc, 0) < 0) return;
             // Check if the crop has a chance to grow in the current environment.
             if (calcAvgGrowthRate(crop, cc, 6) <= 0) return;
 
             ItemStack blockInputStackToConsume = null;
-            if (!cc.canGrow(crop)) {
+            if (!crop.canMature()) {
                 // If the block we have in storage no longer functions, we are no longer valid, the seed and block
                 // should be ejected if possible.
                 if (this.supportItems != null) return;
                 // assume we need a block under the farmland/fertilized dirt and update nutrients accordingly
-                crop.nutrients = getUpdateNutrientsForBlockUnder(crop, cc);
+                crop.updateNutrientsForBlockUnder();
                 // Try to find the needed block in the inputs
                 boolean canGrow = false;
                 ArrayList<ItemStack> inputs = greenhouse.getStoredInputs();
@@ -256,7 +234,7 @@ public class EIGIC2Bucket extends EIGBucket {
                     if (potentialBlock == null || potentialBlock.stackSize <= 0) continue;
                     if (!setBlock(potentialBlock, xyz[0], xyz[1] - 2, xyz[2], world)) continue;
                     // check if the crop can grow with the block under it.
-                    if (!cc.canGrow(crop)) continue;
+                    if (!crop.canMature()) continue;
                     // If we don't have enough blocks to consume, abort.
                     if (this.seedCount > potentialBlock.stackSize) return;
                     canGrow = true;
@@ -271,11 +249,69 @@ public class EIGIC2Bucket extends EIGBucket {
                 if (!canGrow) return;
             }
 
+            // check if the crop does a block under check and try to put a requested block if possible
+            if (this.supportItems == null)  {
+                // some crops get increased outputs if a specific block is under them.
+                cc.getGain(crop);
+                if (crop.hasRequestedBlockUnder()) {
+                    ArrayList<ItemStack> inputs = greenhouse.getStoredInputs();
+                    boolean keepLooking = !inputs.isEmpty();
+                    if (keepLooking && !crop.reqBlockOreDict.isEmpty()) {
+                        oreDictLoop:
+                        for (String reqOreDictName : crop.reqBlockOreDict) {
+                            if (reqOreDictName == null || OreDictionary.doesOreNameExist(reqOreDictName)) continue;
+                            int oreId = OreDictionary.getOreID(reqOreDictName);
+                            for (ItemStack potentialBlock : inputs) {
+                                if (potentialBlock == null || potentialBlock.stackSize <= 0) continue;
+                                for (int inputOreId : OreDictionary.getOreIDs(potentialBlock)) {
+                                    if (inputOreId != oreId) continue;
+                                    blockInputStackToConsume = potentialBlock;
+                                    // Don't consume the block just yet, we do that once everything is valid.
+                                    ItemStack newSupport = potentialBlock.copy();
+                                    newSupport.stackSize = 1;
+                                    this.supportItems = new ItemStack[]{newSupport};
+                                    keepLooking = false;
+                                    crop.updateNutrientsForBlockUnder();
+                                    break oreDictLoop;
+                                }
+                            }
+                        }
+                    }
+                    if (keepLooking && !crop.reqBlockSet.isEmpty()) {
+                        blockLoop: for (Block reqBlock : crop.reqBlockSet) {
+                            if (reqBlock == null || reqBlock instanceof BlockLiquid) continue;
+                            for(ItemStack potentialBlockStack : inputs) {
+                                // TODO: figure out a way to handle liquid block requirements
+                                // water lilly looks for water and players don't really have access to those.
+                                if (potentialBlockStack == null || potentialBlockStack.stackSize <= 0) continue;
+                                // check if it places a block that is equal to the the one we are looking for
+                                Block inputBlock = Block.getBlockFromItem(potentialBlockStack.getItem());
+                                if (inputBlock != reqBlock) continue;
+                                blockInputStackToConsume = potentialBlockStack;
+                                // Don't consume the block just yet, we do that once everything is valid.
+                                ItemStack newSupport = potentialBlockStack.copy();
+                                newSupport.stackSize = 1;
+                                this.supportItems = new ItemStack[]{newSupport};
+                                keepLooking = false;
+                                crop.updateNutrientsForBlockUnder();
+                                break blockLoop;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // check if the crop can be harvested at its max size
+            // Eg: the Eating plant cannot be harvested at its max size of 6, only 4 or 5 can
             crop.setSize((byte) cc.maxSize());
             if (!cc.canBeHarvested(crop)) return;
 
-            // PRE GENERATE DROP CHANCES
-            // TODO: Create better loot table handling for crops like red wheat, stonelilies, mana beans, magic metal
+            // endregion can grow checks
+
+            // region drop rate calculations
+
+            // PRE CALCULATE DROP RATES
+            // TODO: Add better loot table handling for crops like red wheat
             // berries, etc.
             this.drops = new EIGDropTable();
             // Multiply drop sizes by the average number drop rounds per harvest.
@@ -294,12 +330,18 @@ public class EIGIC2Bucket extends EIGBucket {
             }
             if (this.drops.isEmpty()) return;
 
-            // Just doing average(ceil(stageGrowth/growthPerm)) isn't good enough it's off by as much as 20%
+            // endregion drop rate calculations
+
+            // region growth time calculation
+
+            // Just doing average(ceil(stageGrowth/growthSpeed)) isn't good enough it's off by as much as 20%
             double avgGrowthCyclesToHarvest = calcRealAvgGrowthRate(crop, cc, sizeAfterHarvestFrequencies);
             if (avgGrowthCyclesToHarvest <= 0) {
                 return;
             }
             this.growthTime = TileEntityCrop.tickRate * avgGrowthCyclesToHarvest;
+
+            // endregion growth time calculation
 
             // Consume new under block if necessary
             if (blockInputStackToConsume != null) blockInputStackToConsume.stackSize -= this.seedCount;
@@ -310,7 +352,7 @@ public class EIGIC2Bucket extends EIGBucket {
         } finally {
             // always reset the world to it's original state
             if (!cheating) world.setBlock(xyz[0], xyz[1] - 2, xyz[2], GregTech_API.sBlockCasings4, 1, 0);
-            world.setBlockToAir(xyz[0], xyz[1], xyz[2]);
+            //world.setBlockToAir(xyz[0], xyz[1], xyz[2]);
         }
     }
 
@@ -348,92 +390,6 @@ public class EIGIC2Bucket extends EIGBucket {
         return true;
     }
 
-    // region deterministic environmental calculations
-
-    /**
-     * Computes the number of nutrients that should be given to the crop if we need a block under based on the number of
-     * dirt blocks we are simulating under the farmland/fertilized dirt.
-     *
-     * @param crop The {@link TileEntityCrop} with the seed growing on it.
-     * @param cc   The {@link CropCard} for the seed growing on the crop stick.
-     * @return The updated nutrient value.
-     */
-    private static byte getUpdateNutrientsForBlockUnder(TileEntityCrop crop, CropCard cc) {
-        // -1 because the farm land is included in the root check.
-        if ((cc.getrootslength(crop) - 1 - NUMBER_OF_DIRT_BLOCKS_UNDER) > 0) {
-            return crop.nutrients;
-        }
-        return (byte) (crop.nutrients - 1);
-    }
-
-    /**
-     * Calculates the humidity at the location of the controller using information obtained by decompiling IC2.
-     * Returns 0 if the greenhouse is in no humidity mode.
-     *
-     * @see EIGIC2Bucket#IS_ON_WET_FARMLAND
-     * @see EIGIC2Bucket#WATER_STORAGE_VALUE
-     * @see TileEntityCrop#updateHumidity()
-     * @param greenhouse The {@link GT_MetaTileEntity_ExtremeIndustrialGreenhouse} that holds the seed.
-     * @return The humidity environmental value at the controller's location.
-     */
-    public static byte getHumidity(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, boolean useNoHumidity) {
-        // TODO: Check if we may want to have the slot remember whether humidity is turned on or not.
-        if (useNoHumidity) return 0;
-        int value = Crops.instance.getHumidityBiomeBonus(
-            greenhouse.getBaseMetaTileEntity()
-                .getBiome());
-        if (IS_ON_WET_FARMLAND) value += 2;
-        // we add 2 if we have more than 5 water in storage
-        if (WATER_STORAGE_VALUE >= 5) value += 2;
-        // add 1 for every 25 water stored (max of 200
-        value += (WATER_STORAGE_VALUE + 24) / 25;
-        return (byte) value;
-    }
-
-    /**
-     * Calculates the nutrient value at the location of the controller using information obtained by decompiling IC2
-     *
-     * @see EIGIC2Bucket#NUMBER_OF_DIRT_BLOCKS_UNDER
-     * @see EIGIC2Bucket#FERTILIZER_STORAGE_VALUE
-     * @see TileEntityCrop#updateNutrients()
-     * @param greenhouse The {@link GT_MetaTileEntity_ExtremeIndustrialGreenhouse} that holds the seed.
-     * @return The nutrient environmental value at the controller's location.
-     */
-    public static byte getNutrients(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse) {
-        int value = Crops.instance.getNutrientBiomeBonus(
-            greenhouse.getBaseMetaTileEntity()
-                .getBiome());
-        value += NUMBER_OF_DIRT_BLOCKS_UNDER;
-        value += (FERTILIZER_STORAGE_VALUE + 19) / 20;
-        return (byte) value;
-    }
-
-    /**
-     * Calculates the air quality at the location of the controller bucket using information obtained by decompiling IC2
-     *
-     * @see EIGIC2Bucket#CROP_OBSTRUCTION_VALUE
-     * @see EIGIC2Bucket#CROP_CAN_SEE_SKY
-     * @see TileEntityCrop#updateAirQuality()
-     * @param greenhouse The {@link GT_MetaTileEntity_ExtremeIndustrialGreenhouse} that holds the seed.
-     * @return The air quality environmental value at the controller's location.
-     */
-    public static byte getAirQuality(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse) {
-        // clamp height bonus to 0-4, use the height of the crop itself
-        // TODO: check if we want to add the extra +2 for the actual height of the crop stick in the EIG.
-        int value = Math.max(
-            0,
-            Math.min(
-                4,
-                (greenhouse.getBaseMetaTileEntity()
-                    .getYCoord() - 64) / 15));
-        // min value of fresh is technically 8 since the crop itself will count as an obstruction at xOff = 0, zOff = 0
-        value += CROP_OBSTRUCTION_VALUE / 2;
-        // you get a +2 bonus for being able to see the sky
-        if (CROP_CAN_SEE_SKY) value += 2;
-        return (byte) value;
-    }
-
-    // endregion deterministic environmental calculations
 
     // region drop rate calculations
 
@@ -558,7 +514,7 @@ public class EIGIC2Bucket extends EIGBucket {
         // Compute multipliers based on how often the growth starts at a given rate.
         double[] frequencyMultipliers = new double[avgCyclePerStage.length];
         Arrays.fill(frequencyMultipliers, 1.0d);
-        conv1DAndCopyToSignal(frequencyMultipliers, normalizedStageFrequencies, new double[avgCyclePerStage.length]);
+        conv1DAndCopyToSignal(frequencyMultipliers, normalizedStageFrequencies, new double[avgCyclePerStage.length], 0, frequencyMultipliers.length, 0);
 
         // apply multipliers to length
         for (int i = 0; i < avgCyclePerStage.length; i++) avgCyclePerStage[i] *= frequencyMultipliers[i];
@@ -566,7 +522,8 @@ public class EIGIC2Bucket extends EIGBucket {
         // lengthen average based on number of 0 rolls.
         double average = Arrays.stream(avgCyclePerStage)
             .average()
-            .getAsDouble();
+            .orElse(-1);
+        if (average <= 0) return -1;
         if (zeroRolls > 0) {
             average = average / nonZeroSpeeds.length * growthSpeeds.length;
         }
@@ -586,26 +543,34 @@ public class EIGIC2Bucket extends EIGBucket {
     private static double calcAvgCyclesToGoal(int[] speeds, int goal) {
         // even if the goal is 0, it will always take at least 1 cycle.
         if (goal <= 0) return 1;
+        double mult = 1.0d;
+        int goalCap = speeds[speeds.length-1] * 1000;
+        if (goal > goalCap) {
+            mult = (double) goal / goalCap;
+            goal = goalCap;
+        }
         // condition start signal
         double[] signal = new double[goal];
         Arrays.fill(signal, 0);
         signal[0] = 1;
 
         // Create kernel out of our growth speeds
-        double[] kernel = tabulate(speeds, 1.0d / speeds.length);
+        double[] kernel = tabulate(speeds, 1.0d/speeds.length);
         double[] convolutionTarget = new double[signal.length];
         LinkedList<Double> P = new LinkedList<Double>();
 
         // Perform convolutions on the signal until it's too weak to be recognised.
         double p, avgRolls = 1;
+        int iterNo = 0;
+        // 1e-1 is a threshold, you can increase it for to increase the accuracy of the output.
+        // 1e-1 is already accurate enough that any value beyond that is unwarranted.
+        int min = speeds[0];
+        int max = speeds[speeds.length - 1];
         do {
-            conv1DAndCopyToSignal(signal, kernel, convolutionTarget);
-            avgRolls += p = Arrays.stream(signal)
-                .sum();
-            // 1e-1 is a threshold, you can increase it for to increase the accuracy of the output.
-            // 1e-1 is already accurate enough that any value beyond that is unwarranted.
-        } while (p >= 1e-1 / goal);
-        return avgRolls;
+            avgRolls += p = conv1DAndCopyToSignal(signal, kernel, convolutionTarget, min, max, iterNo);
+            iterNo += 1;
+        } while (p >= 1e-1/goal);
+        return avgRolls * mult;
     }
 
     /**
@@ -633,19 +598,27 @@ public class EIGIC2Bucket extends EIGBucket {
      * @param fixedLengthTarget A memory optimisation so we don't just create a ton of arrays since we overwrite it.
      *                          Should be the same length as the signal.
      */
-    private static void conv1DAndCopyToSignal(double[] signal, double[] kernel, double[] fixedLengthTarget) {
+    private static double conv1DAndCopyToSignal(double[] signal, double[] kernel, double[] fixedLengthTarget, int minValue, int maxValue, int iterNo) {
         // for a 1d convolution we would usually use kMax = signal.length + kernel.length - 1
         // but since we are directly applying our result to our signal, there is no reason to compute
         // values where k > signal.length.
         // we could probably run this loop in parallel.
-        for (int k = 0; k < signal.length; k++) {
+        double sum = 0;
+        int maxK = Math.min(signal.length, (iterNo + 1) * maxValue + 1);
+        int startAt = Math.min(signal.length, minValue * (iterNo+1));
+        int k = Math.max(0, startAt - kernel.length);
+        for (; k < startAt; k++) fixedLengthTarget[k] = 0;
+        for(; k < maxK; k++) {
             // I needs to be a valid index of the kernel.
             fixedLengthTarget[k] = 0;
-            for (int i = Math.max(0, k - kernel.length + 1); i <= k; i++) {
-                fixedLengthTarget[k] += signal[i] * kernel[k - i];
+            for(int i = Math.max(0, k - kernel.length + 1); i <= k; i++) {
+                double v = signal[i] * kernel[k - i];
+                sum += v;
+                fixedLengthTarget[k] += v;
             }
         }
         System.arraycopy(fixedLengthTarget, 0, signal, 0, signal.length);
+        return sum;
     }
 
     /**
@@ -686,5 +659,198 @@ public class EIGIC2Bucket extends EIGBucket {
     }
 
     // endregion growth time approximation
+
+    // region deterministic environmental calculations
+
+    /**
+     * Calculates the humidity at the location of the controller using information obtained by decompiling IC2.
+     * Returns 0 if the greenhouse is in no humidity mode.
+     *
+     * @see EIGIC2Bucket#IS_ON_WET_FARMLAND
+     * @see EIGIC2Bucket#WATER_STORAGE_VALUE
+     * @see TileEntityCrop#updateHumidity()
+     * @param greenhouse The {@link GT_MetaTileEntity_ExtremeIndustrialGreenhouse} that holds the seed.
+     * @return The humidity environmental value at the controller's location.
+     */
+    public static byte getHumidity(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, boolean useNoHumidity) {
+        // TODO: Check if we may want to have the slot remember whether humidity is turned on or not.
+        if (useNoHumidity) return 0;
+        int value = Crops.instance.getHumidityBiomeBonus(
+            greenhouse.getBaseMetaTileEntity()
+                .getBiome());
+        if (IS_ON_WET_FARMLAND) value += 2;
+        // we add 2 if we have more than 5 water in storage
+        if (WATER_STORAGE_VALUE >= 5) value += 2;
+        // add 1 for every 25 water stored (max of 200
+        value += (WATER_STORAGE_VALUE + 24) / 25;
+        return (byte) value;
+    }
+
+    /**
+     * Calculates the nutrient value at the location of the controller using information obtained by decompiling IC2
+     *
+     * @see EIGIC2Bucket#NUMBER_OF_DIRT_BLOCKS_UNDER
+     * @see EIGIC2Bucket#FERTILIZER_STORAGE_VALUE
+     * @see TileEntityCrop#updateNutrients()
+     * @param greenhouse The {@link GT_MetaTileEntity_ExtremeIndustrialGreenhouse} that holds the seed.
+     * @return The nutrient environmental value at the controller's location.
+     */
+    public static byte getNutrients(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse) {
+        int value = Crops.instance.getNutrientBiomeBonus(
+            greenhouse.getBaseMetaTileEntity()
+                .getBiome());
+        value += NUMBER_OF_DIRT_BLOCKS_UNDER;
+        value += (FERTILIZER_STORAGE_VALUE + 19) / 20;
+        return (byte) value;
+    }
+
+    /**
+     * Calculates the air quality at the location of the controller bucket using information obtained by decompiling IC2
+     *
+     * @see EIGIC2Bucket#CROP_OBSTRUCTION_VALUE
+     * @see EIGIC2Bucket#CROP_CAN_SEE_SKY
+     * @see TileEntityCrop#updateAirQuality()
+     * @param greenhouse The {@link GT_MetaTileEntity_ExtremeIndustrialGreenhouse} that holds the seed.
+     * @return The air quality environmental value at the controller's location.
+     */
+    public static byte getAirQuality(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse) {
+        // clamp height bonus to 0-4, use the height of the crop itself
+        // TODO: check if we want to add the extra +2 for the actual height of the crop stick in the EIG.
+        int value = Math.max(
+            0,
+            Math.min(
+                4,
+                (greenhouse.getBaseMetaTileEntity()
+                    .getYCoord() - 64) / 15));
+        // min value of fresh is technically 8 since the crop itself will count as an obstruction at xOff = 0, zOff = 0
+        value += CROP_OBSTRUCTION_VALUE / 2;
+        // you get a +2 bonus for being able to see the sky
+        if (CROP_CAN_SEE_SKY) value += 2;
+        return (byte) value;
+    }
+
+    // endregion deterministic environmental calculations
+
+    private static class FakeTileEntityCrop extends TileEntityCrop {
+
+        private boolean isValid;
+        public Set<Block> reqBlockSet = new HashSet<>();
+        public Set<String> reqBlockOreDict = new HashSet<>();
+        private int lightLevel = 15;
+
+        public FakeTileEntityCrop(EIGIC2Bucket bucket, GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, int[] xyz) {
+            super();
+            this.isValid = false;
+            this.ticker = 1;
+
+            // put seed in crop stick
+            CropCard cc = Crops.instance.getCropCard(bucket.seed);
+            this.setCrop(cc);
+            NBTTagCompound nbt = bucket.seed.getTagCompound();
+            this.setGrowth(nbt.getByte("growth"));
+            this.setGain(nbt.getByte("gain"));
+            this.setResistance(nbt.getByte("resistance"));
+            this.setWorldObj(greenhouse.getBaseMetaTileEntity().getWorld());
+
+            this.xCoord = xyz[0];
+            this.yCoord = xyz[1];
+            this.zCoord = xyz[2];
+            this.blockType = Block.getBlockFromItem(Ic2Items.crop.getItem());
+            this.blockMetadata = 0;
+
+            this.waterStorage = bucket.useNoHumidity ? 0 : WATER_STORAGE_VALUE;
+            this.humidity = EIGIC2Bucket.getHumidity(greenhouse, bucket.useNoHumidity);
+            this.nutrientStorage = FERTILIZER_STORAGE_VALUE;
+            this.nutrients = EIGIC2Bucket.getNutrients(greenhouse);
+            this.airQuality = EIGIC2Bucket.getAirQuality(greenhouse);
+
+            this.isValid = true;
+        }
+
+        public boolean canMature() {
+            CropCard cc = this.getCrop();
+            this.size = cc.maxSize() - 1;
+            // try with a high light level
+            this.lightLevel = 15;
+            if (cc.canGrow(this)) return true;
+            // and then with a low light level.
+            this.lightLevel = 9;
+            return cc.canGrow(this);
+        }
+
+        @Override
+        public boolean isBlockBelow(Block reqBlock) {
+            this.reqBlockSet.add(reqBlock);
+            return super.isBlockBelow(reqBlock);
+        }
+
+        @Override
+        public boolean isBlockBelow(String oreDictionaryName) {
+            this.reqBlockOreDict.add(oreDictionaryName);
+            return super.isBlockBelow(oreDictionaryName);
+        }
+
+        // region environment simulation
+
+        @Override
+        public int getLightLevel() {
+            // 9 should allow most light dependent crops to grow
+            // the only exception I know of the eating plant which checks
+            return this.lightLevel;
+        }
+
+
+        @Override
+        public byte getHumidity() {
+            return this.humidity;
+        }
+        @Override
+        public byte updateHumidity() {
+            return this.humidity;
+        }
+
+
+        @Override
+        public byte getNutrients() {
+            return this.nutrients;
+        }
+        @Override
+        public byte updateNutrients() {
+            return this.nutrients;
+        }
+
+
+        @Override
+        public byte getAirQuality() {
+            return this.airQuality;
+        }
+
+        @Override
+        public byte updateAirQuality() {
+            return this.nutrients;
+        }
+
+        // endregion environment simulation
+
+
+        /**
+         * Updates the nutrient value based on the fact tha the crop needs a block under it.
+         */
+        public void updateNutrientsForBlockUnder() {
+            // -1 because the farm land is included in the root check.
+            if ((this.getCrop().getrootslength(this) - 1 - NUMBER_OF_DIRT_BLOCKS_UNDER) <= 0 && this.nutrients > 0) {
+                this.nutrients--;
+            }
+        }
+
+        /**
+         * Checks if the crop stick has requested a block to be under it yet.
+         *
+         * @return true if a block under check was made.
+         */
+        public boolean hasRequestedBlockUnder() {
+            return !this.reqBlockSet.isEmpty() || !this.reqBlockOreDict.isEmpty();
+        }
+    }
 
 }

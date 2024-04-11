@@ -34,10 +34,18 @@ public class EIGDropTable {
      * @param key The name of the key name for the drop table.
      */
     public EIGDropTable(NBTTagCompound nbt, String key) {
+        this(nbt.getTagList(key, 10));
+    }
+
+    /**
+     * Loads a serialised drop table from nbt.
+     *
+     * @param nbt The nbt tag that contains the key for a drop table
+     */
+    public EIGDropTable(NBTTagList nbt) {
         this();
-        NBTTagList dropTableNBT = nbt.getTagList(key, 10);
-        for (int i = 0; i < dropTableNBT.tagCount(); i++) {
-            NBTTagCompound drop = dropTableNBT.getCompoundTagAt(i);
+        for (int i = 0; i < nbt.tagCount(); i++) {
+            NBTTagCompound drop = nbt.getCompoundTagAt(i);
             dropTable.merge(
                 readItemStackFromNBT(drop.getCompoundTag(NBT_DROP_TABLE_ITEM_KEY)),
                 drop.getDouble(NBT_DROP_TABLE_COUNT_KEY),
@@ -127,10 +135,21 @@ public class EIGDropTable {
         return this.dropTable.isEmpty();
     }
 
+    /**
+     * Returns the entry set for this drop table.
+     *
+     * @return ItemStack -> amount
+     */
     public Set<Map.Entry<ItemStack, Double>> entrySet() {
         return this.dropTable.entrySet();
     }
 
+    /**
+     * Gets the amout for a specific item.
+     *
+     * @param item The item to look for.
+     * @return 0 if nothing is found else a positive value.
+     */
     public double getItemAmount(ItemStack item) {
         if (this.dropTable.containsKey(item)) {
             return this.dropTable.get(item);
@@ -139,33 +158,39 @@ public class EIGDropTable {
     }
 
     /**
+     * Creates a new drop table that is the intersection of this drop table and another.
+     *
+     *
+     * @param with The drop table to intersect with.
+     * @return The result of the intersection.
+     */
+    public EIGDropTable intersect(EIGDropTable with) {
+        EIGDropTable ret = new EIGDropTable();
+        for(ItemStack key : with.dropTable.keySet()) {
+            if (this.dropTable.containsKey(key)) {
+                ret.addDrop(key, this.dropTable.get(key));
+            }
+        }
+        return ret;
+    }
+
+    /**
      * Consumes drops with drop counts above 1 and returns a list of the consumed item stacks.
      *
      * @return The list of consumed items;
      */
     public ItemStack[] getDrops() {
+        // doesn't need to filter for less than 0 so that the EIG displays the progress of incomplete items.
         return this.dropTable.entrySet()
             .parallelStream()
-            .filter(EIGDropTable::filterCompletedDrops)
             .map(EIGDropTable::computeDrops)
             .toArray(ItemStack[]::new);
     }
 
-    /**
-     * Used to filter drops in the table that have an amount above 1.
-     *
-     * @param entry The entry to check
-     * @return True if the amount is above 1
-     */
-    private static boolean filterCompletedDrops(Map.Entry<ItemStack, Double> entry) {
-        return entry.getValue() >= 1.0d;
-    }
 
     /**
      * Consumes the items in the entry and returns the consumed item without removing partial items.
-     * This should only be called if the value is above 1.
      *
-     * @see EIGDropTable#filterCompletedDrops(Map.Entry)
      * @param entry The entry to consume from
      * @return The item tha twas removed.
      */
@@ -173,7 +198,9 @@ public class EIGDropTable {
         ItemStack copied = entry.getKey()
             .copy();
         copied.stackSize = (int) Math.floor(entry.getValue());
-        entry.setValue(entry.getValue() % 1);
+        if (entry.getValue() >= 1.0d) {
+            entry.setValue(entry.getValue() % 1);
+        }
         return copied;
     }
 }
