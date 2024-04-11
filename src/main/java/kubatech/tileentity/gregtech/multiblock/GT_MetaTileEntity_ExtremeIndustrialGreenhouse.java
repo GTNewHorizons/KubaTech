@@ -34,15 +34,11 @@ import static kubatech.api.Variables.Author;
 import static kubatech.api.Variables.StructureHologram;
 import static kubatech.api.utils.ItemUtils.readItemStackFromNBT;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_OutputBus;
-import gregtech.api.util.VoidProtectionHelper;
-import gregtech.common.tileentities.machines.GT_MetaTileEntity_Hatch_OutputBus_ME;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.item.EntityItem;
@@ -99,12 +95,15 @@ import gregtech.api.interfaces.ITexture;
 import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_Energy;
+import gregtech.api.metatileentity.implementations.GT_MetaTileEntity_Hatch_OutputBus;
 import gregtech.api.recipe.check.CheckRecipeResult;
 import gregtech.api.recipe.check.CheckRecipeResultRegistry;
 import gregtech.api.recipe.check.SimpleCheckRecipeResult;
 import gregtech.api.render.TextureFactory;
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
+import gregtech.api.util.VoidProtectionHelper;
+import gregtech.common.tileentities.machines.GT_MetaTileEntity_Hatch_OutputBus_ME;
 import ic2.core.Ic2Items;
 import ic2.core.init.BlocksItems;
 import ic2.core.init.InternalName;
@@ -421,9 +420,15 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         IGregTechTileEntity mte = this.getBaseMetaTileEntity();
         for (EIGBucket bucket : this.buckets) {
             for (ItemStack stack : bucket.tryRemoveSeed(bucket.getSeedCount(), false)) {
-                EntityItem entityitem = new EntityItem(mte.getWorld(), mte.getXCoord(), mte.getYCoord(), mte.getZCoord(), stack);
+                EntityItem entityitem = new EntityItem(
+                    mte.getWorld(),
+                    mte.getXCoord(),
+                    mte.getYCoord(),
+                    mte.getZCoord(),
+                    stack);
                 entityitem.delayBeforeCanPickup = 10;
-                mte.getWorld().spawnEntityInWorld(entityitem);
+                mte.getWorld()
+                    .spawnEntityInWorld(entityitem);
             }
         }
     }
@@ -543,7 +548,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         for (EIGBucket b : this.buckets) {
             bucketListNBT.appendTag(b.save());
         }
-        aNBT.setTag("progress", this.dropTracker.intersect(this.guiDropTracker).save());
+        aNBT.setTag(
+            "progress",
+            this.dropTracker.intersect(this.guiDropTracker)
+                .save());
         aNBT.setTag("buckets", bucketListNBT);
     }
 
@@ -716,8 +724,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
         // Else attempt to empty the bucket while not voiding anything.
         ItemStack[] simulated = bucket.tryRemoveSeed(1, true);
-        VoidProtectionHelper helper = new VoidProtectionHelper()
-            .setMachine(this, true, false)
+        VoidProtectionHelper helper = new VoidProtectionHelper().setMachine(this, true, false)
             .setItemOutputs(simulated)
             .setMaxParallel(bucket.getSeedCount())
             .build();
@@ -750,7 +757,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             } else if (setupPhase == 2) {
                 for (Iterator<EIGBucket> iterator = this.buckets.iterator(); iterator.hasNext();) {
                     EIGBucket bucket = iterator.next();
-                    if (tryEmptyBucket(bucket)){
+                    if (tryEmptyBucket(bucket)) {
                         iterator.remove();
                     } else {
                         this.mMaxProgresstime = 20;

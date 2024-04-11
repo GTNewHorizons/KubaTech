@@ -2,7 +2,6 @@ package kubatech.tileentity.gregtech.multiblock.eigbuckets;
 
 import java.util.ArrayList;
 
-import gregtech.common.GT_DummyWorld;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockStem;
 import net.minecraft.init.Blocks;

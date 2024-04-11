@@ -10,6 +10,7 @@ import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
+import net.minecraftforge.oredict.OreDictionary;
 
 import gregtech.api.GregTech_API;
 import gregtech.api.enums.ItemList;
@@ -26,7 +27,6 @@ import kubatech.api.eig.EIGBucket;
 import kubatech.api.eig.EIGDropTable;
 import kubatech.api.eig.IEIGBucketFactory;
 import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialGreenhouse;
-import net.minecraftforge.oredict.OreDictionary;
 
 public class EIGIC2Bucket extends EIGBucket {
 
@@ -177,7 +177,8 @@ public class EIGIC2Bucket extends EIGBucket {
      */
     public void recalculateDrops(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse) {
         this.isValid = false;
-        World world = greenhouse.getBaseMetaTileEntity().getWorld();
+        World world = greenhouse.getBaseMetaTileEntity()
+            .getWorld();
         int[] abc = new int[] { 0, -2, 3 };
         int[] xyz = new int[] { 0, 0, 0 };
         greenhouse.getExtendedFacing()
@@ -250,15 +251,14 @@ public class EIGIC2Bucket extends EIGBucket {
             }
 
             // check if the crop does a block under check and try to put a requested block if possible
-            if (this.supportItems == null)  {
+            if (this.supportItems == null) {
                 // some crops get increased outputs if a specific block is under them.
                 cc.getGain(crop);
                 if (crop.hasRequestedBlockUnder()) {
                     ArrayList<ItemStack> inputs = greenhouse.getStoredInputs();
                     boolean keepLooking = !inputs.isEmpty();
                     if (keepLooking && !crop.reqBlockOreDict.isEmpty()) {
-                        oreDictLoop:
-                        for (String reqOreDictName : crop.reqBlockOreDict) {
+                        oreDictLoop: for (String reqOreDictName : crop.reqBlockOreDict) {
                             if (reqOreDictName == null || OreDictionary.doesOreNameExist(reqOreDictName)) continue;
                             int oreId = OreDictionary.getOreID(reqOreDictName);
                             for (ItemStack potentialBlock : inputs) {
@@ -269,7 +269,7 @@ public class EIGIC2Bucket extends EIGBucket {
                                     // Don't consume the block just yet, we do that once everything is valid.
                                     ItemStack newSupport = potentialBlock.copy();
                                     newSupport.stackSize = 1;
-                                    this.supportItems = new ItemStack[]{newSupport};
+                                    this.supportItems = new ItemStack[] { newSupport };
                                     keepLooking = false;
                                     crop.updateNutrientsForBlockUnder();
                                     break oreDictLoop;
@@ -280,7 +280,7 @@ public class EIGIC2Bucket extends EIGBucket {
                     if (keepLooking && !crop.reqBlockSet.isEmpty()) {
                         blockLoop: for (Block reqBlock : crop.reqBlockSet) {
                             if (reqBlock == null || reqBlock instanceof BlockLiquid) continue;
-                            for(ItemStack potentialBlockStack : inputs) {
+                            for (ItemStack potentialBlockStack : inputs) {
                                 // TODO: figure out a way to handle liquid block requirements
                                 // water lilly looks for water and players don't really have access to those.
                                 if (potentialBlockStack == null || potentialBlockStack.stackSize <= 0) continue;
@@ -291,7 +291,7 @@ public class EIGIC2Bucket extends EIGBucket {
                                 // Don't consume the block just yet, we do that once everything is valid.
                                 ItemStack newSupport = potentialBlockStack.copy();
                                 newSupport.stackSize = 1;
-                                this.supportItems = new ItemStack[]{newSupport};
+                                this.supportItems = new ItemStack[] { newSupport };
                                 keepLooking = false;
                                 crop.updateNutrientsForBlockUnder();
                                 break blockLoop;
@@ -352,7 +352,7 @@ public class EIGIC2Bucket extends EIGBucket {
         } finally {
             // always reset the world to it's original state
             if (!cheating) world.setBlock(xyz[0], xyz[1] - 2, xyz[2], GregTech_API.sBlockCasings4, 1, 0);
-            //world.setBlockToAir(xyz[0], xyz[1], xyz[2]);
+            // world.setBlockToAir(xyz[0], xyz[1], xyz[2]);
         }
     }
 
@@ -389,7 +389,6 @@ public class EIGIC2Bucket extends EIGBucket {
         } else world.setBlock(x, y, z, b, tDamage, 0);
         return true;
     }
-
 
     // region drop rate calculations
 
@@ -514,7 +513,13 @@ public class EIGIC2Bucket extends EIGBucket {
         // Compute multipliers based on how often the growth starts at a given rate.
         double[] frequencyMultipliers = new double[avgCyclePerStage.length];
         Arrays.fill(frequencyMultipliers, 1.0d);
-        conv1DAndCopyToSignal(frequencyMultipliers, normalizedStageFrequencies, new double[avgCyclePerStage.length], 0, frequencyMultipliers.length, 0);
+        conv1DAndCopyToSignal(
+            frequencyMultipliers,
+            normalizedStageFrequencies,
+            new double[avgCyclePerStage.length],
+            0,
+            frequencyMultipliers.length,
+            0);
 
         // apply multipliers to length
         for (int i = 0; i < avgCyclePerStage.length; i++) avgCyclePerStage[i] *= frequencyMultipliers[i];
@@ -544,7 +549,7 @@ public class EIGIC2Bucket extends EIGBucket {
         // even if the goal is 0, it will always take at least 1 cycle.
         if (goal <= 0) return 1;
         double mult = 1.0d;
-        int goalCap = speeds[speeds.length-1] * 1000;
+        int goalCap = speeds[speeds.length - 1] * 1000;
         if (goal > goalCap) {
             mult = (double) goal / goalCap;
             goal = goalCap;
@@ -555,7 +560,7 @@ public class EIGIC2Bucket extends EIGBucket {
         signal[0] = 1;
 
         // Create kernel out of our growth speeds
-        double[] kernel = tabulate(speeds, 1.0d/speeds.length);
+        double[] kernel = tabulate(speeds, 1.0d / speeds.length);
         double[] convolutionTarget = new double[signal.length];
         LinkedList<Double> P = new LinkedList<Double>();
 
@@ -569,7 +574,7 @@ public class EIGIC2Bucket extends EIGBucket {
         do {
             avgRolls += p = conv1DAndCopyToSignal(signal, kernel, convolutionTarget, min, max, iterNo);
             iterNo += 1;
-        } while (p >= 1e-1/goal);
+        } while (p >= 1e-1 / goal);
         return avgRolls * mult;
     }
 
@@ -598,20 +603,21 @@ public class EIGIC2Bucket extends EIGBucket {
      * @param fixedLengthTarget A memory optimisation so we don't just create a ton of arrays since we overwrite it.
      *                          Should be the same length as the signal.
      */
-    private static double conv1DAndCopyToSignal(double[] signal, double[] kernel, double[] fixedLengthTarget, int minValue, int maxValue, int iterNo) {
+    private static double conv1DAndCopyToSignal(double[] signal, double[] kernel, double[] fixedLengthTarget,
+        int minValue, int maxValue, int iterNo) {
         // for a 1d convolution we would usually use kMax = signal.length + kernel.length - 1
         // but since we are directly applying our result to our signal, there is no reason to compute
         // values where k > signal.length.
         // we could probably run this loop in parallel.
         double sum = 0;
         int maxK = Math.min(signal.length, (iterNo + 1) * maxValue + 1);
-        int startAt = Math.min(signal.length, minValue * (iterNo+1));
+        int startAt = Math.min(signal.length, minValue * (iterNo + 1));
         int k = Math.max(0, startAt - kernel.length);
         for (; k < startAt; k++) fixedLengthTarget[k] = 0;
-        for(; k < maxK; k++) {
+        for (; k < maxK; k++) {
             // I needs to be a valid index of the kernel.
             fixedLengthTarget[k] = 0;
-            for(int i = Math.max(0, k - kernel.length + 1); i <= k; i++) {
+            for (int i = Math.max(0, k - kernel.length + 1); i <= k; i++) {
                 double v = signal[i] * kernel[k - i];
                 sum += v;
                 fixedLengthTarget[k] += v;
@@ -738,7 +744,8 @@ public class EIGIC2Bucket extends EIGBucket {
         public Set<String> reqBlockOreDict = new HashSet<>();
         private int lightLevel = 15;
 
-        public FakeTileEntityCrop(EIGIC2Bucket bucket, GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, int[] xyz) {
+        public FakeTileEntityCrop(EIGIC2Bucket bucket, GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse,
+            int[] xyz) {
             super();
             this.isValid = false;
             this.ticker = 1;
@@ -750,7 +757,9 @@ public class EIGIC2Bucket extends EIGBucket {
             this.setGrowth(nbt.getByte("growth"));
             this.setGain(nbt.getByte("gain"));
             this.setResistance(nbt.getByte("resistance"));
-            this.setWorldObj(greenhouse.getBaseMetaTileEntity().getWorld());
+            this.setWorldObj(
+                greenhouse.getBaseMetaTileEntity()
+                    .getWorld());
 
             this.xCoord = xyz[0];
             this.yCoord = xyz[1];
@@ -799,26 +808,25 @@ public class EIGIC2Bucket extends EIGBucket {
             return this.lightLevel;
         }
 
-
         @Override
         public byte getHumidity() {
             return this.humidity;
         }
+
         @Override
         public byte updateHumidity() {
             return this.humidity;
         }
 
-
         @Override
         public byte getNutrients() {
             return this.nutrients;
         }
+
         @Override
         public byte updateNutrients() {
             return this.nutrients;
         }
-
 
         @Override
         public byte getAirQuality() {
@@ -832,13 +840,14 @@ public class EIGIC2Bucket extends EIGBucket {
 
         // endregion environment simulation
 
-
         /**
          * Updates the nutrient value based on the fact tha the crop needs a block under it.
          */
         public void updateNutrientsForBlockUnder() {
             // -1 because the farm land is included in the root check.
-            if ((this.getCrop().getrootslength(this) - 1 - NUMBER_OF_DIRT_BLOCKS_UNDER) <= 0 && this.nutrients > 0) {
+            if ((this.getCrop()
+                .getrootslength(this) - 1
+                - NUMBER_OF_DIRT_BLOCKS_UNDER) <= 0 && this.nutrients > 0) {
                 this.nutrients--;
             }
         }

@@ -166,7 +166,7 @@ public class EIGDropTable {
      */
     public EIGDropTable intersect(EIGDropTable with) {
         EIGDropTable ret = new EIGDropTable();
-        for(ItemStack key : with.dropTable.keySet()) {
+        for (ItemStack key : with.dropTable.keySet()) {
             if (this.dropTable.containsKey(key)) {
                 ret.addDrop(key, this.dropTable.get(key));
             }
@@ -186,7 +186,6 @@ public class EIGDropTable {
             .map(EIGDropTable::computeDrops)
             .toArray(ItemStack[]::new);
     }
-
 
     /**
      * Consumes the items in the entry and returns the consumed item without removing partial items.
