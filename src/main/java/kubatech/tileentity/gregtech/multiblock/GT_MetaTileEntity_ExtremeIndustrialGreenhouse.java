@@ -36,11 +36,17 @@ import static kubatech.api.utils.ItemUtils.readItemStackFromNBT;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import kubatech.api.eig.EIGMode;
-import kubatech.api.enums.GTVoltageIndex;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.item.EntityItem;
@@ -114,7 +120,9 @@ import kubatech.api.EIGDynamicInventory;
 import kubatech.api.LoaderReference;
 import kubatech.api.eig.EIGBucket;
 import kubatech.api.eig.EIGDropTable;
+import kubatech.api.eig.EIGMode;
 import kubatech.api.enums.EIGModes;
+import kubatech.api.enums.GTVoltageIndex;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.client.effect.CropRenderer;
 import kubatech.tileentity.gregtech.multiblock.eigbuckets.EIGIC2Bucket;
@@ -147,7 +155,6 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     public static final double EIG_BALANCE_MAX_FERTILIZER_BOOST = 4.0d;
     public static final int EIG_BALANCE_WEED_EX_USAGE_BEGINS_AT = 1000;
     public static final int EIG_BALANCE_WATER_USAGE_PER_SEED = 1000;
-
 
     private static final Fluid WEEDEX_FLUID = Materials.WeedEX9000.mFluid;
     private static final Item FORESTRY_FERTILIZER_ITEM = GameRegistry.findItem("Forestry", "fertilizerCompound");
@@ -302,7 +309,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             .addInfo("Use wire cutters to give incoming IC2 seeds 0 humidity")
             .addInfo("Uses " + EIG_BALANCE_WATER_USAGE_PER_SEED + "L of water per seed per operation")
             .addInfo(
-                "Uses 1L of " + WEEDEX_FLUID.getName() + " per second per seed if it contains more than  " + EIG_BALANCE_WEED_EX_USAGE_BEGINS_AT
+                "Uses 1L of " + WEEDEX_FLUID.getName()
+                    + " per second per seed if it contains more than  "
+                    + EIG_BALANCE_WEED_EX_USAGE_BEGINS_AT
                     + " seeds ")
             .addInfo("Otherwise, around 1% of seeds will be voided each operation")
             .addInfo("You can insert fertilizer each operation to get more drops (max +" + fertilizerBoostMax + ")")
@@ -821,7 +830,8 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             }
             if (consumedFertilizer == maxFertilizerToConsume) break;
         }
-        double multiplier = 1.d + (((double) consumedFertilizer / (double) maxFertilizerToConsume) * EIG_BALANCE_MAX_FERTILIZER_BOOST);
+        double multiplier = 1.d
+            + (((double) consumedFertilizer / (double) maxFertilizerToConsume) * EIG_BALANCE_MAX_FERTILIZER_BOOST);
 
         // compute drops based on the drop tracker
         this.guiDropTracker = new EIGDropTable();
@@ -835,8 +845,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             for (EIGBucket bucket : this.buckets) {
                 bucket.addProgress(timeElapsed * multiplier, this.guiDropTracker);
             }
-        }
-        else if (this.mode == EIGModes.Normal) {
+        } else if (this.mode == EIGModes.Normal) {
             this.mMaxProgresstime = Math.max(20, 100 / (tier - 3)); // Min 1 s
             for (EIGBucket bucket : this.buckets) {
                 bucket.addProgress(multiplier, this.guiDropTracker);
@@ -853,7 +862,6 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         this.updateSlots();
         return CheckRecipeResultRegistry.SUCCESSFUL;
     }
-
 
     private ItemStack addCrop(ItemStack input) {
         return addCrop(input, false) ? input : null;
@@ -918,7 +926,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         final WeakReference<GT_MetaTileEntity_ExtremeIndustrialGreenhouse> parent;
 
         public KT_ModulaUIContainer_ExtremeIndustrialGreenhouse(ModularUIContext context, ModularWindow mainWindow,
-                                                                GT_MetaTileEntity_ExtremeIndustrialGreenhouse mte) {
+            GT_MetaTileEntity_ExtremeIndustrialGreenhouse mte) {
             super(context, mainWindow);
             parent = new WeakReference<>(mte);
         }
@@ -953,10 +961,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         configurationElements.setSynced(false);
         configurationElements.widget(
             new ButtonWidget().setOnClick(
-                    (clickData, widget) -> {
-                        if (!widget.isClient()) widget.getContext()
-                            .openSyncedWindow(CONFIGURATION_WINDOW_ID);
-                    })
+                (clickData, widget) -> {
+                    if (!widget.isClient()) widget.getContext()
+                        .openSyncedWindow(CONFIGURATION_WINDOW_ID);
+                })
                 .setBackground(GT_UITextures.BUTTON_STANDARD, GT_UITextures.OVERLAY_BUTTON_CYCLIC)
                 .addTooltip("Configuration")
                 .setSize(16, 16));
@@ -971,24 +979,24 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         this::getTotalSeedCount,
         this.buckets,
         EIGBucket::getSeedStack).allowInventoryInjection(this::addCrop)
-        .allowInventoryExtraction((bucket, player) -> {
-            if (bucket == null) return null;
-            int maxRemove = bucket.getSeedStack()
-                .getMaxStackSize();
-            ItemStack[] outputs = bucket.tryRemoveSeed(maxRemove, false);
-            if (outputs == null || outputs.length <= 0) return null;
-            ItemStack ret = outputs[0];
-            for (int i = 1; i < outputs.length; i++) {
-                ItemStack suppertItem = outputs[i];
-                if (!player.inventory.addItemStackToInventory(suppertItem)) {
-                    player.entityDropItem(suppertItem, 0.f);
-                } ;
-            }
-            if (bucket.getSeedCount() <= 0) this.buckets.remove(bucket);
-            return ret;
-        })
-        // TODO: re-add allow inventory replace?
-        .setEnabled(() -> this.mMaxProgresstime == 0);
+            .allowInventoryExtraction((bucket, player) -> {
+                if (bucket == null) return null;
+                int maxRemove = bucket.getSeedStack()
+                    .getMaxStackSize();
+                ItemStack[] outputs = bucket.tryRemoveSeed(maxRemove, false);
+                if (outputs == null || outputs.length <= 0) return null;
+                ItemStack ret = outputs[0];
+                for (int i = 1; i < outputs.length; i++) {
+                    ItemStack suppertItem = outputs[i];
+                    if (!player.inventory.addItemStackToInventory(suppertItem)) {
+                        player.entityDropItem(suppertItem, 0.f);
+                    } ;
+                }
+                if (bucket.getSeedCount() <= 0) this.buckets.remove(bucket);
+                return ret;
+            })
+            // TODO: re-add allow inventory replace?
+            .setEnabled(() -> this.mMaxProgresstime == 0);
 
     @Override
     public void createInventorySlots() {
@@ -1040,36 +1048,36 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         ModularWindow.Builder builder = ModularWindow.builder(200, 100);
         builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
         builder.widget(
-                new DrawableWidget().setDrawable(GT_UITextures.OVERLAY_BUTTON_CYCLIC)
-                    .setPos(5, 5)
-                    .setSize(16, 16))
+            new DrawableWidget().setDrawable(GT_UITextures.OVERLAY_BUTTON_CYCLIC)
+                .setPos(5, 5)
+                .setSize(16, 16))
             .widget(new TextWidget("Configuration").setPos(25, 9))
             .widget(
                 ButtonWidget.closeWindowButton(true)
                     .setPos(185, 3))
             .widget(
                 new Column().widget(
-                        new CycleButtonWidget().setLength(3)
-                            .setGetter(() -> this.setupPhase)
-                            .setSetter(val -> {
-                                if (!(player instanceof EntityPlayerMP)) return;
-                                tryChangeSetupPhase(player);
-                            })
-                            .addTooltip(0, new Text("Operating").color(Color.GREEN.dark(3)))
-                            .addTooltip(1, new Text("Input").color(Color.YELLOW.dark(3)))
-                            .addTooltip(2, new Text("Output").color(Color.YELLOW.dark(3)))
-                            .setTextureGetter(
-                                i -> i == 0 ? new Text("Operating").color(Color.GREEN.dark(3))
-                                    .withFixedSize(70 - 18, 18, 15, 0)
-                                    : i == 1 ? new Text("Input").color(Color.YELLOW.dark(3))
+                    new CycleButtonWidget().setLength(3)
+                        .setGetter(() -> this.setupPhase)
+                        .setSetter(val -> {
+                            if (!(player instanceof EntityPlayerMP)) return;
+                            tryChangeSetupPhase(player);
+                        })
+                        .addTooltip(0, new Text("Operating").color(Color.GREEN.dark(3)))
+                        .addTooltip(1, new Text("Input").color(Color.YELLOW.dark(3)))
+                        .addTooltip(2, new Text("Output").color(Color.YELLOW.dark(3)))
+                        .setTextureGetter(
+                            i -> i == 0 ? new Text("Operating").color(Color.GREEN.dark(3))
+                                .withFixedSize(70 - 18, 18, 15, 0)
+                                : i == 1 ? new Text("Input").color(Color.YELLOW.dark(3))
                                     .withFixedSize(70 - 18, 18, 15, 0)
                                     : new Text("Output").color(Color.YELLOW.dark(3))
-                                    .withFixedSize(70 - 18, 18, 15, 0))
-                            .setBackground(
-                                ModularUITextures.VANILLA_BACKGROUND,
-                                GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18))
-                            .setSize(70, 18)
-                            .addTooltip("Setup mode"))
+                                        .withFixedSize(70 - 18, 18, 15, 0))
+                        .setBackground(
+                            ModularUITextures.VANILLA_BACKGROUND,
+                            GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18))
+                        .setSize(70, 18)
+                        .addTooltip("Setup mode"))
                     .widget(
                         new CycleButtonWidget().setLength(2)
                             .setGetter(() -> this.mode.getUIIndex())
@@ -1083,7 +1091,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                                 i -> i == 0 ? new Text("Disabled").color(Color.RED.dark(3))
                                     .withFixedSize(70 - 18, 18, 15, 0)
                                     : new Text("Enabled").color(Color.GREEN.dark(3))
-                                    .withFixedSize(70 - 18, 18, 15, 0))
+                                        .withFixedSize(70 - 18, 18, 15, 0))
                             .setBackground(
                                 ModularUITextures.VANILLA_BACKGROUND,
                                 GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18))
@@ -1102,7 +1110,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                                 i -> i == 0 ? new Text("Disabled").color(Color.RED.dark(3))
                                     .withFixedSize(70 - 18, 18, 15, 0)
                                     : new Text("Enabled").color(Color.GREEN.dark(3))
-                                    .withFixedSize(70 - 18, 18, 15, 0))
+                                        .withFixedSize(70 - 18, 18, 15, 0))
                             .setBackground(
                                 ModularUITextures.VANILLA_BACKGROUND,
                                 GT_UITextures.OVERLAY_BUTTON_CYCLIC.withFixedSize(18, 18))
@@ -1218,7 +1226,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             Arrays.asList(
                 "Running in mode: " + EnumChatFormatting.GREEN
                     + (this.setupPhase == 0 ? this.mode.getName()
-                    : ("Setup mode " + (this.setupPhase == 1 ? "(input)" : "(output)")))
+                        : ("Setup mode " + (this.setupPhase == 1 ? "(input)" : "(output)")))
                     + EnumChatFormatting.RESET,
                 "Uses " + waterUsage + "L/operation of water",
                 "Uses " + weedEXUsage + "L/second of Weed-EX 9000",
@@ -1256,7 +1264,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
     @Override
     public ITexture[] getTexture(IGregTechTileEntity aBaseMetaTileEntity, ForgeDirection side, ForgeDirection facing,
-                                 int colorIndex, boolean aActive, boolean aRedstone) {
+        int colorIndex, boolean aActive, boolean aRedstone) {
         if (side == facing) {
             if (aActive) return new ITexture[] { Textures.BlockIcons.getCasingTextureForId(CASING_INDEX),
                 TextureFactory.builder()

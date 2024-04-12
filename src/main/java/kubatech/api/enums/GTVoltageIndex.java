@@ -1,6 +1,7 @@
 package kubatech.api.enums;
 
 public class GTVoltageIndex {
+
     public final static int ULV = 0;
     public final static int LV = 1;
     public final static int MV = 2;
@@ -16,5 +17,6 @@ public class GTVoltageIndex {
     public final static int UMV = 12;
     public final static int UXV = 13;
     public final static int MAX = 14;
-    private GTVoltageIndex(){}
+
+    private GTVoltageIndex() {}
 }

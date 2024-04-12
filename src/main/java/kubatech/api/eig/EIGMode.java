@@ -1,29 +1,42 @@
 package kubatech.api.eig;
 
-import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
-import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialGreenhouse;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import static kubatech.kubatech.error;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-import static kubatech.kubatech.error;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+
+import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
+import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialGreenhouse;
 
 public abstract class EIGMode {
+
     public abstract int getUIIndex();
+
     public abstract String getName();
+
     public abstract int getMinVoltageTier();
+
     public abstract int getMinGlassTier();
+
     public abstract int getStartingSlotCount();
+
     public abstract int getSlotPerTierMultiplier();
+
     public abstract int getSlotCount(int machineTier);
+
     public abstract int getSeedCapacityPerSlot();
+
     public abstract int getWeedEXMultiplier();
+
     public abstract int getMaxFertilizerUsagePerSeed();
+
     public abstract double getFertilizerBoost();
+
     public abstract GT_Multiblock_Tooltip_Builder addTooltipInfo(GT_Multiblock_Tooltip_Builder builder);
 
     /**
@@ -93,7 +106,7 @@ public abstract class EIGMode {
      * @return Null if no bucket could be created from the item.
      */
     public EIGBucket tryCreateNewBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-                                        int maxConsume, boolean simulate) {
+        int maxConsume, boolean simulate) {
         // Validate inputs
         if (input == null) return null;
         maxConsume = Math.min(input.stackSize, maxConsume);

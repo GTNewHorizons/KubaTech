@@ -1,11 +1,11 @@
 package kubatech.api.enums;
 
+import java.util.HashMap;
+
 import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import kubatech.api.eig.EIGMode;
 import kubatech.tileentity.gregtech.multiblock.eigmodes.EIGIC2Mode;
 import kubatech.tileentity.gregtech.multiblock.eigmodes.EIGNormalMode;
-
-import java.util.*;
 
 public class EIGModes {
 
@@ -15,7 +15,7 @@ public class EIGModes {
     public static final EIGMode IC2 = addMode(EIGIC2Mode.instance);
 
     // this is basically a fake enum, plz don't instantiate
-    private EIGModes(){}
+    private EIGModes() {}
 
     private static EIGMode addMode(EIGMode mode) {
         modes.put(mode.getName(), mode);
