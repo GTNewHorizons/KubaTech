@@ -1,37 +1,31 @@
-package kubatech.api.enums;
+package kubatech.api.eig;
 
-import static kubatech.kubatech.error;
-
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.function.Function;
-
+import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
+import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialGreenhouse;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
-import kubatech.api.eig.EIGBucket;
-import kubatech.api.eig.IEIGBucketFactory;
-import kubatech.tileentity.gregtech.multiblock.GT_MetaTileEntity_ExtremeIndustrialGreenhouse;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
-// TODO: Make this into instance classes
-public enum EIGMode {
+import static kubatech.kubatech.error;
 
-    Normal(0, "normal", GT_MetaTileEntity_ExtremeIndustrialGreenhouse.EIG_BALANCE_REGULAR_MODE_MIN_TIER, 64,
-        (i) -> (1 << i), 1, 2),
-    IC2(1, "IC2", GT_MetaTileEntity_ExtremeIndustrialGreenhouse.EIG_BALANCE_IC2_MODE_MIN_TIER, 1, (i) -> 4 << (2 * i),
-        5, 40)
+public abstract class EIGMode {
+    public abstract int getUIIndex();
+    public abstract String getName();
+    public abstract int getMinVoltageTier();
+    public abstract int getMinGlassTier();
+    public abstract int getStartingSlotCount();
+    public abstract int getSlotPerTierMultiplier();
+    public abstract int getSlotCount(int machineTier);
+    public abstract int getSeedCapacityPerSlot();
+    public abstract int getWeedEXMultiplier();
+    public abstract int getMaxFertilizerUsagePerSeed();
+    public abstract double getFertilizerBoost();
+    public abstract GT_Multiblock_Tooltip_Builder addTooltipInfo(GT_Multiblock_Tooltip_Builder builder);
 
-    ;
-
-    public final int id;
-    public final String name;
-    public final int minTier;
-    public final int seedPerSlot;
-    private final Function<Integer, Integer> slotCalculator;
-    public final int weedEXMultiplier;
-    public final int fertilizerUsagePerSeed;
     /**
      * Used to resolve factory type to an identifier.
      */
@@ -41,15 +35,7 @@ public enum EIGMode {
      */
     private final LinkedList<IEIGBucketFactory> orderedFactories;
 
-    EIGMode(int id, String name, int minTier, int seedPerSlot, Function<Integer, Integer> slotCalculator,
-        int weedEXMultiplier, int fertilizerUsagePerSeed) {
-        this.id = id;
-        this.name = name;
-        this.minTier = minTier;
-        this.seedPerSlot = seedPerSlot;
-        this.slotCalculator = slotCalculator;
-        this.weedEXMultiplier = weedEXMultiplier;
-        this.fertilizerUsagePerSeed = fertilizerUsagePerSeed;
+    public EIGMode() {
         this.factories = new HashMap<>();
         this.orderedFactories = new LinkedList<>();
     }
@@ -58,7 +44,6 @@ public enum EIGMode {
      * Adds a bucket factory to the EIG mode and gives it a low priority. Factories with using existing IDs will
      * overwrite each other.
      *
-     * @see EIGMode#factories
      * @param factory The bucket factory to add.
      */
     public void addLowPriorityFactory(IEIGBucketFactory factory) {
@@ -73,7 +58,6 @@ public enum EIGMode {
      * Adds a bucket factory to the EIG mode and gives it a high priority. Factories with using existing IDs will
      * overwrite each other.
      *
-     * @see EIGMode#factories
      * @param factory The bucket factory to add.
      */
     public void addHighPriorityFactory(IEIGBucketFactory factory) {
@@ -82,33 +66,6 @@ public enum EIGMode {
         // add factory as lowest priority
         this.factories.put(factoryId, factory);
         this.orderedFactories.addFirst(factory);
-    }
-
-    /**
-     * Attempts to create a new bucket from a given item. Returns if the item cannot be inserted into the EIG.
-     *
-     * @see IEIGBucketFactory#tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse, ItemStack, int)
-     * @param greenhouse The {@link GT_MetaTileEntity_ExtremeIndustrialGreenhouse} that will contain the seed.
-     * @param input      The {@link ItemStack} for the input item.
-     * @param maxConsume The maximum amount of items to consume.
-     * @param simulate   Whether to actually consume the seed.
-     * @return Null if no bucket could be created from the item.
-     */
-    public EIGBucket tryCreateNewBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
-        int maxConsume, boolean simulate) {
-        // Validate inputs
-        if (input == null) return null;
-        maxConsume = Math.min(input.stackSize, maxConsume);
-        if (maxConsume <= 0) return null;
-        for (IEIGBucketFactory factory : this.orderedFactories) {
-            EIGBucket bucket = factory.tryCreateBucket(greenhouse, input);
-            if (bucket == null || !bucket.isValid()) continue;
-            if (!simulate) input.stackSize--;
-            maxConsume--;
-            bucket.tryAddSeed(greenhouse, input, maxConsume, simulate);
-            return bucket;
-        }
-        return null;
     }
 
     /**
@@ -123,6 +80,33 @@ public enum EIGMode {
             // remove duplicate from ordered list
             this.orderedFactories.remove(this.factories.get(factoryId));
         }
+    }
+
+    /**
+     * Attempts to create a new bucket from a given item. Returns if the item cannot be inserted into the EIG.
+     *
+     * @see IEIGBucketFactory#tryCreateBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse, ItemStack)
+     * @param greenhouse The {@link GT_MetaTileEntity_ExtremeIndustrialGreenhouse} that will contain the seed.
+     * @param input      The {@link ItemStack} for the input item.
+     * @param maxConsume The maximum amount of items to consume.
+     * @param simulate   Whether to actually consume the seed.
+     * @return Null if no bucket could be created from the item.
+     */
+    public EIGBucket tryCreateNewBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input,
+                                        int maxConsume, boolean simulate) {
+        // Validate inputs
+        if (input == null) return null;
+        maxConsume = Math.min(input.stackSize, maxConsume);
+        if (maxConsume <= 0) return null;
+        for (IEIGBucketFactory factory : this.orderedFactories) {
+            EIGBucket bucket = factory.tryCreateBucket(greenhouse, input);
+            if (bucket == null || !bucket.isValid()) continue;
+            if (!simulate) input.stackSize--;
+            maxConsume--;
+            bucket.tryAddSeed(greenhouse, input, maxConsume, simulate);
+            return bucket;
+        }
+        return null;
     }
 
     /**
@@ -153,18 +137,5 @@ public enum EIGMode {
             // restore bucket
             loadTo.add(factory.restore(bucketNBT));
         }
-    }
-
-    public int getSlotCount(int voltageTier) {
-        if (voltageTier < this.minTier) return 0;
-        return this.slotCalculator.apply(voltageTier - this.minTier);
-    }
-
-    public EIGMode nextMode() {
-        EIGMode[] modes = EIGMode.values();
-        int pos = 1;
-        for (EIGMode mode : modes) if (mode == this) break;
-        else pos++;
-        return modes[pos % modes.length];
     }
 }

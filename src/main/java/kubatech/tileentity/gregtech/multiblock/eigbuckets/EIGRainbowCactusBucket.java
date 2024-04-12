@@ -66,7 +66,7 @@ public class EIGRainbowCactusBucket extends EIGBucket {
     @Override
     public void addProgress(double multiplier, EIGDropTable tracker) {
         if (!this.isValid()) return;
-        // TODO: make the bloody function static in TB.
+        // TODO: make the addDyeDropsToOutput static in TB.
         ArrayList<ItemStack> drops = new ArrayList<>();
         ((BlockRainbowCactus) TBBlocks.rainbowCactus).addDyeDropsToOutput(this.random, drops);
         for (ItemStack drop : drops) {

@@ -298,6 +298,8 @@ public class EIGDynamicInventory<T> {
                                 if (copy.stackSize == 1) return;
                                 input.stackSize--;
                                 if (input.stackSize > 0) {
+                                    // clearing and updating the held item value like this is the only
+                                    // way i found to be able to reliably update the item count in the UI.
                                     player.inventory.setItemStack(null);
                                     ((EntityPlayerMP) player).updateHeldItem();
                                     player.inventory.setItemStack(input);
@@ -307,6 +309,8 @@ public class EIGDynamicInventory<T> {
                             } else {
                                 inventoryInjector.inject(input);
                                 if (input.stackSize > 0) {
+                                    // clearing and updating the held item value like this is the only
+                                    // way i found to be able to reliably update the item count in the UI.
                                     player.inventory.setItemStack(null);
                                     ((EntityPlayerMP) player).updateHeldItem();
                                     player.inventory.setItemStack(input);
@@ -400,6 +404,8 @@ public class EIGDynamicInventory<T> {
 
                             input.stackSize--;
                             if (input.stackSize > 0) {
+                                // clearing and updating the held item value like this is the only
+                                // way i found to be able to reliably update the item count in the UI.
                                 player.inventory.setItemStack(null);
                                 ((EntityPlayerMP) player).updateHeldItem();
                                 player.inventory.setItemStack(input);
@@ -409,6 +415,8 @@ public class EIGDynamicInventory<T> {
                         } else {
                             inventoryInjector.inject(input);
                             if (input.stackSize > 0) {
+                                // clearing and updating the held item value like this is the only
+                                // way i found to be able to reliably update the item count in the UI.
                                 player.inventory.setItemStack(null);
                                 ((EntityPlayerMP) player).updateHeldItem();
                                 player.inventory.setItemStack(input);
@@ -434,9 +442,9 @@ public class EIGDynamicInventory<T> {
                 })
                 .dynamicTooltip(() -> {
                     // TODO: all l10n for insertion slot tooltip.
-                    List<String> tip = new ArrayList<>(Collections.singleton(EnumChatFormatting.GRAY + "Empty slot"));
+                    List<String> tip = new ArrayList<>();
                     tip.add(
-                        EnumChatFormatting.DARK_PURPLE + "Remaining slots: "
+                        EnumChatFormatting.DARK_PURPLE + "Remaining seed types: "
                             + (this.maxSeedTypes - this.usedSeedTypes));
                     tip.add(
                         EnumChatFormatting.DARK_GREEN + "Remaining seed capacity: "

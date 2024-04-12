@@ -20,6 +20,7 @@
 
 package kubatech.api.utils;
 
+import gregtech.api.enums.GT_Values;
 import net.minecraft.util.EnumChatFormatting;
 
 public class StringUtils {
@@ -48,5 +49,9 @@ public class StringUtils {
 
     public static String applyRainbow(String str) {
         return applyRainbow(str, 0, "");
+    }
+
+    public static String voltageTooltipFormatted(int tier) {
+        return GT_Values.TIER_COLORS[tier] + GT_Values.VN[tier] + EnumChatFormatting.GRAY;
     }
 }

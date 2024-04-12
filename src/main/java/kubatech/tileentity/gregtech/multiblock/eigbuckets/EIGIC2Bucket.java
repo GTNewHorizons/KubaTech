@@ -36,7 +36,7 @@ public class EIGIC2Bucket extends EIGBucket {
 
     // region crop simulation variables
 
-    private final static int NUMBER_OF_DROPS_TO_SIMULATE = 100;
+    private final static int NUMBER_OF_DROPS_TO_SIMULATE = 1000;
     // nutrient factors
     /**
      * Set to true if you want to assume the crop is on wet farmland for a +2 bonus to nutrients
@@ -95,9 +95,12 @@ public class EIGIC2Bucket extends EIGBucket {
         }
     }
 
+    /**
+     * The average amount of growth cycles needed to reach maturity.
+     */
+    private double growthTime;
     public final boolean useNoHumidity;
     private EIGDropTable drops = new EIGDropTable();
-    private double growthTime;
     private boolean isValid = false;
 
     /**
@@ -153,7 +156,7 @@ public class EIGIC2Bucket extends EIGBucket {
         // abort early if slot is invalid
         if (!this.isValid) return;
         // else apply drops to tracker
-        double growthPercent = multiplier / this.growthTime;
+        double growthPercent = multiplier / (this.growthTime * TileEntityCrop.tickRate);
         if (this.drops != null) {
             this.drops.addTo(tracker, this.seedCount * growthPercent);
         }
@@ -339,7 +342,7 @@ public class EIGIC2Bucket extends EIGBucket {
             if (avgGrowthCyclesToHarvest <= 0) {
                 return;
             }
-            this.growthTime = TileEntityCrop.tickRate * avgGrowthCyclesToHarvest;
+            this.growthTime = avgGrowthCyclesToHarvest;
 
             // endregion growth time calculation
 
@@ -407,12 +410,12 @@ public class EIGIC2Bucket extends EIGBucket {
         double multTotal = 0;
         double chance = (double) cc.dropGainChance() * Math.pow(1.03, te.getGain());
         // this range should cover ~99.8% of random values from the gaussian curve
-        // idk why having the stop at 3.2825
+        // idk why having the stop at 3.2825 results in a higher accuracy but i'll take it
         // also no idk why using a normal distribution instead of an actual gaussian formula results in higher accuracy
         for (int y = -300; y <= 328; y += 1) {
             double x = ((double) y / 100.0d);
             double mult = stdNormDistr(x);
-            total += Math.max(0L, Math.round(x * chance * 0.6827D + chance)) * mult;
+            total += Math.max(0L, Math.round(x * chance * 0.6827d + chance)) * mult;
             multTotal += mult;
         }
         return total / multTotal;
@@ -438,7 +441,7 @@ public class EIGIC2Bucket extends EIGBucket {
         return (te.getGain() + 1) / 100.0d;
     }
 
-    // endregiondrop rate calculations
+    // endregion drop rate calculations
 
     // region growth time approximation
 
