@@ -20,8 +20,8 @@
 
 package kubatech.test;
 
-import static gregtech.api.util.GT_RecipeBuilder.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static gregtech.api.util.GT_RecipeBuilder.HOURS;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.util.Map;
