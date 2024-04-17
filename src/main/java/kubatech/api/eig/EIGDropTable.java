@@ -34,6 +34,7 @@ public class EIGDropTable {
      * @param key The name of the key name for the drop table.
      */
     public EIGDropTable(NBTTagCompound nbt, String key) {
+        // should create an empty table if no drops are found.
         this(nbt.getTagList(key, 10));
     }
 

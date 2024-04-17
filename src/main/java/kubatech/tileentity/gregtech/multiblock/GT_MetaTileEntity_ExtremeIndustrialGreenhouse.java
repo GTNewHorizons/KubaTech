@@ -53,9 +53,7 @@ import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
 import net.minecraft.inventory.Slot;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -91,7 +89,6 @@ import com.gtnewhorizons.modularui.common.widget.FakeSyncWidget;
 import com.gtnewhorizons.modularui.common.widget.SlotWidget;
 import com.gtnewhorizons.modularui.common.widget.TextWidget;
 
-import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import gregtech.api.GregTech_API;
@@ -112,7 +109,6 @@ import gregtech.api.util.GT_Multiblock_Tooltip_Builder;
 import gregtech.api.util.GT_Utility;
 import gregtech.api.util.VoidProtectionHelper;
 import gregtech.common.tileentities.machines.GT_MetaTileEntity_Hatch_OutputBus_ME;
-import ic2.core.Ic2Items;
 import ic2.core.init.BlocksItems;
 import ic2.core.init.InternalName;
 import kubatech.Tags;
@@ -157,7 +153,11 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
     public static final int EIG_BALANCE_WATER_USAGE_PER_SEED = 1000;
 
     private static final Fluid WEEDEX_FLUID = Materials.WeedEX9000.mFluid;
-    private static final Item FORESTRY_FERTILIZER_ITEM = GameRegistry.findItem("Forestry", "fertilizerCompound");
+    private static final LinkedList<ItemStack> FERTILIZER_ITEM_LIST = new LinkedList<>();
+
+    public static void addFertilizerItem(ItemStack fertilizer) {
+        FERTILIZER_ITEM_LIST.addLast(fertilizer);
+    }
 
     private static final boolean debug = false;
 
@@ -688,9 +688,10 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
      */
     public static boolean isFertilizer(ItemStack item) {
         if (item == null || item.stackSize <= 0) return false;
-        return (item.getItem() == Items.dye && item.getItemDamage() == 15)
-            || (FORESTRY_FERTILIZER_ITEM != null && (item.getItem() == FORESTRY_FERTILIZER_ITEM))
-            || (GT_Utility.areStacksEqual(item, Ic2Items.fertilizer));
+        for (ItemStack fert : FERTILIZER_ITEM_LIST) {
+            if (GT_Utility.areStacksEqual(item, fert)) return true;
+        }
+        return false;
     }
 
     private boolean tryEmptyBucket(EIGBucket bucket) {
@@ -1188,14 +1189,13 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                 b -> this.mode = b ? EIGModes.IC2 : EIGModes.Normal));
         screenElements.widget(new FakeSyncWidget<>(() -> {
             HashMap<ItemStack, Double> ret = new HashMap<>();
-            HashMap<ItemStack, Double> dropProgress = new HashMap<>();
 
             for (Map.Entry<ItemStack, Double> drop : this.guiDropTracker.entrySet()) {
                 ret.merge(drop.getKey(), drop.getValue(), Double::sum);
             }
 
             return ret;
-        }, h -> synchedGUIDropTracker = h, (buffer, h) -> {
+        }, h -> this.synchedGUIDropTracker = h, (buffer, h) -> {
             buffer.writeVarIntToBuffer(h.size());
             for (Map.Entry<ItemStack, Double> itemStackDoubleEntry : h.entrySet()) {
                 try {
@@ -1236,27 +1236,16 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
                     + this.buckets.size()
                     + EnumChatFormatting.RESET));
         for (EIGBucket bucket : buckets) {
-            StringBuilder a = new StringBuilder();
-            // display invalid buckets, we don't want people to think they lost their seeds or something.
-            a.append(bucket.isValid() ? EnumChatFormatting.GREEN : EnumChatFormatting.RED);
-            a.append("x");
-            a.append(bucket.getSeedCount());
-            a.append(" ");
-            a.append(bucket.getDisplayName());
-            if (bucket instanceof EIGIC2Bucket) {
-                a.append(" | Humidity: ");
-                boolean isNotUsingHumidity = ((EIGIC2Bucket) bucket).useNoHumidity;
-                if (isNotUsingHumidity) {
-                    a.append(EnumChatFormatting.RED);
-                }
-                a.append(isNotUsingHumidity ? "Off" : "On");
-            }
-            a.append(EnumChatFormatting.RESET);
-            info.add(a.toString());
+            info.add(bucket.getInfoData());
         }
         if (this.buckets.size() > this.maxSeedTypes) {
             info.add(
-                EnumChatFormatting.DARK_RED + "There are too many crops inside to run !" + EnumChatFormatting.RESET);
+                EnumChatFormatting.DARK_RED + "There are too many seed types inside to run!"
+                    + EnumChatFormatting.RESET);
+        }
+        if (this.getTotalSeedCount() > this.maxSeedCount) {
+            info.add(
+                EnumChatFormatting.DARK_RED + "There are too many seeds inside to run!" + EnumChatFormatting.RESET);
         }
         info.addAll(Arrays.asList(super.getInfoData()));
         return info.toArray(new String[0]);

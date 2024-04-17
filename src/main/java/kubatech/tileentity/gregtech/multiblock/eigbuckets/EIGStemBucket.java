@@ -52,7 +52,7 @@ public class EIGStemBucket extends EIGBucket {
     }
 
     private boolean isValid = false;
-    private EIGDropTable drops;
+    private EIGDropTable drops = new EIGDropTable();
 
     private EIGStemBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack input) {
         super(input, 1, null);
@@ -62,13 +62,15 @@ public class EIGStemBucket extends EIGBucket {
     private EIGStemBucket(NBTTagCompound nbt) {
         super(nbt);
         this.drops = new EIGDropTable(nbt, "drops");
-        this.isValid = nbt.getInteger("version") == REVISION_NUMBER;
+        this.isValid = nbt.getInteger("version") == REVISION_NUMBER && !this.drops.isEmpty();
     }
 
     @Override
     public NBTTagCompound save() {
         NBTTagCompound nbt = super.save();
-        nbt.setTag("drops", this.drops.save());
+        if (this.drops != null) {
+            nbt.setTag("drops", this.drops.save());
+        }
         nbt.setInteger("version", REVISION_NUMBER);
         return nbt;
     }
@@ -116,11 +118,11 @@ public class EIGStemBucket extends EIGBucket {
         // if we know some crops needs a specific metadata, remap here
         int metadata = 0;
 
-        this.drops = new EIGDropTable();
+        EIGDropTable drops = new EIGDropTable();
 
         for (int i = 0; i < NUMBER_OF_DROPS_TO_SIMULATE; i++) {
             // simulate 1 round of drops
-            ArrayList<ItemStack> drops = cropBlock.getDrops(
+            ArrayList<ItemStack> blockDrops = cropBlock.getDrops(
                 greenhouse.getBaseMetaTileEntity()
                     .getWorld(),
                 greenhouse.getBaseMetaTileEntity()
@@ -131,23 +133,26 @@ public class EIGStemBucket extends EIGBucket {
                     .getZCoord(),
                 metadata,
                 0);
-            if (drops == null || drops.isEmpty()) continue;
-            // if it drops itself assume that it only drops itself
-            if (i == 0 && drops.size() == 1) {
-                ItemStack drop = drops.get(0);
+            if (blockDrops == null || blockDrops.isEmpty()) continue;
+            // if the droped item is a block that places itself, assume this is the only possible drop
+            // eg: pumpkin, redlon
+            if (i == 0 && blockDrops.size() == 1) {
+                ItemStack drop = blockDrops.get(0);
                 if (drop != null && drop.stackSize >= 1 && drop.getItem() == Item.getItemFromBlock(cropBlock)) {
-                    this.drops.addDrop(drop, drop.stackSize);
+                    drops.addDrop(drop, drop.stackSize);
                     break;
                 }
             }
             // else append all the drops
-            for (ItemStack drop : drops) {
-                this.drops.addDrop(drop, drop.stackSize / (double) NUMBER_OF_DROPS_TO_SIMULATE);
+            for (ItemStack drop : blockDrops) {
+                drops.addDrop(drop, drop.stackSize / (double) NUMBER_OF_DROPS_TO_SIMULATE);
             }
         }
         // check that we did in fact drop something.s
-        if (this.drops.isEmpty()) return;
+        if (drops.isEmpty()) return;
+
         // all checks passed we are good to go
+        this.drops = drops;
         this.isValid = true;
     }
 }

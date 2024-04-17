@@ -100,11 +100,11 @@ public class EIGIC2Bucket extends EIGBucket {
         }
     }
 
+    public final boolean useNoHumidity;
     /**
      * The average amount of growth cycles needed to reach maturity.
      */
-    private double growthTime;
-    public final boolean useNoHumidity;
+    private double growthTime = 0;
     private EIGDropTable drops = new EIGDropTable();
     private boolean isValid = false;
 
@@ -134,20 +134,26 @@ public class EIGIC2Bucket extends EIGBucket {
 
     private EIGIC2Bucket(NBTTagCompound nbt) {
         super(nbt);
-        this.drops = new EIGDropTable(nbt, "drops");
-        this.growthTime = nbt.getDouble("growthTime");
         this.useNoHumidity = nbt.getBoolean("useNoHumidity");
-        this.isValid = nbt.getInteger("version") == REVISION_NUMBER && !nbt.hasKey("invalid");
+        // If the invalid key exists then drops and growth time haven't been saved
+        if (!nbt.hasKey("invalid")) {
+            this.drops = new EIGDropTable(nbt, "drops");
+            this.growthTime = nbt.getDouble("growthTime");
+            this.isValid = nbt.getInteger("version") == REVISION_NUMBER && this.growthTime > 0 && !this.drops.isEmpty();
+        }
     }
 
     @Override
     public NBTTagCompound save() {
         NBTTagCompound nbt = super.save();
-        nbt.setTag("drops", this.drops.save());
-        nbt.setDouble("growthTime", this.growthTime);
         nbt.setBoolean("useNoHumidity", this.useNoHumidity);
-        nbt.setInteger("version", this.isValid() ? REVISION_NUMBER : -1);
-        if (!this.isValid()) nbt.setBoolean("invalid", true);
+        if (this.isValid) {
+            nbt.setTag("drops", this.drops.save());
+            nbt.setDouble("growthTime", this.growthTime);
+        } else {
+            nbt.setBoolean("invalid", true);
+        }
+        nbt.setInteger("version", REVISION_NUMBER);
         return nbt;
     }
 
@@ -158,13 +164,19 @@ public class EIGIC2Bucket extends EIGBucket {
 
     @Override
     public void addProgress(double multiplier, EIGDropTable tracker) {
-        // abort early if slot is invalid
-        if (!this.isValid) return;
+        // abort early if the bucket is invalid
+        if (!this.isValid()) return;
         // else apply drops to tracker
         double growthPercent = multiplier / (this.growthTime * TileEntityCrop.tickRate);
         if (this.drops != null) {
             this.drops.addTo(tracker, this.seedCount * growthPercent);
         }
+    }
+
+    @Override
+    protected void getAdditionalInfoData(StringBuilder sb) {
+        sb.append(" | Humidity: ");
+        sb.append(this.useNoHumidity ? "Off" : "On");
     }
 
     @Override
@@ -321,7 +333,7 @@ public class EIGIC2Bucket extends EIGBucket {
             // PRE CALCULATE DROP RATES
             // TODO: Add better loot table handling for crops like red wheat
             // berries, etc.
-            this.drops = new EIGDropTable();
+            EIGDropTable drops = new EIGDropTable();
             // Multiply drop sizes by the average number drop rounds per harvest.
             double avgDropRounds = getRealAverageDropRounds(crop, cc);
             double avgStackIncrease = getRealAverageDropIncrease(crop, cc);
@@ -334,9 +346,9 @@ public class EIGIC2Bucket extends EIGBucket {
 
                 // Merge the new drop with the current loot table.
                 double avgAmount = (drop.stackSize + avgStackIncrease) * avgDropRounds;
-                this.drops.addDrop(drop, avgAmount / NUMBER_OF_DROPS_TO_SIMULATE);
+                drops.addDrop(drop, avgAmount / NUMBER_OF_DROPS_TO_SIMULATE);
             }
-            if (this.drops.isEmpty()) return;
+            if (drops.isEmpty()) return;
 
             // endregion drop rate calculations
 
@@ -347,13 +359,14 @@ public class EIGIC2Bucket extends EIGBucket {
             if (avgGrowthCyclesToHarvest <= 0) {
                 return;
             }
-            this.growthTime = avgGrowthCyclesToHarvest;
 
             // endregion growth time calculation
 
             // Consume new under block if necessary
             if (blockInputStackToConsume != null) blockInputStackToConsume.stackSize -= this.seedCount;
             // We are good return success
+            this.growthTime = avgGrowthCyclesToHarvest;
+            this.drops = drops;
             this.isValid = true;
         } catch (Exception e) {
             e.printStackTrace(System.err);

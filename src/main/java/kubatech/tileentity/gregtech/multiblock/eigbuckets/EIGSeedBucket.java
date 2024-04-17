@@ -50,8 +50,8 @@ public class EIGSeedBucket extends EIGBucket {
 
     }
 
-    private boolean isValid;
-    private EIGDropTable drops;
+    private boolean isValid = false;
+    private EIGDropTable drops = new EIGDropTable();
 
     private EIGSeedBucket(GT_MetaTileEntity_ExtremeIndustrialGreenhouse greenhouse, ItemStack seed) {
         super(seed, 1, null);
@@ -60,12 +60,14 @@ public class EIGSeedBucket extends EIGBucket {
 
     private EIGSeedBucket(NBTTagCompound nbt) {
         super(nbt);
-        this.isValid = nbt.getInteger("version") == REVISION_NUMBER;
+        this.drops = new EIGDropTable(nbt, "drops");
+        this.isValid = nbt.getInteger("version") == REVISION_NUMBER && !this.drops.isEmpty();
     }
 
     @Override
     public NBTTagCompound save() {
         NBTTagCompound nbt = super.save();
+        nbt.setTag("drops", this.drops.save());
         nbt.setInteger("version", REVISION_NUMBER);
         return nbt;
     }
@@ -113,20 +115,21 @@ public class EIGSeedBucket extends EIGBucket {
         if (u != null && Objects.equals(u.modId, "Natura")) optimalGrowthMetadata = 8;
 
         // Pre-Generate drops.
-        this.drops = new EIGDropTable();
+        EIGDropTable drops = new EIGDropTable();
         World world = greenhouse.getBaseMetaTileEntity()
             .getWorld();
         for (int i = 0; i < NUMBER_OF_DROPS_TO_SIMULATE; i++) {
-            ArrayList<ItemStack> drops = block.getDrops(world, 0, 0, 0, optimalGrowthMetadata, FORTUNE_LEVEL);
-            for (ItemStack drop : drops) {
+            ArrayList<ItemStack> blockDrops = block.getDrops(world, 0, 0, 0, optimalGrowthMetadata, FORTUNE_LEVEL);
+            for (ItemStack drop : blockDrops) {
                 if (GT_Utility.areStacksEqual(this.seed, drop, true)) continue;
-                this.drops.addDrop(drop, drop.stackSize / (double) NUMBER_OF_DROPS_TO_SIMULATE);
+                drops.addDrop(drop, drop.stackSize / (double) NUMBER_OF_DROPS_TO_SIMULATE);
             }
         }
         // make sure we actually got a drop
-        if (this.drops.isEmpty()) return;
+        if (drops.isEmpty()) return;
 
         // and we are good, see ya.
+        this.drops = drops;
         this.isValid = true;
     }
 
