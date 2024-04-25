@@ -423,26 +423,42 @@ public class EIGIC2Bucket extends EIGBucket {
      * @return The average number of drops to computer per harvest
      */
     private static double getRealAverageDropRounds(TileEntityCrop te, CropCard cc) {
-        // this should be ~99.99995%
-        double total = 0;
-        double multTotal = 0;
+        // this should be ~99.995% accurate
         double chance = (double) cc.dropGainChance() * Math.pow(1.03, te.getGain());
-        // this range should cover ~99.8% of random values from the gaussian curve
-        // idk why having the stop at 3.2825 results in a higher accuracy but i'll take it
-        // also no idk why using a normal distribution instead of an actual gaussian formula results in higher accuracy
-        for (int y = -300; y <= 328; y += 1) {
-            double x = ((double) y / 100.0d);
-            double mult = stdNormDistr(x);
-            total += Math.max(0L, Math.round(x * chance * 0.6827d + chance)) * mult;
-            multTotal += mult;
+        // this is essentially just performing an integration using the composite trapezoidal rule.
+        double min = -10, max = 10;
+        int steps = 10000;
+        double stepSize = (max - min) / steps;
+        double sum = 0;
+        for (int k = 1; k <= steps - 1; k++) {
+            sum += getWeightedDropChance(min + k * stepSize, chance);
         }
-        return total / multTotal;
+        double minVal = getWeightedDropChance(min, chance);
+        double maxVal = getWeightedDropChance(max, chance);
+        return stepSize * ((minVal + maxVal) / 2 + sum);
     }
 
-    private static final double STD_NORM_DISTR_P1 = 1 / Math.sqrt(2.0d * Math.PI);
-
+    /**
+     * Evaluates the value of y for a standard normal distribution
+     *
+     * @param x The value of x to evaluate
+     * @return The value of y
+     */
     private static double stdNormDistr(double x) {
-        return STD_NORM_DISTR_P1 * Math.exp(-0.5 * (x * x));
+        return Math.exp(-0.5 * (x * x)) / SQRT2PI;
+    }
+
+    private static final double SQRT2PI = Math.sqrt(2.0d * Math.PI);
+
+    /**
+     * Calculates the weighted drop chance using
+     * 
+     * @param x
+     * @param chance
+     * @return
+     */
+    private static double getWeightedDropChance(double x, double chance) {
+        return Math.max(0L, Math.round(x * chance * 0.6827d + chance)) * stdNormDistr(x);
     }
 
     /**
