@@ -309,12 +309,12 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             .addInfo("Use wire cutters to give incoming IC2 seeds 0 humidity")
             .addInfo("Uses " + EIG_BALANCE_WATER_USAGE_PER_SEED + "L of water per seed per operation")
             .addInfo(
-                "Uses 1L of " + WEEDEX_FLUID.getName()
-                    + " per second per seed if it contains more than  "
+                "Uses 1L of " + new FluidStack(WEEDEX_FLUID, 1).getLocalizedName()
+                    + " per operation per seed if it contains more than "
                     + EIG_BALANCE_WEED_EX_USAGE_BEGINS_AT
-                    + " seeds ")
+                    + " seeds")
             .addInfo("Otherwise, around 1% of seeds will be voided each operation")
-            .addInfo("You can insert fertilizer each operation to get more drops (max +" + fertilizerBoostMax + ")")
+            .addInfo("You can insert fertilizer each operation to get more drops (max + " + fertilizerBoostMax + ")")
             .addInfo("--------------------- SETUP MODE ---------------------")
             .addInfo("Does not take power")
             .addInfo("There are two modes: input / output")
