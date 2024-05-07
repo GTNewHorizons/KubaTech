@@ -665,9 +665,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         for (FluidStack fluid : fluids) {
             if (fluid.isFluidEqual(toConsume)) {
                 remaining -= fluid.amount;
+                fluidsToUse.add(fluid);
+                if (remaining <= 0) break;
             }
-            fluidsToUse.add(fluid);
-            if (remaining <= 0) break;
         }
         if (!drainPartial && remaining > 0 && !debug) return false;
         boolean success = remaining <= 0;
