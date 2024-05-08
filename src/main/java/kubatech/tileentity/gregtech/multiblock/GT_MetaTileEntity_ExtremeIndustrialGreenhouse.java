@@ -239,7 +239,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         .addElement(
             'l',
             LoaderReference.ProjRedIllumination
-                ? ofBlock(Block.getBlockFromName("ProjRed|Illumination:projectred.illumination.lamp"), 10)
+                ? ofChain(
+                    ofBlock(Block.getBlockFromName("ProjRed|Illumination:projectred.illumination.lamp"), 10),
+                    ofBlock(Block.getBlockFromName("ProjRed|Illumination:projectred.illumination.lamp"), 26))
                 : ofChain(ofBlock(Blocks.redstone_lamp, 0), ofBlock(Blocks.lit_redstone_lamp, 0)))
         .addElement(
             'g',
