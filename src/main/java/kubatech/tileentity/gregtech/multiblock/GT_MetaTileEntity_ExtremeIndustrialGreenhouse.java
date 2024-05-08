@@ -636,6 +636,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
      * @return The number of seeds in the EIG.
      */
     private int getTotalSeedCount() {
+        // null check is to prevent a occasional weird NPE from MUI
         return this.buckets.parallelStream()
             .reduce(0, (b, t) -> b + t.getSeedCount(), Integer::sum);
     }
@@ -1136,49 +1137,46 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
     @Override
     protected String generateCurrentRecipeInfoString() {
-        if (this.mode == EIGModes.IC2) {
-            StringBuilder ret = new StringBuilder(EnumChatFormatting.WHITE + "Progress: ")
-                .append(String.format("%,.2f", (double) this.mProgresstime / 20))
-                .append("s / ")
-                .append(String.format("%,.2f", (double) this.mMaxProgresstime / 20))
-                .append("s (")
-                .append(String.format("%,.1f", (double) this.mProgresstime / this.mMaxProgresstime * 100))
-                .append("%)\n");
+        StringBuilder ret = new StringBuilder(EnumChatFormatting.WHITE + "Progress: ")
+            .append(String.format("%,.2f", (double) this.mProgresstime / 20))
+            .append("s / ")
+            .append(String.format("%,.2f", (double) this.mMaxProgresstime / 20))
+            .append("s (")
+            .append(String.format("%,.1f", (double) this.mProgresstime / this.mMaxProgresstime * 100))
+            .append("%)\n");
 
-            for (Map.Entry<ItemStack, Double> drop : this.synchedGUIDropTracker.entrySet()
-                .stream()
-                .sorted(
-                    Comparator.comparing(
-                        a -> a.getKey()
-                            .toString()
-                            .toLowerCase()))
-                .collect(Collectors.toList())) {
-                int outputSize = Arrays.stream(this.mOutputItems)
-                    .filter(s -> s.isItemEqual(drop.getKey()))
-                    .mapToInt(i -> i.stackSize)
-                    .sum();
-                ret.append(EnumChatFormatting.AQUA)
+        for (Map.Entry<ItemStack, Double> drop : this.synchedGUIDropTracker.entrySet()
+            .stream()
+            .sorted(
+                Comparator.comparing(
+                    a -> a.getKey()
+                        .toString()
+                        .toLowerCase()))
+            .collect(Collectors.toList())) {
+            int outputSize = Arrays.stream(this.mOutputItems)
+                .filter(s -> s.isItemEqual(drop.getKey()))
+                .mapToInt(i -> i.stackSize)
+                .sum();
+            ret.append(EnumChatFormatting.AQUA)
+                .append(
+                    drop.getKey()
+                        .getDisplayName())
+                .append(EnumChatFormatting.WHITE)
+                .append(": ");
+            if (outputSize == 0) {
+                ret.append(String.format("%.2f", drop.getValue() * 100))
+                    .append("%\n");
+            } else {
+                ret.append(EnumChatFormatting.GOLD)
                     .append(
-                        drop.getKey()
-                            .getDisplayName())
-                    .append(EnumChatFormatting.WHITE)
-                    .append(": ");
-                if (outputSize == 0) {
-                    ret.append(String.format("%.2f", drop.getValue() * 100))
-                        .append("%\n");
-                } else {
-                    ret.append(EnumChatFormatting.GOLD)
-                        .append(
-                            String.format(
-                                "x%d %s(+%.2f/sec)\n",
-                                outputSize,
-                                EnumChatFormatting.WHITE,
-                                (double) outputSize / (mMaxProgresstime / 20)));
-                }
+                        String.format(
+                            "x%d %s(+%.2f/sec)\n",
+                            outputSize,
+                            EnumChatFormatting.WHITE,
+                            (double) outputSize / (mMaxProgresstime / 20)));
             }
-            return ret.toString();
         }
-        return super.generateCurrentRecipeInfoString();
+        return ret.toString();
     }
 
     @Override
