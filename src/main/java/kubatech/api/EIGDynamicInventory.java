@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -160,24 +159,15 @@ public class EIGDynamicInventory<T> {
             }), builder)
 
             .attachSyncer(new FakeSyncWidget.ListSyncer<>(() -> {
-                HashMap<ItemID, Integer> itemMap = new HashMap<>();
-                HashMap<ItemID, ItemStack> stackMap = new HashMap<>();
-                HashMap<ItemID, ArrayList<Integer>> realSlotMap = new HashMap<>();
-                for (int i = 0, mStorageSize = inventory.size(); i < mStorageSize; i++) {
-                    ItemStack stack = inventoryGetter.get(inventory.get(i));
-                    ItemID id = ItemID.createNoCopy(stack, false);
-                    itemMap.merge(id, 1, Integer::sum);
-                    stackMap.putIfAbsent(id, stack);
-                    realSlotMap.computeIfAbsent(id, unused -> new ArrayList<>())
-                        .add(i);
-                }
                 List<GTHelper.StackableItemSlot> newDrawables = new ArrayList<>();
-                for (Map.Entry<ItemID, Integer> entry : itemMap.entrySet()) {
-                    newDrawables.add(
-                        new GTHelper.StackableItemSlot(
-                            entry.getValue(),
-                            stackMap.get(entry.getKey()),
-                            realSlotMap.get(entry.getKey())));
+                for (int i = 0, mStorageSize = inventory.size(); i < mStorageSize; i++) {
+                    T slot = inventory.get(i);
+                    if (slot == null) {
+                        continue;
+                    }
+                    ItemStack stack = inventoryGetter.get(slot);
+                    newDrawables
+                        .add(new GTHelper.StackableItemSlot(1, stack, new ArrayList<>(Collections.singletonList(i))));
                 }
                 if (!Objects.equals(newDrawables, drawables)) {
                     drawables = newDrawables;
@@ -218,21 +208,15 @@ public class EIGDynamicInventory<T> {
             HashMap<ItemID, Integer> itemMap = new HashMap<>();
             HashMap<ItemID, ItemStack> stackMap = new HashMap<>();
             HashMap<ItemID, ArrayList<Integer>> realSlotMap = new HashMap<>();
-            for (int i = 0, inventorySize = inventory.size(); i < inventorySize; i++) {
-                ItemStack stack = inventoryGetter.get(inventory.get(i));
-                ItemID id = ItemID.createNoCopy(stack, false);
-                itemMap.merge(id, 1, Integer::sum);
-                stackMap.putIfAbsent(id, stack);
-                realSlotMap.computeIfAbsent(id, unused -> new ArrayList<>())
-                    .add(i);
-            }
             drawables = new ArrayList<>();
-            for (Map.Entry<ItemID, Integer> entry : itemMap.entrySet()) {
-                drawables.add(
-                    new GTHelper.StackableItemSlot(
-                        entry.getValue(),
-                        stackMap.get(entry.getKey()),
-                        realSlotMap.get(entry.getKey())));
+            for (int i = 0, inventorySize = inventory.size(); i < inventorySize; i++) {
+                T slot = inventory.get(i);
+                if (slot == null) {
+                    continue;
+                }
+                ItemStack stack = inventoryGetter.get(slot);
+                drawables
+                    .add(new GTHelper.StackableItemSlot(1, stack, new ArrayList<Integer>(Collections.singleton(i))));
             }
         }
 
