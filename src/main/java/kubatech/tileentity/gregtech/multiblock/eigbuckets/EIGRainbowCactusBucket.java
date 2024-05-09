@@ -38,7 +38,7 @@ public class EIGRainbowCactusBucket extends EIGBucket {
 
         @Override
         public EIGBucket restore(NBTTagCompound nbt) {
-            return null;
+            return new EIGRainbowCactusBucket(nbt);
         }
 
     }

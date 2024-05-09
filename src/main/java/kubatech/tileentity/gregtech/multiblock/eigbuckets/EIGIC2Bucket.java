@@ -452,10 +452,10 @@ public class EIGIC2Bucket extends EIGBucket {
 
     /**
      * Calculates the weighted drop chance using
-     * 
-     * @param x
-     * @param chance
-     * @return
+     *
+     * @param x      The value rolled by nextGaussian
+     * @param chance the base drop chance
+     * @return the weighted drop chance
      */
     private static double getWeightedDropChance(double x, double chance) {
         return Math.max(0L, Math.round(x * chance * 0.6827d + chance)) * stdNormDistr(x);

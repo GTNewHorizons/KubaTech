@@ -92,6 +92,7 @@ import com.gtnewhorizons.modularui.common.widget.TextWidget;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import gregtech.api.GregTech_API;
+import gregtech.api.enums.GTVoltageIndex;
 import gregtech.api.enums.GT_Values;
 import gregtech.api.enums.Materials;
 import gregtech.api.enums.Textures;
@@ -118,7 +119,6 @@ import kubatech.api.eig.EIGBucket;
 import kubatech.api.eig.EIGDropTable;
 import kubatech.api.eig.EIGMode;
 import kubatech.api.enums.EIGModes;
-import kubatech.api.enums.GTVoltageIndex;
 import kubatech.api.implementations.KubaTechGTMultiBlockBase;
 import kubatech.client.effect.CropRenderer;
 import kubatech.tileentity.gregtech.multiblock.eigbuckets.EIGIC2Bucket;
@@ -239,7 +239,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         .addElement(
             'l',
             LoaderReference.ProjRedIllumination
-                ? ofBlock(Block.getBlockFromName("ProjRed|Illumination:projectred.illumination.lamp"), 10)
+                ? ofChain(
+                    ofBlock(Block.getBlockFromName("ProjRed|Illumination:projectred.illumination.lamp"), 10),
+                    ofBlock(Block.getBlockFromName("ProjRed|Illumination:projectred.illumination.lamp"), 26))
                 : ofChain(ofBlock(Blocks.redstone_lamp, 0), ofBlock(Blocks.lit_redstone_lamp, 0)))
         .addElement(
             'g',
@@ -309,12 +311,12 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
             .addInfo("Use wire cutters to give incoming IC2 seeds 0 humidity")
             .addInfo("Uses " + EIG_BALANCE_WATER_USAGE_PER_SEED + "L of water per seed per operation")
             .addInfo(
-                "Uses 1L of " + WEEDEX_FLUID.getName()
-                    + " per second per seed if it contains more than  "
+                "Uses 1L of " + new FluidStack(WEEDEX_FLUID, 1).getLocalizedName()
+                    + " per operation per seed if it contains more than "
                     + EIG_BALANCE_WEED_EX_USAGE_BEGINS_AT
-                    + " seeds ")
+                    + " seeds")
             .addInfo("Otherwise, around 1% of seeds will be voided each operation")
-            .addInfo("You can insert fertilizer each operation to get more drops (max +" + fertilizerBoostMax + ")")
+            .addInfo("You can insert fertilizer each operation to get more drops (max + " + fertilizerBoostMax + ")")
             .addInfo("--------------------- SETUP MODE ---------------------")
             .addInfo("Does not take power")
             .addInfo("There are two modes: input / output")
@@ -636,6 +638,7 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
      * @return The number of seeds in the EIG.
      */
     private int getTotalSeedCount() {
+        // null check is to prevent a occasional weird NPE from MUI
         return this.buckets.parallelStream()
             .reduce(0, (b, t) -> b + t.getSeedCount(), Integer::sum);
     }
@@ -665,9 +668,9 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
         for (FluidStack fluid : fluids) {
             if (fluid.isFluidEqual(toConsume)) {
                 remaining -= fluid.amount;
+                fluidsToUse.add(fluid);
+                if (remaining <= 0) break;
             }
-            fluidsToUse.add(fluid);
-            if (remaining <= 0) break;
         }
         if (!drainPartial && remaining > 0 && !debug) return false;
         boolean success = remaining <= 0;
@@ -1136,49 +1139,46 @@ public class GT_MetaTileEntity_ExtremeIndustrialGreenhouse
 
     @Override
     protected String generateCurrentRecipeInfoString() {
-        if (this.mode == EIGModes.IC2) {
-            StringBuilder ret = new StringBuilder(EnumChatFormatting.WHITE + "Progress: ")
-                .append(String.format("%,.2f", (double) this.mProgresstime / 20))
-                .append("s / ")
-                .append(String.format("%,.2f", (double) this.mMaxProgresstime / 20))
-                .append("s (")
-                .append(String.format("%,.1f", (double) this.mProgresstime / this.mMaxProgresstime * 100))
-                .append("%)\n");
+        StringBuilder ret = new StringBuilder(EnumChatFormatting.WHITE + "Progress: ")
+            .append(String.format("%,.2f", (double) this.mProgresstime / 20))
+            .append("s / ")
+            .append(String.format("%,.2f", (double) this.mMaxProgresstime / 20))
+            .append("s (")
+            .append(String.format("%,.1f", (double) this.mProgresstime / this.mMaxProgresstime * 100))
+            .append("%)\n");
 
-            for (Map.Entry<ItemStack, Double> drop : this.synchedGUIDropTracker.entrySet()
-                .stream()
-                .sorted(
-                    Comparator.comparing(
-                        a -> a.getKey()
-                            .toString()
-                            .toLowerCase()))
-                .collect(Collectors.toList())) {
-                int outputSize = Arrays.stream(this.mOutputItems)
-                    .filter(s -> s.isItemEqual(drop.getKey()))
-                    .mapToInt(i -> i.stackSize)
-                    .sum();
-                ret.append(EnumChatFormatting.AQUA)
+        for (Map.Entry<ItemStack, Double> drop : this.synchedGUIDropTracker.entrySet()
+            .stream()
+            .sorted(
+                Comparator.comparing(
+                    a -> a.getKey()
+                        .toString()
+                        .toLowerCase()))
+            .collect(Collectors.toList())) {
+            int outputSize = Arrays.stream(this.mOutputItems)
+                .filter(s -> s.isItemEqual(drop.getKey()))
+                .mapToInt(i -> i.stackSize)
+                .sum();
+            ret.append(EnumChatFormatting.AQUA)
+                .append(
+                    drop.getKey()
+                        .getDisplayName())
+                .append(EnumChatFormatting.WHITE)
+                .append(": ");
+            if (outputSize == 0) {
+                ret.append(String.format("%.2f", drop.getValue() * 100))
+                    .append("%\n");
+            } else {
+                ret.append(EnumChatFormatting.GOLD)
                     .append(
-                        drop.getKey()
-                            .getDisplayName())
-                    .append(EnumChatFormatting.WHITE)
-                    .append(": ");
-                if (outputSize == 0) {
-                    ret.append(String.format("%.2f", drop.getValue() * 100))
-                        .append("%\n");
-                } else {
-                    ret.append(EnumChatFormatting.GOLD)
-                        .append(
-                            String.format(
-                                "x%d %s(+%.2f/sec)\n",
-                                outputSize,
-                                EnumChatFormatting.WHITE,
-                                (double) outputSize / (mMaxProgresstime / 20)));
-                }
+                        String.format(
+                            "x%d %s(+%.2f/sec)\n",
+                            outputSize,
+                            EnumChatFormatting.WHITE,
+                            (double) outputSize / (mMaxProgresstime / 20)));
             }
-            return ret.toString();
         }
-        return super.generateCurrentRecipeInfoString();
+        return ret.toString();
     }
 
     @Override
