@@ -40,8 +40,8 @@ dependencies {
         exclude group:"com.github.GTNewHorizons", module:"ModularUI"
     }
     api("com.github.GTNewHorizons:EnderCore:0.4.6:dev")
-    api("com.github.GTNewHorizons:EnderIO:2.7.6:dev")
-    api("com.github.GTNewHorizons:ForestryMC:4.8.9:dev")
+    api("com.github.GTNewHorizons:EnderIO:2.8.0:dev")
+    api("com.github.GTNewHorizons:ForestryMC:4.8.10:dev")
     api("com.github.GTNewHorizons:ModularUI:1.1.42:dev")
     api("com.github.GTNewHorizons:Mobs-Info:0.2.6-GTNH:dev")
     devOnlyNonPublishable("com.github.GTNewHorizons:Infernal-Mobs:1.8.1-GTNH:dev")
@@ -68,7 +68,7 @@ dependencies {
     {
         transitive = false
     }
-    compileOnly("com.github.GTNewHorizons:NewHorizonsCoreMod:2.3.53:dev")
+    compileOnly("com.github.GTNewHorizons:NewHorizonsCoreMod:2.4.8:dev")
     {
         transitive = false
     }
@@ -89,7 +89,7 @@ dependencies {
     //runtimeOnly("com.github.GTNewHorizons:BetterLoadingScreen:1.6.1-GTNH:dev")
     //runtimeOnly("com.github.GTNewHorizons:GTplusplus:1.11.63:dev")
     //runtimeOnly("com.github.GTNewHorizons:harvestcraft:1.1.11-GTNH:dev")
-    //runtimeOnly("com.github.GTNewHorizons:NewHorizonsCoreMod:2.3.53:dev")
+    //runtimeOnly("com.github.GTNewHorizons:NewHorizonsCoreMod:2.4.8:dev")
     //runtimeOnly("com.github.GTNewHorizons:OpenBlocks:1.9.1-GTNH:dev")
     //runtimeOnly("com.github.GTNewHorizons:bartworks:0.9.25:dev")
     //runtimeOnly("com.github.GTNewHorizons:CraftTweaker:3.3.1:dev")
